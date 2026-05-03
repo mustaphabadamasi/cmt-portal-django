@@ -1,0 +1,1 @@
+web: gunicorn cmt_portal.wsgi
