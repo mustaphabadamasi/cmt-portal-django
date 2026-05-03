@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}CMT Portal{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#1a5c38;--green2:#2d7a50;--green3:#3d9e68;--green-light:#e8f5ee;--green-pale:#f0faf4;
+  --gold:#c8a84b;--gold2:#e8c96a;--gold-light:#fdf8ec;
+  --bg:#f4f9f6;--bg2:#ffffff;--bg3:#eef7f2;
+  --surface:#ffffff;--surface2:#f0faf4;
+  --text:#0f2d1c;--text2:#3d6b52;--text3:#7aab8e;
+  --border:#c8e6d4;--border2:#a8d4bc;
+  --red:#dc2626;--blue:#2563eb;--amber:#d97706;
+  --radius:12px;--radius2:8px;
+  --shadow:0 1px 3px rgba(26,92,56,.08),0 1px 2px rgba(26,92,56,.06);
+  --shadow-md:0 4px 6px rgba(26,92,56,.07),0 2px 4px rgba(26,92,56,.05);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.layout{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:248px;background:var(--green);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;box-shadow:4px 0 20px rgba(26,92,56,.15)}
+.sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(to bottom,transparent,rgba(200,168,75,.4),transparent)}
+.logo{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.12)}
+.logo-mark{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:#fff;line-height:1.2}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.55);font-weight:400;margin-top:2px}
+.nav-section{padding:16px 16px 5px;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 10px;border-radius:var(--radius2);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:rgba(255,255,255,.7);text-decoration:none;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.nav-item.active::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--gold);border-radius:2px}
+.nav-icon{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:14px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,.12)}
+.nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px}
+.sidebar-footer{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.1)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.1);border-radius:var(--radius2);text-decoration:none;transition:all .15s}
+.user-card:hover{background:rgba(255,255,255,.15)}
+.avatar{width:34px;height:34px;border-radius:99px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green);flex-shrink:0;text-transform:uppercase}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role{font-size:10px;color:rgba(255,255,255,.5);text-transform:capitalize}
+
+/* MAIN */
+.main{flex:1;margin-left:248px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--text)}
+.topbar-breadcrumb{font-size:11px;color:var(--text3);margin-top:1px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.topbar-btn{width:34px;height:34px;border-radius:var(--radius2);background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text2);text-decoration:none;transition:all .15s}
+.topbar-btn:hover{background:var(--green-light);color:var(--green)}
+.content{flex:1;padding:28px;overflow-y:auto}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.card-title{font-size:14px;font-weight:700;color:var(--text)}
+.card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.card-action{font-size:12px;color:var(--green2);text-decoration:none;font-weight:600}
+.card-action:hover{color:var(--green)}
+.card-body{padding:20px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .2s;cursor:pointer;box-shadow:var(--shadow)}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),var(--green3))}
+.stat-card.amber::before{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),#f87171)}
+.stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
+.stat-icon.green{background:var(--green-light);color:var(--green)}
+.stat-icon.amber{background:var(--gold-light);color:var(--gold)}
+.stat-icon.blue{background:#eff6ff;color:var(--blue)}
+.stat-icon.red{background:#fef2f2;color:var(--red)}
+.stat-value{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:var(--text);line-height:1}
+.stat-label{font-size:12px;color:var(--text3);margin-top:5px;font-weight:500}
+.stat-trend{font-size:11px;margin-top:8px;font-weight:500}
+.stat-trend.up{color:#16a34a}
+.stat-trend.down{color:var(--red)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 16px;text-align:left;background:var(--bg3);border-bottom:2px solid var(--border)}
+.data-table td{padding:12px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)}
+.data-table tbody tr:hover td{background:var(--green-pale)}
+.data-table tr:last-child td{border-bottom:none}
+.td-user{display:flex;align-items:center;gap:10px}
+.mini-av{width:30px;height:30px;border-radius:99px;background:linear-gradient(135deg,var(--green),var(--green3));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
+
+/* BADGES */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.02em}
+.badge-active{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.badge-pending{background:#fef9c3;color:#a16207;border:1px solid #fef08a}
+.badge-approved{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.badge-rejected{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.badge-admin{background:#f3e8ff;color:#7e22ce;border:1px solid #e9d5ff}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius2);border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green2);color:#fff}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:var(--gold2);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-danger{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.btn-danger:hover{background:#fee2e2}
+.btn-sm{padding:6px 12px;font-size:11px}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.form-control{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius2);padding:10px 14px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border .15s}
+.form-control:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,92,56,.08)}
+.form-control option{background:#fff}
+
+/* ALERTS */
+.alert-msg{padding:12px 16px;border-radius:var(--radius2);font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.alert-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.alert-error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+.alert-warning{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+
+/* LAYOUT */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--text)}
+.page-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3c{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.section-divider{height:1px;background:var(--border);margin:20px 0}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+</style>
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="layout">
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">??</div>
+      <div>
+        <div class="logo-text">CMT Portal</div>
+        <div class="logo-sub">FUD Affiliate — Katsina</div>
+      </div>
+    </div>
+  </div>
+
+  {% if user.role == 'student' %}
+  <div class="nav-section">Main Menu</div>
+  <a href="{% url 'student_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
+  <a href="{% url 'student_profile' %}" class="nav-item {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-person-circle"></i></div>My Profile</a>
+  <div class="nav-section">Academics</div>
+  <a href="{% url 'register_courses' %}" class="nav-item {% if request.resolver_match.url_name == 'register_courses' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-journal-check"></i></div>Course Registration</a>
+  <a href="{% url 'my_courses' %}" class="nav-item {% if request.resolver_match.url_name == 'my_courses' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-book-half"></i></div>My Courses</a>
+  <div class="nav-section">Finance</div>
+  <a href="{% url 'make_payment' %}" class="nav-item {% if request.resolver_match.url_name == 'make_payment' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>Pay Fees</a>
+  <a href="{% url 'my_payments' %}" class="nav-item {% if request.resolver_match.url_name == 'my_payments' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-receipt-cutoff"></i></div>My Payments</a>
+  {% else %}
+  <div class="nav-section">Overview</div>
+  <a href="{% url 'admin_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
+  <div class="nav-section">Students</div>
+  <a href="{% url 'student_list' %}" class="nav-item {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-people-fill"></i></div>All Students</a>
+  <a href="{% url 'add_student' %}" class="nav-item {% if request.resolver_match.url_name == 'add_student' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-person-plus-fill"></i></div>Add Student</a>
+  <a href="{% url 'admin_photo_capture' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_photo_capture' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-fill"></i></div>Photo Capture</a>
+  <div class="nav-section">Academic</div>
+  <a href="{% url 'semester_result' %}" class="nav-item {% if request.resolver_match.url_name == 'semester_result' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>Semester Result</a>
+  <a href="{% url 'user_management' %}" class="nav-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-shield-lock-fill"></i></div>User Management</a>
+  {% if user.role == 'bursar' or user.role == 'admin' %}
+  <div class="nav-section">Finance</div>
+  <a href="{% url 'bursar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'bursar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-stack"></i></div>Payments{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+  {% endif %}
+  <div class="nav-section">System</div>
+  <a href="/admin/" class="nav-item"><div class="nav-icon"><i class="bi bi-gear-fill"></i></div>Site Admin</a>
+  {% endif %}
+
+  <div class="sidebar-footer">
+    <a href="{% url 'logout' %}" class="user-card">
+      <div class="avatar">{{ user.first_name|first }}{{ user.last_name|first }}</div>
+      <div>
+        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="user-role">{{ user.role }} &mdash; Logout</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <div class="topbar-breadcrumb">College of Management & Technology, Katsina</div>
+    </div>
+    <div class="topbar-right">
+      <a href="{% url 'logout' %}" class="topbar-btn" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="content">
+    {% for msg in messages %}
+    <div class="alert-msg {% if msg.tags == 'error' %}alert-error{% elif msg.tags == 'success' %}alert-success{% elif msg.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}">
+      {{ msg }}
+    </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+</div>
+{% else %}
+{% block full_content %}{% endblock %}
+{% endif %}
+</body>
+</html>

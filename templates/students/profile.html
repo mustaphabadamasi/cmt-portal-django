@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-4">My Profile</h4>
+<div class="row g-3">
+  <div class="col-md-3 text-center">
+    {% if student.photo %}<img src="{{ student.photo.url }}" class="img-fluid rounded shadow" style="max-height:200px;width:100%;object-fit:cover">
+    {% else %}<div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="height:200px;font-size:48px">{{ student.user.first_name|first }}</div>{% endif %}
+    <div class="mt-3"><a href="{% url 'upload_photo' %}" class="btn btn-cmt btn-sm">Update Photo</a></div>
+  </div>
+  <div class="col-md-9">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6"><small class="text-muted d-block">Full Name</small><strong>{{ student.user.get_full_name }}</strong></div>
+          <div class="col-md-6"><small class="text-muted d-block">Reg / Matric Number</small><strong>{{ student.reg_number }}</strong></div>
+          <div class="col-md-6"><small class="text-muted d-block">Programme</small>{{ student.programme }}</div>
+          <div class="col-md-6"><small class="text-muted d-block">Level</small>{{ student.programme.get_level_display }}</div>
+          <div class="col-md-6"><small class="text-muted d-block">Session</small>{{ student.current_session|default:"-" }}</div>
+          <div class="col-md-6"><small class="text-muted d-block">Semester</small>{{ student.current_semester|default:"-" }}</div>
+          <div class="col-md-6"><small class="text-muted d-block">Email</small>{{ student.user.email|default:"-" }}</div>
+          <div class="col-md-6"><small class="text-muted d-block">Status</small><span class="badge bg-success">{{ student.status }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

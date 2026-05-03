@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Pay Fees{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header card-header-cmt"><strong>Fee Payment Request</strong></div>
+      <div class="card-body p-4">
+        <div class="alert alert-info small"><strong>Fee Structure:</strong><br>Full Session: <strong>&#8358;50,000</strong><br>Per Semester: <strong>&#8358;25,000</strong></div>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3"><label class="form-label">Payment Type</label>
+          <select name="payment_type" class="form-select" id="payType" onchange="toggleSemester(this.value)">
+            <option value="session">Full Session (&#8358;50,000)</option>
+            <option value="semester">Per Semester (&#8358;25,000)</option>
+          </select></div>
+          <div class="mb-3" id="semesterDiv" style="display:none"><label class="form-label">Select Semester</label>
+          <select name="semester" class="form-select">{% for s in semesters %}<option value="{{ s.pk }}">{{ s }}</option>{% endfor %}</select></div>
+          <div class="mb-3"><label class="form-label">Session</label><input type="text" class="form-control" value="{{ session|default:'Not assigned' }}" disabled></div>
+          <button type="submit" class="btn btn-cmt w-100">Submit Payment Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>function toggleSemester(v) { document.getElementById('semesterDiv').style.display = v === 'semester' ? 'block' : 'none'; }</script>
+{% endblock %}

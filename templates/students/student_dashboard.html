@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block content %}
+<h4 class="fw-bold mb-1">Welcome, {{ student.user.first_name }}!</h4>
+<p class="text-muted mb-4">{{ student.programme }} &nbsp;|&nbsp; {{ student.current_session|default:"No session assigned" }}</p>
+{% if not student.photo %}
+<div class="alert alert-warning"><i class="bi bi-camera me-2"></i>You have not uploaded a passport photo yet. <a href="{% url 'upload_photo' %}" class="alert-link">Upload photo now</a> — required for exam card.</div>
+{% endif %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        {% if student.photo %}<img src="{{ student.photo.url }}" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover">
+        {% else %}<div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width:80px;height:80px;font-size:28px">{{ student.user.first_name|first }}</div>{% endif %}
+        <h6 class="fw-bold mb-0">{{ student.user.get_full_name }}</h6>
+        <small class="text-muted">{{ student.reg_number }}</small>
+        <div class="mt-2"><a href="{% url 'upload_photo' %}" class="btn btn-sm btn-outline-secondary">Update Photo</a></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="row g-3">
+      <div class="col-6"><div class="card border-0 bg-light h-100"><div class="card-body"><small class="text-muted">Active Semester</small><p class="fw-bold mb-0">{{ active_semester|default:"Not set" }}</p></div></div></div>
+      <div class="col-6"><div class="card border-0 bg-light h-100"><div class="card-body"><small class="text-muted">Course Registration</small><p class="fw-bold mb-0">{% if registration %}Registered ({{ registration.courses.count }} courses){% else %}Not registered{% endif %}</p></div></div></div>
+      <div class="col-12">
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'make_payment' %}" class="btn btn-cmt btn-sm"><i class="bi bi-cash me-1"></i>Pay Fees</a>
+          <a href="{% url 'register_courses' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-journal-check me-1"></i>Register Courses</a>
+          <a href="{% url 'exam_card' student.pk %}" target="_blank" class="btn btn-outline-success btn-sm"><i class="bi bi-card-heading me-1"></i>Exam Card</a>
+          {% if registration %}<a href="{% url 'course_reg_form' student.pk %}" target="_blank" class="btn btn-outline-info btn-sm"><i class="bi bi-file-pdf me-1"></i>Course Reg Form</a>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-header card-header-cmt"><strong>Recent Payment Activity</strong></div>
+  <div class="card-body p-0">
+    <table class="table mb-0 small">
+      <thead class="table-light"><tr><th>Receipt</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for p in payments %}
+        <tr><td>{{ p.receipt_number }}</td><td>{{ p.get_payment_type_display }}</td><td>&#8358;{{ p.amount|floatformat:0 }}</td>
+        <td><span class="badge {% if p.status == 'approved' %}bg-success{% elif p.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.status }}</span></td>
+        <td>{{ p.date_requested|date:"d M Y" }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">No payment history yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

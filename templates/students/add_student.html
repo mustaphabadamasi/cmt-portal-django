@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Add Student{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header card-header-cmt"><strong>Add New Student</strong></div>
+      <div class="card-body p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">First Name</label><input type="text" name="first_name" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Last Name</label><input type="text" name="last_name" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Matric / Reg Number</label><input type="text" name="reg_number" class="form-control" required placeholder="e.g. CMT/2024/001"></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Programme</label><select name="programme" class="form-select" required><option value="">-- Select Programme --</option>{% for p in programmes %}<option value="{{ p.pk }}">{{ p }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label">Current Session</label><select name="session" class="form-select" required>{% for s in sessions %}<option value="{{ s.pk }}">{{ s }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label">Current Semester</label><select name="semester" class="form-select" required>{% for s in semesters %}<option value="{{ s.pk }}">{{ s }}</option>{% endfor %}</select></div>
+            <div class="col-12"><div class="alert alert-info small mb-0">Default password will be the matric number. Student should change it after first login.</div></div>
+            <div class="col-12"><button type="submit" class="btn btn-cmt px-4">Save Student</button><a href="{% url 'student_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a></div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

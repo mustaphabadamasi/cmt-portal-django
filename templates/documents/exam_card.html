@@ -1,0 +1,158 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Examination Card — {{ student.reg_number }}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,sans-serif;font-size:12px;background:#fff;color:#000}
+  .page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .header .logo{width:70px;height:70px;object-fit:contain}
+  .header .center{text-align:center;flex:1;padding:0 10px}
+  .header .center h1{font-size:15px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
+  .header .center .addr{font-size:11px;margin:2px 0}
+  .header .center .univ{font-size:12px;font-weight:bold;color:#c00}
+  hr.thick{border:none;border-top:2px solid #000;margin:6px 0 4px}
+  .card-title{font-size:16px;font-weight:bold;text-transform:uppercase;text-decoration:underline;margin:6px 0 10px}
+  .info-row{display:flex;align-items:baseline;margin-bottom:6px;font-size:12px;gap:8px}
+  .info-row .lbl{font-weight:bold;min-width:88px}
+  .info-row .val{border-bottom:1px solid #000;min-width:160px;padding-bottom:1px}
+  .passport-box{border:2px solid #000;width:82px;height:82px;display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;overflow:hidden}
+  .passport-box img{width:100%;height:100%;object-fit:cover}
+  .section-title{font-size:13px;font-weight:bold;text-align:center;text-decoration:underline;margin:10px 0 6px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  table th{background:#2e4e2e;color:#fff;padding:5px 8px;text-align:left;font-weight:bold;border:1px solid #000}
+  table td{border:1px solid #000;padding:5px 8px}
+  .sig-section{margin-top:14px}
+  .sig-row{display:flex;align-items:flex-end;margin-bottom:10px}
+  .sig-row .slbl{font-weight:bold;min-width:160px}
+  .sig-row .sline{flex:1;border-bottom:1px dashed #000;margin-left:10px}
+  .ref-row{display:flex;align-items:flex-end;margin-bottom:10px}
+  .regulations{margin-top:18px;border-top:2px solid #000;padding-top:10px}
+  .regulations h3{font-size:13px;font-weight:bold;text-align:center;text-decoration:underline;text-transform:uppercase;margin-bottom:8px}
+  .regulations ol{padding-left:20px}
+  .regulations li{font-size:10.5px;line-height:1.55;margin-bottom:3px}
+  .sub{list-style-type:lower-roman;margin-left:16px;margin-top:2px}
+  @media print{.no-print{display:none}@page{size:A4;margin:0}body{margin:0}.page{padding:8mm 10mm}}
+  .print-btn{position:fixed;bottom:24px;right:24px;background:#1a5c38;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+</style>
+</head>
+<body>
+<button class="print-btn no-print" onclick="window.print()">🖨 Print Exam Card</button>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <img src="{% static 'images/cmt_logo.png' %}" alt="CMT" class="logo" onerror="this.style.display='none'"/>
+    <div class="center">
+      <h1>College of Management and Technology Katsina</h1>
+      <p class="addr">11, Batsari Road, Day Kofar Yandaka, Katsina</p>
+      <p class="addr" style="font-style:italic">Affiliated to</p>
+      <p class="univ">Federal University Dutsin-Ma, Katsina</p>
+    </div>
+    <img src="{% static 'images/university_logo.png' %}" alt="FUDMA" class="logo" onerror="this.style.display='none'"/>
+  </div>
+  <hr class="thick"/>
+
+  <p class="card-title">Examination Card</p>
+
+  <!-- STUDENT INFO -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div style="flex:1">
+      <div class="info-row">
+        <span class="lbl">Name:</span><span class="val">&nbsp;{{ student.user.get_full_name }}</span>
+        <span class="lbl" style="margin-left:20px">Level:</span><span class="val">&nbsp;{{ student.level }}</span>
+      </div>
+      <div class="info-row">
+        <span class="lbl">Matric. No:</span><span class="val">&nbsp;{{ student.reg_number }}</span>
+        <span class="lbl" style="margin-left:20px">Session:</span><span class="val">&nbsp;{{ student.current_session }}</span>
+      </div>
+      <div class="info-row">
+        <span class="lbl">Programme:</span><span class="val" style="min-width:220px">&nbsp;{{ student.programme }}</span>
+        <span class="lbl" style="margin-left:20px">Semester:</span><span class="val">&nbsp;{{ student.current_semester|upper }}</span>
+      </div>
+    </div>
+    <div style="text-align:center;margin-left:12px">
+      <div class="passport-box">
+        {% if student.photo %}<img src="{{ student.photo.url }}" alt="Photo"/>{% else %}2x2<br>Passport{% endif %}
+      </div>
+      <div style="font-size:10px;text-align:center;margin-top:2px">2x2<br>Passport</div>
+    </div>
+  </div>
+
+  <!-- COURSES -->
+  <p class="section-title">Course(s) Registered</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:36px">S/N</th>
+        <th style="width:100px">Course Code</th>
+        <th>Course Title</th>
+        <th style="width:170px">Invigilator's Signature</th>
+        <th style="width:80px">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for course in student.courses.all %}
+      <tr>
+        <td style="text-align:center">{{ forloop.counter }}</td>
+        <td>{{ course.code }}</td>
+        <td>{{ course.title }}</td>
+        <td></td><td></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center;color:#999;font-style:italic;padding:12px">No courses registered</td></tr>
+      {% endfor %}
+      <!-- blank rows to fill space -->
+      {% with n=student.courses.count %}
+      {% if n < 3 %}<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>{% endif %}
+      {% if n < 2 %}<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>{% endif %}
+      {% endwith %}
+    </tbody>
+  </table>
+
+  <!-- SIGNATURES -->
+  <div class="sig-section">
+    <div class="sig-row">
+      <span class="slbl">Student's Sign &amp; Date:</span>
+      <span class="sline"></span>
+    </div>
+    <div class="sig-row">
+      <span class="slbl">HOD's Sign &amp; Date:</span>
+      <span class="sline"></span>
+    </div>
+    <div class="ref-row" style="display:flex;align-items:flex-end">
+      <span style="font-weight:bold;font-size:13px;min-width:110px">{{ exam_card_ref|default:"EC00000000" }}</span>
+      <span style="margin-left:20px;font-weight:bold">Registrar's Sign, Date &amp; Stamp:</span>
+      <span style="flex:1;border-bottom:1px dashed #000;margin-left:10px"></span>
+    </div>
+  </div>
+
+  <!-- REGULATIONS -->
+  <div class="regulations">
+    <h3>Examination Regulations</h3>
+    <ol>
+      <li>Student shall be at the examination room/hall at least fifteen (15) minutes before the time appointed for the commencement of the examination. Candidates should, therefore, refrain from studying in halls earmarked for examinations.</li>
+      <li>Student must NOT take into the examination hall any programmed electronic device, handset, book, paper, or any other form of printed or written material, hand bags and brief cases.</li>
+      <li>Student must bring his/her examination and college ID card to the examination hall and display them on his/her desk.</li>
+      <li>While the examination is in progress, communication between candidates is strictly forbidden, and any candidate found to be giving or receiving irregular assistance may be required to withdraw from the examination.</li>
+      <li>Student must sign in, the attendance form with his/her Reg. number and must sign out same on submission of their script.</li>
+      <li>Student must correctly fill in all the spaces provided on the cover of the answer booklet and all additional sheets of paper issued during the examination.</li>
+      <li>No candidate will be permitted to:
+        <ol class="sub">
+          <li>Enter examination room 30 minutes after the commencement of the examination</li>
+          <li>Leave the examination room before the first 45 minutes of the examination</li>
+          <li>Write examination without college ID Card</li>
+        </ol>
+      </li>
+      <li>Examination answer scripts/sheets whether used or unused should not be taken out of the examination hall by students.</li>
+      <li>A student involved in examination misconduct or malpractice may be expelled from the College.</li>
+      <li>Candidates must adhere strictly to the sitting arrangement made by the Chief Invigilator.</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>

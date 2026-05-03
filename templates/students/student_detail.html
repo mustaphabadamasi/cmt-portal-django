@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Student Detail{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h4 class="fw-bold">{{ student.user.get_full_name }}</h4>
+  <div>
+    <a href="{% url 'exam_card' student.pk %}" target="_blank" class="btn btn-success btn-sm">Exam Card PDF</a>
+    <a href="{% url 'course_reg_form' student.pk %}" target="_blank" class="btn btn-info btn-sm">Course Reg PDF</a>
+    <a href="{% url 'delete_student' student.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this student?')">Delete</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-3 text-center">
+    {% if student.photo %}<img src="{{ student.photo.url }}" class="img-fluid rounded shadow" style="max-height:200px;object-fit:cover">
+    {% else %}<div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="height:200px;font-size:48px">{{ student.user.first_name|first }}</div>{% endif %}
+    <p class="mt-2 fw-bold">{{ student.reg_number }}</p>
+  </div>
+  <div class="col-md-9">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-6"><small class="text-muted">Full Name</small><p class="fw-semibold mb-0">{{ student.user.get_full_name }}</p></div>
+          <div class="col-md-6"><small class="text-muted">Email</small><p class="mb-0">{{ student.user.email|default:"-" }}</p></div>
+          <div class="col-md-6"><small class="text-muted">Programme</small><p class="mb-0">{{ student.programme }}</p></div>
+          <div class="col-md-6"><small class="text-muted">Session</small><p class="mb-0">{{ student.current_session|default:"-" }}</p></div>
+          <div class="col-md-6"><small class="text-muted">Semester</small><p class="mb-0">{{ student.current_semester|default:"-" }}</p></div>
+          <div class="col-md-6"><small class="text-muted">Status</small><p class="mb-0"><span class="badge bg-success">{{ student.status }}</span></p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header card-header-cmt"><strong>Payment History</strong></div>
+      <div class="card-body p-0">
+        <table class="table mb-0 small">
+          <thead class="table-light"><tr><th>Receipt No.</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+            {% for p in payments %}
+            <tr><td>{{ p.receipt_number }}</td><td>{{ p.payment_type }}</td><td>&#8358;{{ p.amount|floatformat:0 }}</td>
+            <td><span class="badge {% if p.status == 'approved' %}bg-success{% elif p.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.status }}</span></td>
+            <td>{{ p.date_requested|date:"d M Y" }}</td>
+            <td>{% if p.status == 'approved' %}<a href="{% url 'payment_receipt' p.pk %}" target="_blank" class="btn btn-sm btn-outline-success">Receipt</a>{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="6" class="text-center text-muted">No payments</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

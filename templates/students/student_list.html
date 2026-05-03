@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Student List{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="fw-bold mb-0">All Students</h4>
+  <a href="{% url 'add_student' %}" class="btn btn-cmt">+ Add Student</a>
+</div>
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2">
+      <div class="col-md-4"><select name="programme" class="form-select form-select-sm"><option value="">All Programmes</option>{% for p in programmes %}<option value="{{ p.pk }}" {% if request.GET.programme == p.pk|stringformat:"s" %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><select name="status" class="form-select form-select-sm"><option value="">All Status</option><option value="active">Active</option><option value="graduated">Graduated</option><option value="withdrawn">Withdrawn</option></select></div>
+      <div class="col-auto"><button class="btn btn-sm btn-cmt">Filter</button></div>
+    </form>
+  </div>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light"><tr><th>Photo</th><th>Reg No.</th><th>Name</th><th>Programme</th><th>Session</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td>{% if s.photo %}<img src="{{ s.photo.url }}" width="36" height="36" class="rounded-circle" style="object-fit:cover">{% else %}<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width:36px;height:36px;font-size:14px">{{ s.user.first_name|first }}</div>{% endif %}</td>
+          <td>{{ s.reg_number }}</td><td>{{ s.user.get_full_name }}</td><td>{{ s.programme }}</td><td>{{ s.current_session|default:"-" }}</td>
+          <td><span class="badge {% if s.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">{{ s.status }}</span></td>
+          <td><a href="{% url 'student_detail' s.pk %}" class="btn btn-sm btn-outline-primary">View</a> <a href="{% url 'exam_card' s.pk %}" class="btn btn-sm btn-outline-success" target="_blank">Exam Card</a> <a href="{% url 'course_reg_form' s.pk %}" class="btn btn-sm btn-outline-info" target="_blank">Course Reg</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="text-center py-4 text-muted">No students found.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

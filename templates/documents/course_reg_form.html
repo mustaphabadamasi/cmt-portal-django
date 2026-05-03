@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+body{font-family:Arial,sans-serif;font-size:12px;margin:20px}
+.header{text-align:center;border-bottom:3px double #1a5c38;padding-bottom:10px;margin-bottom:15px}
+.header h2{color:#1a5c38;margin:0;font-size:16px}
+.form-title{text-align:center;background:#1a5c38;color:white;padding:6px;font-size:14px;font-weight:bold;margin-bottom:15px}
+.info-row{margin-bottom:8px}
+.info-label{font-weight:bold;display:inline-block;width:140px}
+.photo-box{float:right;width:100px;height:120px;border:2px solid #333;margin-left:15px}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.course-table{width:100%;border-collapse:collapse;margin-top:15px}
+.course-table th{background:#1a5c38;color:white;padding:5px 8px;text-align:left;font-size:11px}
+.course-table td{border:1px solid #ccc;padding:5px 8px;font-size:11px}
+.signature-row{margin-top:50px;display:flex;justify-content:space-between}
+.sig-box{text-align:center;width:30%;border-top:1px solid #333;padding-top:5px;font-size:10px}
+</style></head>
+<body>
+<div class="header"><h2>COLLEGE OF MANAGEMENT AND TECHNOLOGY</h2><p>Affiliated with Federal University Dutsin-Ma, Katsina State</p></div>
+<div class="form-title">COURSE REGISTRATION FORM &mdash; {{ semester }}</div>
+<div class="photo-box">{% if student.photo %}<img src="{{ student.photo.url }}">{% else %}<div style="padding:10px;text-align:center;font-size:10px;color:#999">No Photo</div>{% endif %}</div>
+<div class="info-row"><span class="info-label">Full Name:</span> {{ student.user.get_full_name|upper }}</div>
+<div class="info-row"><span class="info-label">Reg / Matric No:</span> {{ student.reg_number }}</div>
+<div class="info-row"><span class="info-label">Programme:</span> {{ student.programme }}</div>
+<div class="info-row"><span class="info-label">Level:</span> {{ student.programme.get_level_display }}</div>
+<div class="info-row"><span class="info-label">Session:</span> {{ student.current_session }}</div>
+<div class="info-row"><span class="info-label">Semester:</span> {{ semester }}</div>
+<div style="clear:both"></div>
+<table class="course-table">
+  <thead><tr><th>#</th><th>Course Code</th><th>Course Title</th><th>Units</th><th>Status</th></tr></thead>
+  <tbody>
+    {% if registration %}{% for course in registration.courses.all %}
+    <tr><td>{{ forloop.counter }}</td><td>{{ course.code }}</td><td>{{ course.title }}</td><td>{{ course.unit }}</td><td>Registered</td></tr>
+    {% endfor %}{% else %}<tr><td colspan="5" style="text-align:center">No courses registered</td></tr>{% endif %}
+  </tbody>
+</table>
+<div class="signature-row">
+  <div class="sig-box">Student Signature &amp; Date</div>
+  <div class="sig-box">Adviser Signature &amp; Date</div>
+  <div class="sig-box">Academic Officer Stamp &amp; Date</div>
+</div>
+</body></html>

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block page_title %}Semester Result{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Semester Result Sheet</div>
+    <div class="page-sub">Generate and print FUDMA submission result sheets by programme</div>
+  </div>
+  {% if result_data %}
+  <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i> Print / Export PDF</button>
+  {% endif %}
+</div>
+
+<div class="card" id="filter-panel">
+  <div class="card-head"><div class="card-title">Select Programme & Semester</div></div>
+  <div class="card-body">
+    <form method="get" class="grid-2" style="gap:12px;align-items:end">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Programme</label>
+        <select name="programme" class="form-control" required>
+          <option value="">-- Select Programme --</option>
+          {% for p in programmes %}
+          <option value="{{ p.pk }}" {% if selected.programme == p.pk|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Semester</label>
+        <select name="semester" class="form-control" required>
+          <option value="">-- Select Semester --</option>
+          {% for s in semesters %}
+          <option value="{{ s.pk }}" {% if selected.semester == s.pk|stringformat:"s" %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="grid-column:1/-1">
+        <button type="submit" class="btn btn-primary">Generate Result Sheet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if result_data %}
+<div id="result-sheet" class="card">
+  <div class="card-body" style="padding:0">
+    <div class="result-print-area">
+
+      <div class="rp-header">
+        <div class="rp-logos">
+          <div class="rp-logo-box">CMT</div>
+          <div class="rp-title-block">
+            <div class="rp-college">COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA</div>
+            <div class="rp-address">11, Batsari Road, Day Kofar Yandaka, Katsina</div>
+            <div class="rp-affiliate">Affiliated to</div>
+            <div class="rp-university">Federal University Dutsin-Ma Katsina</div>
+          </div>
+          <div class="rp-logo-box">FUD</div>
+        </div>
+        <div class="rp-prog-name">{{ result_data.programme }}</div>
+        <div class="rp-submission">Submission to the Academic Board, College of Professional and Continuing Education</div>
+        <div class="rp-sem-title">{{ result_data.programme.get_level_display|upper }}, {{ result_data.semester.session }} {{ result_data.semester.get_name_display|upper }} SEMESTER<br>RESULT</div>
+      </div>
+
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="rp-th-sn">S/N</th>
+            <th rowspan="2" class="rp-th-student">Student</th>
+            <th colspan="{{ result_data.courses|length }}" class="rp-th-group">SEMESTER COURSES</th>
+            <th colspan="4" class="rp-th-group">CURRENT</th>
+            <th rowspan="2" class="rp-th-remark">REMARK</th>
+          </tr>
+          <tr>
+            {% for c in result_data.courses %}
+            <th class="rp-th-course">{{ c.code }}</th>
+            {% endfor %}
+            <th class="rp-th-cur">TCR</th>
+            <th class="rp-th-cur">TCE</th>
+            <th class="rp-th-cur">TGP</th>
+            <th class="rp-th-cur">GPA</th>
+          </tr>
+          <tr class="rp-unit-row">
+            <td></td><td></td>
+            {% for c in result_data.courses %}
+            <td class="rp-unit">{{ c.unit }}</td>
+            {% endfor %}
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in result_data.rows %}
+          <tr>
+            <td class="rp-td-sn">{{ forloop.counter }}</td>
+            <td class="rp-td-student">
+              <div class="rp-sname">{{ row.student.user.get_full_name }}</div>
+              <div class="rp-sreg">{{ row.student.reg_number }}</div>
+            </td>
+            {% for c in result_data.courses %}
+            <td class="rp-td-score">—</td>
+            {% endfor %}
+            <td class="rp-td-cur">—</td>
+            <td class="rp-td-cur">—</td>
+            <td class="rp-td-cur">—</td>
+            <td class="rp-td-cur">—</td>
+            <td class="rp-td-remark">PASS</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="100" style="text-align:center;padding:20px;color:#888">No students registered for this semester/programme.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="rp-stat-section">
+        <div class="rp-stat-title">STATISTICAL REPORT</div>
+        <table class="rp-stat-table">
+          <tr>
+            <th>Total number of registered students</th>
+            <th>Total number of students that Sat for the Exam</th>
+            <th>Passed students</th>
+            <th>Students with carry over</th>
+          </tr>
+          <tr>
+            <td>{{ result_data.rows|length }}</td>
+            <td>{{ result_data.rows|length }}</td>
+            <td>{{ result_data.rows|length }} (100%)</td>
+            <td>(0%)</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="rp-signature">
+        <div class="rp-sig-line">
+          <div class="rp-sig-name">MUSTAPHA BADAMASI</div>
+          <div class="rp-sig-title">REGISTRAR</div>
+        </div>
+      </div>
+
+      <div class="rp-course-key">
+        <div class="rp-key-col">
+          <div class="rp-key-title">COURSE KEY</div>
+          <table class="rp-key-table">
+            <tr><th>COURSE CODE</th><th>COURSE TITLE</th><th>CREDIT UNIT</th></tr>
+            {% for c in result_data.courses %}
+            <tr><td>{{ c.code }}</td><td>{{ c.title }}</td><td>{{ c.unit }}</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+        <div class="rp-key-col">
+          <div class="rp-key-title">NOTATIONS</div>
+          <table class="rp-key-table">
+            <tr><td>TCR</td><td>Total Credit Registered</td></tr>
+            <tr><td>TCE</td><td>Total Credit Earned</td></tr>
+            <tr><td>TPE</td><td>Total Point Earned</td></tr>
+            <tr><td>GPA</td><td>Grade Point Average</td></tr>
+            <tr><td>CGPA</td><td>Cummulative Grade Point Average</td></tr>
+            <tr><td>DEF</td><td>Deferment</td></tr>
+            <tr><td>RUS</td><td>Rustication</td></tr>
+            <tr><td>SUS</td><td>Suspension</td></tr>
+            <tr><td>WDL</td><td>Withdrawal</td></tr>
+          </table>
+          <div style="margin-top:8px;font-size:9px;color:#666">&copy;{% now "Y" %} cmtkatsina</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.result-print-area{padding:24px;font-family:'Times New Roman',serif}
+.rp-header{text-align:center;margin-bottom:12px}
+.rp-logos{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rp-logo-box{width:70px;height:70px;border:2px solid #1a5c38;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#1a5c38}
+.rp-title-block{flex:1;text-align:center;padding:0 16px}
+.rp-college{font-size:15px;font-weight:700;color:#1a5c38;text-transform:uppercase}
+.rp-address{font-size:11px;color:#333;margin:2px 0}
+.rp-affiliate{font-size:11px;font-style:italic;color:#333}
+.rp-university{font-size:14px;font-weight:700;color:#1a5c38}
+.rp-prog-name{font-size:13px;font-weight:600;margin:8px 0 3px}
+.rp-submission{font-size:11px;font-style:italic;margin-bottom:5px}
+.rp-sem-title{font-size:12px;font-weight:700;text-transform:uppercase;line-height:1.6}
+.rp-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:10px}
+.rp-table th,.rp-table td{border:1px solid #888;padding:4px 5px;text-align:center}
+.rp-th-sn{width:28px}
+.rp-th-student{width:160px;text-align:left}
+.rp-th-group{background:#d4edda;font-weight:700;font-size:10px;text-transform:uppercase}
+.rp-th-course{background:#f8f9fa;font-size:9px;font-weight:700;min-width:38px}
+.rp-th-cur{background:#f8f9fa;font-size:9px;font-weight:700;width:32px}
+.rp-th-remark{width:80px}
+.rp-unit-row td{font-size:9px;background:#f8f9fa;font-weight:600}
+.rp-td-sn{font-size:10px}
+.rp-td-student{text-align:left;padding:4px 6px}
+.rp-sname{font-size:10px;font-weight:600;line-height:1.3}
+.rp-sreg{font-size:9px;color:#555}
+.rp-td-score{font-size:10px;font-weight:500}
+.rp-td-cur{font-size:10px}
+.rp-td-remark{font-size:9px;font-weight:600}
+.rp-stat-section{margin-top:16px}
+.rp-stat-title{font-size:10px;font-weight:700;text-decoration:underline;margin-bottom:4px}
+.rp-stat-table{border-collapse:collapse;font-size:10px;width:70%}
+.rp-stat-table th,.rp-stat-table td{border:1px solid #888;padding:4px 8px;text-align:center}
+.rp-stat-table th{background:#f8f9fa;font-weight:700;font-size:9px}
+.rp-signature{text-align:right;margin:30px 0 16px;padding-right:60px}
+.rp-sig-line{display:inline-block;border-top:1px solid #333;padding-top:4px;min-width:160px;text-align:center}
+.rp-sig-name{font-size:11px;font-weight:700}
+.rp-sig-title{font-size:11px}
+.rp-course-key{display:flex;gap:32px;margin-top:12px;padding-top:12px;border-top:2px dashed #ccc}
+.rp-key-col{flex:1}
+.rp-key-title{font-size:10px;font-weight:700;text-decoration:underline;margin-bottom:5px}
+.rp-key-table{border-collapse:collapse;font-size:9px;width:100%}
+.rp-key-table th,.rp-key-table td{border:1px solid #ccc;padding:3px 6px}
+.rp-key-table th{background:#f8f9fa;font-weight:700}
+
+@media print{
+  body{background:#fff !important}
+  .sidebar,.topbar,#filter-panel,.page-header,.alert-msg{display:none !important}
+  .main{margin-left:0 !important}
+  .content{padding:0 !important}
+  .card{border:none !important;box-shadow:none !important}
+  .result-print-area{padding:10px !important}
+  @page{margin:1cm;size:A4 landscape}
+}
+</style>
+{% endblock %}

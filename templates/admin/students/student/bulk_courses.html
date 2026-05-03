@@ -1,0 +1,134 @@
+{% extends "admin/base_site.html" %}
+{% block content_title %}<h1>📚 Bulk Assign Courses to Students</h1>{% endblock %}
+{% block content %}
+<style>
+  .wrap{max-width:1100px}
+  .card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:24px;margin-bottom:20px}
+  .card h2{font-size:15px;font-weight:600;color:#1a5c38;border-bottom:2px solid #1a5c38;padding-bottom:8px;margin-bottom:14px}
+  .two-col{display:flex;gap:20px;flex-wrap:wrap}
+  .col{flex:1;min-width:280px}
+  .search-box{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:10px}
+  .list-box{border:1px solid #ddd;border-radius:6px;overflow-y:auto;max-height:400px}
+  .list-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;cursor:pointer}
+  .list-item:hover{background:#f0fdf4}
+  .list-item input[type=checkbox]{margin:0;cursor:pointer;width:15px;height:15px}
+  .list-item label{cursor:pointer;flex:1}
+  .badge-prog{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;background:#e8f5e9;color:#1a5c38;margin-left:4px}
+  .btn{padding:10px 22px;border-radius:6px;border:none;font-size:14px;font-weight:500;cursor:pointer}
+  .btn-green{background:#1a5c38;color:#fff}.btn-green:hover{background:#14472c}
+  .btn-gray{background:#e9ecef;color:#333;border:1px solid #ccc;text-decoration:none;display:inline-block}
+  .select-all-row{padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #ddd;font-size:12px;display:flex;align-items:center;gap:8px}
+  .filter-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .filter-btn{padding:4px 12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer}
+  .filter-btn.active{background:#1a5c38;color:#fff;border-color:#1a5c38}
+  #selCount{font-weight:600;color:#1a5c38}
+  #courseCount{font-weight:600;color:#1a5c38}
+</style>
+
+<div class="wrap">
+  {% if messages %}
+    {% for m in messages %}
+    <div style="padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:13px;background:#d4edda;color:#155724">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="two-col">
+
+      <!-- Students -->
+      <div class="col card">
+        <h2>👥 Select Students — <span id="selCount">0</span> selected</h2>
+        <div class="filter-row" id="progFilters">
+          <button type="button" class="filter-btn active" onclick="filterProg('all',this)">All</button>
+          {% for p in programmes %}
+          <button type="button" class="filter-btn" onclick="filterProg('{{ p.id }}',this)">{{ p.name|truncatechars:25 }}</button>
+          {% endfor %}
+        </div>
+        <input type="text" class="search-box" placeholder="Search by name or reg number..." onkeyup="filterStudents(this.value)"/>
+        <div class="list-box">
+          <div class="select-all-row">
+            <input type="checkbox" id="selAllStudents" onchange="toggleAll('student_ids',this.checked)"/>
+            <label for="selAllStudents">Select all visible</label>
+          </div>
+          {% for student in students %}
+          <div class="list-item student-item" data-name="{{ student.user.get_full_name|lower }}" data-reg="{{ student.reg_number|lower }}" data-prog="{{ student.programme.id|default:'' }}">
+            <input type="checkbox" name="student_ids" value="{{ student.pk }}" id="s{{ student.pk }}"
+              onchange="updateCount()"
+              {% if student.pk|stringformat:'s' in preselected_ids %}checked{% endif %}/>
+            <label for="s{{ student.pk }}">
+              {{ student.user.get_full_name }}
+              <span style="color:#888;font-size:11px"> · {{ student.reg_number }}</span>
+              {% if student.programme %}<span class="badge-prog">{{ student.programme.name|truncatechars:20 }}</span>{% endif %}
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Courses -->
+      <div class="col card">
+        <h2>📖 Select Courses — <span id="courseCount">0</span> selected</h2>
+        <input type="text" class="search-box" placeholder="Search by code or title..." onkeyup="filterCourses(this.value)"/>
+        <div class="list-box">
+          <div class="select-all-row">
+            <input type="checkbox" id="selAllCourses" onchange="toggleAll('course_ids',this.checked)"/>
+            <label for="selAllCourses">Select all visible</label>
+          </div>
+          {% for course in courses %}
+          <div class="list-item course-item" data-code="{{ course.code|lower }}" data-title="{{ course.title|lower }}">
+            <input type="checkbox" name="course_ids" value="{{ course.pk }}" id="c{{ course.pk }}" onchange="updateCourseCount()"/>
+            <label for="c{{ course.pk }}">
+              <strong>{{ course.code }}</strong> — {{ course.title }}
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;margin-top:4px">
+      <button type="submit" class="btn btn-green">✅ Assign Selected Courses to Selected Students</button>
+      <a href="../" class="btn btn-gray">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function updateCount(){
+    document.getElementById('selCount').textContent =
+      document.querySelectorAll('input[name=student_ids]:checked').length;
+  }
+  function updateCourseCount(){
+    document.getElementById('courseCount').textContent =
+      document.querySelectorAll('input[name=course_ids]:checked').length;
+  }
+  function toggleAll(name, checked){
+    document.querySelectorAll(`input[name=${name}]`).forEach(cb => {
+      if(cb.closest('.list-item') && cb.closest('.list-item').style.display !== 'none') cb.checked = checked;
+    });
+    updateCount(); updateCourseCount();
+  }
+  function filterStudents(q){
+    q = q.toLowerCase();
+    document.querySelectorAll('.student-item').forEach(el=>{
+      const match = el.dataset.name.includes(q) || el.dataset.reg.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+  }
+  function filterProg(id, btn){
+    document.querySelectorAll('#progFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.student-item').forEach(el=>{
+      el.style.display = (id === 'all' || el.dataset.prog === id) ? '' : 'none';
+    });
+  }
+  function filterCourses(q){
+    q = q.toLowerCase();
+    document.querySelectorAll('.course-item').forEach(el=>{
+      el.style.display = (el.dataset.code.includes(q)||el.dataset.title.includes(q)) ? '' : 'none';
+    });
+  }
+  updateCount(); updateCourseCount();
+</script>
+{% endblock %}

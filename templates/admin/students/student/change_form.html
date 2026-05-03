@@ -1,0 +1,46 @@
+﻿{% extends "admin/change_form.html" %}
+{% block after_field_sets %}
+{{ block.super }}
+<style>
+.webcam-widget{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:20px;margin:10px 0 20px 170px;max-width:600px}
+.webcam-widget h3{font-size:14px;font-weight:600;color:#1a5c38;margin-bottom:14px;border-bottom:2px solid #1a5c38;padding-bottom:6px}
+#adminCameraFrame{width:320px;height:240px;background:#1a1a1a;border-radius:8px;overflow:hidden;position:relative;margin-bottom:12px}
+#adminVideo,#adminCanvas{width:100%;height:100%;object-fit:cover}
+#adminCanvas{display:none}
+#adminCameraOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:13px;flex-direction:column;gap:8px}
+#adminCountdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:64px;font-weight:bold;color:white;display:none}
+.wbtn{padding:7px 14px;border-radius:5px;border:none;cursor:pointer;font-size:13px;font-weight:500;margin-right:6px;margin-bottom:6px}
+.wbtn-green{background:#1a5c38;color:white}.wbtn-green:hover{background:#14472c}
+.wbtn-gray{background:#e9ecef;color:#333;border:1px solid #ccc}
+.wbtn-red{background:#fff5f5;color:#c0392b;border:1px solid #f5c6cb}
+.wbtn:disabled{opacity:0.4;cursor:not-allowed}
+#adminCamMsg{font-size:12px;padding:6px 10px;border-radius:5px;display:none;margin-top:6px}
+#adminCamMsg.ok{background:#d4edda;color:#155724}
+#adminCamMsg.err{background:#f8d7da;color:#721c24}
+#webcamPreviewRow{display:none;align-items:center;gap:12px;margin-top:10px;padding:10px;background:#e8f5e9;border-radius:6px;border:1px solid #c3e6cb}
+#webcamPreviewRow img{width:60px;height:60px;object-fit:cover;border-radius:6px;border:2px solid #1a5c38}
+</style>
+<div class="webcam-widget">
+<h3>📷 Webcam Photo Capture</h3>
+<div id="adminCameraFrame">
+<video id="adminVideo" autoplay muted playsinline></video>
+<canvas id="adminCanvas"></canvas>
+<div id="adminCameraOverlay"><span style="font-size:28px">📷</span><span>Click Start Camera below</span></div>
+<div id="adminCountdown"></div>
+</div>
+<button type="button" class="wbtn wbtn-gray" id="adminStartBtn" onclick="adminStartCam()">▶ Start Camera</button>
+<button type="button" class="wbtn wbtn-green" id="adminCaptureBtn" onclick="adminCountdown3()" disabled>⚡ Capture (3s)</button>
+<button type="button" class="wbtn wbtn-red" id="adminRetakeBtn" onclick="adminRetake()" style="display:none">↺ Retake</button>
+<div id="adminCamMsg"></div>
+<div id="webcamPreviewRow"><img id="webcamThumb" src="" alt="Captured"/><span>✅ Photo captured — click SAVE to save student</span></div>
+<input type="hidden" name="webcam_photo" id="webcamPhotoData"/>
+</div>
+<script>
+let adminStream=null;
+async function adminStartCam(){try{adminStream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});const v=document.getElementById('adminVideo');v.srcObject=adminStream;document.getElementById('adminCameraOverlay').style.display='none';document.getElementById('adminStartBtn').disabled=true;document.getElementById('adminCaptureBtn').disabled=false;adminMsg('Camera ready!','ok');}catch(e){adminMsg('Error: '+e.message,'err');}}
+function adminCountdown3(){const cd=document.getElementById('adminCountdown');cd.style.display='block';document.getElementById('adminCaptureBtn').disabled=true;let n=3;cd.textContent=n;const t=setInterval(()=>{n--;if(n>0){cd.textContent=n;}else{clearInterval(t);cd.style.display='none';adminCapture();}},1000);}
+function adminCapture(){const v=document.getElementById('adminVideo');const c=document.getElementById('adminCanvas');c.width=v.videoWidth||640;c.height=v.videoHeight||480;c.getContext('2d').drawImage(v,0,0);const data=c.toDataURL('image/jpeg',0.92);document.getElementById('webcamPhotoData').value=data;v.style.display='none';c.style.display='block';document.getElementById('webcamThumb').src=data;document.getElementById('webcamPreviewRow').style.display='flex';if(adminStream)adminStream.getTracks().forEach(t=>t.stop());document.getElementById('adminCaptureBtn').style.display='none';document.getElementById('adminRetakeBtn').style.display='inline-block';adminMsg('Photo captured! Fill in details and click SAVE.','ok');}
+function adminRetake(){const v=document.getElementById('adminVideo');const c=document.getElementById('adminCanvas');v.style.display='block';c.style.display='none';document.getElementById('webcamPreviewRow').style.display='none';document.getElementById('adminRetakeBtn').style.display='none';document.getElementById('adminCaptureBtn').style.display='inline-block';document.getElementById('adminStartBtn').disabled=false;document.getElementById('webcamPhotoData').value='';adminMsg('','');adminStartCam();}
+function adminMsg(t,type){const el=document.getElementById('adminCamMsg');el.textContent=t;el.className=type;el.style.display=t?'block':'none';}
+</script>
+{% endblock %}

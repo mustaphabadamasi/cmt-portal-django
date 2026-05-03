@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Upload Photo{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header card-header-cmt"><strong>Upload Passport Photo</strong></div>
+      <div class="card-body p-4">
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#webcam-tab">Use Webcam</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#file-tab">Upload File</button></li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="webcam-tab">
+            <div class="text-center mb-3">
+              <video id="video" width="320" height="240" autoplay class="border rounded"></video>
+              <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
+              <div id="preview-box" style="display:none"><img id="preview" class="border rounded" style="max-width:320px"></div>
+            </div>
+            <div class="d-flex gap-2 justify-content-center mb-3">
+              <button type="button" class="btn btn-secondary" onclick="startCamera()">Start Camera</button>
+              <button type="button" class="btn btn-cmt" onclick="capture()">Capture</button>
+              <button type="button" class="btn btn-outline-secondary" onclick="retake()">Retake</button>
+            </div>
+            <form method="post" id="webcam-form">
+              {% csrf_token %}
+              <input type="hidden" name="webcam_data" id="webcam_data">
+              <button type="submit" class="btn btn-success w-100" onclick="return prepareSubmit()">Save Webcam Photo</button>
+            </form>
+          </div>
+          <div class="tab-pane fade" id="file-tab">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="mb-3"><label class="form-label">Select Photo (JPG/PNG)</label><input type="file" name="photo_file" class="form-control" accept="image/*"></div>
+              <button type="submit" class="btn btn-cmt w-100">Upload Photo</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let stream;
+function startCamera() {
+  navigator.mediaDevices.getUserMedia({ video: true }).then(s => {
+    stream = s;
+    document.getElementById('video').srcObject = s;
+    document.getElementById('video').style.display = 'block';
+    document.getElementById('preview-box').style.display = 'none';
+  });
+}
+function capture() {
+  const canvas = document.getElementById('canvas');
+  canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0, 320, 240);
+  const data = canvas.toDataURL('image/jpeg');
+  document.getElementById('webcam_data').value = data;
+  document.getElementById('preview').src = data;
+  document.getElementById('video').style.display = 'none';
+  document.getElementById('preview-box').style.display = 'block';
+}
+function retake() {
+  document.getElementById('video').style.display = 'block';
+  document.getElementById('preview-box').style.display = 'none';
+}
+function prepareSubmit() {
+  if (!document.getElementById('webcam_data').value) { alert('Please capture a photo first.'); return false; }
+  return true;
+}
+startCamera();
+</script>
+{% endblock %}

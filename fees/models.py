@@ -1,0 +1,26 @@
+from django.db import models
+
+# Create your models here.
+from django.db import models
+from students.models import Student
+from core.models import Session, Semester
+
+class FeePayment(models.Model):
+    PAYMENT_TYPE = [('session', 'Full Session'), ('semester', 'Per Semester')]
+    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True, blank=True)
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    receipt_number = models.CharField(max_length=30, unique=True, blank=True)
+    date_requested = models.DateTimeField(auto_now_add=True)
+    date_approved = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.amount:
+            self.amount = 50000 if self.payment_type == 'session' else 25000
+        super().save(*args, **kwargs)
