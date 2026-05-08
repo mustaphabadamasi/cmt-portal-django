@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Photo Capture</div>
+  <div class="page-sub">Capture or upload student passport photographs</div>
+</div>
+<style>
+  .lookup-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:24px;max-width:620px;margin-bottom:20px}
+  .form-row{display:flex;gap:10px}
+  input{padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;flex:1}
+  .btn{padding:10px 20px;background:#1a5c38;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+  .camera-frame{width:320px;height:240px;background:#1a1a1a;border-radius:10px;overflow:hidden;position:relative;margin:16px 0}
+  #video,#canvas{width:100%;height:100%;object-fit:cover}
+  #canvas{display:none}
+  .btn-row{display:flex;gap:8px;margin-bottom:12px}
+  .btn-gray{background:#e5e7eb;color:#374151}
+  .btn-red{background:#dc2626;color:#fff}
+  #countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:64px;font-weight:bold;color:#fff;display:none}
+</style>
+
+<div class="lookup-card">
+  <h3 style="font-size:15px;font-weight:600;color:#1a5c38;margin-bottom:14px">🔍 Lookup Student</h3>
+  <form method="get" class="form-row">
+    <input type="text" name="reg" placeholder="Enter Matric/Reg Number e.g. DPL/BUS/24/047" value="{{ request.GET.reg }}"/>
+    <button type="submit" class="btn">Look Up</button>
+  </form>
+</div>
+
+{% if student %}
+<div class="lookup-card" style="max-width:700px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+    <div>
+      <div style="font-weight:600;font-size:16px">{{ student.user.get_full_name }}</div>
+      <div style="font-size:13px;color:#6b7280">{{ student.reg_number }} &mdash; {{ student.programme }}</div>
+      {% if student.photo %}<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600">✓ Photo on file</span>
+      {% else %}<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600">No photo yet</span>{% endif %}
+    </div>
+    {% if student.photo %}
+    <img src="{{ student.photo.url }}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #1a5c38;margin-left:auto"/>
+    {% endif %}
+  </div>
+
+  <div class="camera-frame">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="countdown"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-gray" onclick="startCam()">▶ Start Camera</button>
+    <button class="btn" id="capBtn" onclick="startCountdown()" disabled>⚡ Capture (3s)</button>
+    <button class="btn btn-red" id="retakeBtn" onclick="retake()" style="display:none">↺ Retake</button>
+  </div>
+
+  <form method="post" action="/registrar/photo/save/" enctype="multipart/form-data" id="webcamForm">
+    {% csrf_token %}
+    <input type="hidden" name="student_id" value="{{ student.pk }}"/>
+    <input type="hidden" name="photo_data" id="photoData"/>
+    <button type="submit" id="saveBtn" class="btn" style="display:none;margin-bottom:16px">✅ Save Photo</button>
+  </form>
+
+  <hr style="margin:16px 0;border-color:#e5e7eb"/>
+  <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Or upload from file:</p>
+  <form method="post" action="/registrar/photo/save/" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="student_id" value="{{ student.pk }}"/>
+    <div style="display:flex;gap:10px">
+      <input type="file" name="photo_file" accept="image/*" style="flex:1"/>
+      <button type="submit" class="btn">⬆ Upload</button>
+    </div>
+  </form>
+</div>
+
+<script>
+let stream=null;
+async function startCam(){
+  stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});
+  document.getElementById("video").srcObject=stream;
+  document.getElementById("capBtn").disabled=false;
+}
+function startCountdown(){
+  const cd=document.getElementById("countdown");
+  cd.style.display="block";
+  let n=3; cd.textContent=n;
+  const t=setInterval(()=>{n--;if(n>0){cd.textContent=n;}else{clearInterval(t);cd.style.display="none";capture();}},1000);
+}
+function capture(){
+  const v=document.getElementById("video"),c=document.getElementById("canvas");
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext("2d").drawImage(v,0,0);
+  document.getElementById("photoData").value=c.toDataURL("image/jpeg",0.92);
+  v.style.display="none";c.style.display="block";
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  document.getElementById("capBtn").style.display="none";
+  document.getElementById("retakeBtn").style.display="inline-block";
+  document.getElementById("saveBtn").style.display="inline-block";
+}
+function retake(){
+  document.getElementById("video").style.display="block";
+  document.getElementById("canvas").style.display="none";
+  document.getElementById("retakeBtn").style.display="none";
+  document.getElementById("capBtn").style.display="inline-block";
+  document.getElementById("saveBtn").style.display="none";
+  document.getElementById("photoData").value="";
+  startCam();
+}
+</script>
+{% else %}
+<div style="text-align:center;padding:48px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;color:#9ca3af">
+  <div style="font-size:48px;margin-bottom:12px">📷</div>
+  <p>Enter a student matric number above to look them up</p>
+</div>
+{% endif %}
+{% endblock %}

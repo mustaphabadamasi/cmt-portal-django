@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Registrar Dashboard</div>
+  <div class="page-sub">College of Management & Technology, Katsina</div>
+</div>
+<style>
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+  .stat-card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e5e7eb;border-top:4px solid #1a5c38}
+  .stat-card.gold{border-top-color:#c8a845}
+  .stat-card.red{border-top-color:#dc2626}
+  .stat-card.blue{border-top-color:#2563eb}
+  .stat-num{font-size:32px;font-weight:700;color:#111;margin:8px 0 4px}
+  .stat-label{font-size:13px;color:#6b7280}
+  .quick-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .ql{display:block;padding:18px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;text-decoration:none;color:#111;transition:all .2s}
+  .ql:hover{border-color:#1a5c38;background:#f0fdf4;transform:translateY(-2px)}
+  .ql-icon{font-size:28px;margin-bottom:8px}
+  .ql-title{font-weight:600;font-size:14px}
+  .ql-sub{font-size:12px;color:#6b7280;margin-top:2px}
+  .active-badge{display:inline-block;padding:4px 12px;background:#d1fae5;color:#065f46;border-radius:20px;font-size:12px;font-weight:600;margin-left:8px}
+</style>
+
+<div style="margin-bottom:20px">
+  {% if active_session %}<span class="active-badge">📅 {{ active_session.name }}</span>{% endif %}
+  {% if active_semester %}<span class="active-badge">📖 {{ active_semester.name }}</span>{% endif %}
+  {% if active_semester.reg_open %}<span style="display:inline-block;padding:4px 12px;background:#dbeafe;color:#1e40af;border-radius:20px;font-size:12px;font-weight:600;margin-left:8px">✅ Registration Open</span>{% endif %}
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-num">{{ total_students }}</div></div>
+  <div class="stat-card gold"><div class="stat-label">Pending Payments</div><div class="stat-num">{{ pending_payments }}</div></div>
+  <div class="stat-card"><div class="stat-label">Approved Payments</div><div class="stat-num">{{ approved_payments }}</div></div>
+  <div class="stat-card red"><div class="stat-label">Missing Photos</div><div class="stat-num">{{ missing_photos }}</div></div>
+</div>
+
+<div class="quick-links">
+  <a href="{% url 'registrar_students' %}" class="ql">
+    <div class="ql-icon">👥</div><div class="ql-title">Student Records</div><div class="ql-sub">View and manage all students</div>
+  </a>
+  <a href="{% url 'academic_config' %}" class="ql">
+    <div class="ql-icon">📅</div><div class="ql-title">Academic Config</div><div class="ql-sub">Sessions, semesters & registration</div>
+  </a>
+  <a href="{% url 'course_structure' %}" class="ql">
+    <div class="ql-icon">📚</div><div class="ql-title">Course Structure</div><div class="ql-sub">Define courses per programme/semester</div>
+  </a>
+  <a href="{% url 'registrar_fees' %}" class="ql">
+    <div class="ql-icon">💳</div><div class="ql-title">Fee Approvals</div><div class="ql-sub">{{ pending_payments }} pending approval</div>
+  </a>
+  <a href="{% url 'registrar_documents' %}" class="ql">
+    <div class="ql-icon">🖨</div><div class="ql-title">Print Documents</div><div class="ql-sub">Exam cards, course reg forms</div>
+  </a>
+  <a href="{% url 'registrar_photo' %}" class="ql">
+    <div class="ql-icon">📷</div><div class="ql-title">Photo Capture</div><div class="ql-sub">{{ missing_photos }} students missing photos</div>
+  </a>
+  <a href="/admin/" class="ql">
+    <div class="ql-icon">⚙️</div><div class="ql-title">Site Admin</div><div class="ql-sub">Django admin panel</div>
+  </a>
+</div>
+{% endblock %}

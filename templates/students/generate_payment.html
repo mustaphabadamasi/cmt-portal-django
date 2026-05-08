@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pay School Fees — CMT Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--green:#0d5c2f;--gold:#c8881a;--bg:#f4f6f3;--border:#d8e0d4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);font-size:14px;color:#0a1a0f}
+.topbar{background:var(--green);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar .brand{font-family:"EB Garamond",serif;color:#fff;font-size:18px}
+.topbar a{color:rgba(255,255,255,.7);text-decoration:none;font-size:13px}
+.page{max-width:700px;margin:32px auto;padding:0 20px}
+.page-title{font-family:"EB Garamond",serif;font-size:26px;margin-bottom:4px}
+.page-sub{font-size:13px;color:#5a6e57;margin-bottom:24px}
+.card{background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+.card-header{background:var(--green);padding:16px 20px}
+.card-header h3{font-family:"EB Garamond",serif;color:#fff;font-size:18px}
+.card-header p{color:rgba(255,255,255,.65);font-size:12px;margin-top:2px}
+.card-body{padding:20px}
+.fee-option{border:2px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;cursor:pointer;transition:all .2s;position:relative}
+.fee-option:hover{border-color:var(--green);background:#f0f8f0}
+.fee-option.selected{border-color:var(--green);background:#f0f8f0}
+.fee-option.disabled{opacity:.5;cursor:not-allowed;background:#f9f9f9}
+.fee-option input[type=radio]{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;accent-color:var(--green)}
+.fee-type{font-weight:700;font-size:15px;margin-bottom:4px}
+.fee-amount{font-family:"EB Garamond",serif;font-size:32px;font-weight:700;color:var(--green);margin-bottom:4px}
+.fee-desc{font-size:12px;color:#5a6e57}
+.fee-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-top:6px}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-approved{background:#d1fae5;color:#065f46}
+.btn-pay{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;font-family:"EB Garamond",serif;margin-top:8px}
+.btn-pay:hover{background:#0a4a25}
+.btn-pay:disabled{opacity:.4;cursor:not-allowed}
+.info-box{background:#f0f8f0;border:1px solid #c3e6cb;border-radius:10px;padding:14px 16px;font-size:13px;color:#1a5c38;margin-top:16px}
+.notice{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">CMT Student Portal</div>
+  <a href="{% url 'student_dashboard' %}">← Back to Dashboard</a>
+</div>
+
+<div class="page">
+  <div class="page-title">School Fee Payment</div>
+  <div class="page-sub">{{ session }} Academic Session — Choose your payment option</div>
+
+  {% if messages %}{% for m in messages %}
+  <div class="notice">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Select Payment Type</h3>
+      <p>Generate an invoice — then pay at the bank and upload your evidence</p>
+    </div>
+    <div class="card-body">
+      <form method="post">
+      {% csrf_token %}
+
+      <!-- Semester Payment -->
+      <label class="fee-option {% if has_semester %}disabled{% endif %}" id="opt1">
+        <input type="radio" name="payment_type" value="semester" {% if has_semester %}disabled{% endif %} onchange="updateBtn()"/>
+        <div class="fee-type">📖 Semester Payment</div>
+        <div class="fee-amount">₦25,000</div>
+        <div class="fee-desc">Pay for one semester only (First or Second)</div>
+        {% if has_semester %}
+        {% for p in existing_payments %}{% if p.payment_type == "semester" %}
+        <span class="fee-badge badge-{{ p.status }}">{{ p.get_status_display }} — {{ p.reference }}</span>
+        {% endif %}{% endfor %}
+        {% endif %}
+      </label>
+
+      <!-- Session Payment -->
+      <label class="fee-option {% if has_session %}disabled{% endif %}" id="opt2">
+        <input type="radio" name="payment_type" value="session" {% if has_session %}disabled{% endif %} onchange="updateBtn()"/>
+        <div class="fee-type">🎓 Full Session Payment <span style="background:#d1fae5;color:#065f46;padding:1px 8px;border-radius:8px;font-size:11px;margin-left:6px">SAVE ₦0</span></div>
+        <div class="fee-amount">₦50,000</div>
+        <div class="fee-desc">Pay for the entire session (First + Second Semester)</div>
+        {% if has_session %}
+        {% for p in existing_payments %}{% if p.payment_type == "session" %}
+        <span class="fee-badge badge-{{ p.status }}">{{ p.get_status_display }} — {{ p.reference }}</span>
+        {% endif %}{% endfor %}
+        {% endif %}
+      </label>
+
+      <button type="submit" class="btn-pay" id="payBtn" disabled>Generate Payment Invoice →</button>
+
+      <div class="info-box">
+        ℹ️ <strong>How it works:</strong><br/>
+        1. Generate invoice here → 2. Pay at any bank using the reference number →
+        3. Upload your teller/receipt evidence → 4. Registrar approves → 5. Print your receipt
+      </div>
+      </form>
+    </div>
+  </div>
+
+  {% if existing_payments %}
+  <div class="card">
+    <div class="card-header"><h3>Your Payments</h3></div>
+    <div class="card-body">
+      {% for p in existing_payments %}
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-weight:600">₦{{ p.amount|floatformat:0 }} — {{ p.get_payment_type_display }}</div>
+          <div style="font-size:12px;color:#5a6e57;font-family:monospace">{{ p.reference }}</div>
+          <div style="font-size:12px;color:#5a6e57">{{ p.created_at|date:"d M Y" }}</div>
+        </div>
+        <span class="fee-badge badge-{{ p.status }}">{{ p.get_status_display }}</span>
+        {% if p.status == "approved" %}
+        <a href="{% url 'student_receipt' p.pk %}" style="font-size:12px;color:var(--green);text-decoration:none;font-weight:600">🖨 Receipt</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+<script>
+function updateBtn(){document.getElementById("payBtn").disabled=!document.querySelector("input[name=payment_type]:checked");}
+</script>
+</body></html>

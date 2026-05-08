@@ -77,3 +77,13 @@ def reject_payment(request, pk):
     payment.save()
     messages.warning(request, f'Payment {payment.receipt_number} rejected.')
     return redirect('bursar_dashboard')
+
+    from django.shortcuts import get_object_or_404
+from django.http import FileResponse
+from students.models import Student
+from .models import Payment
+
+def download_fee_receipt(request, payment_id):
+    payment = get_object_or_404(Payment, id=payment_id)
+    student = get_object_or_404(Student, user=payment.student)
+    return FileResponse(buffer, as_attachment=True, filename=f"{student.matric_number}_receipt.pdf")

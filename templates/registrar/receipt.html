@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;border:1px solid #e5e7eb">
+  <div style="text-align:center;margin-bottom:24px;border-bottom:2px solid #1a5c38;padding-bottom:16px">
+    <h2 style="color:#1a5c38;font-size:18px;font-weight:700">COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA</h2>
+    <p style="font-size:13px;color:#6b7280">11, Batsari Road, Day Kofar Yandaka, Katsina</p>
+    <h3 style="font-size:16px;margin-top:8px;text-decoration:underline">PAYMENT RECEIPT</h3>
+  </div>
+  <table style="width:100%;font-size:14px;border-collapse:collapse">
+    <tr><td style="padding:8px 0;font-weight:600;width:40%">Receipt No:</td><td>{{ payment.receipt_no }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Student Name:</td><td>{{ payment.student.user.get_full_name }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Matric No:</td><td>{{ payment.student.reg_number }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Payment Type:</td><td>{{ payment.get_payment_type_display }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Amount:</td><td style="font-size:18px;font-weight:700;color:#1a5c38">₦{{ payment.amount|floatformat:2 }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Reference:</td><td>{{ payment.reference }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Session:</td><td>{{ payment.session }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Date Approved:</td><td>{{ payment.approved_at|date:"d M Y, H:i" }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Approved By:</td><td>{{ payment.approved_by.get_full_name }}</td></tr>
+  </table>
+  <div style="margin-top:32px;padding-top:16px;border-top:1px dashed #e5e7eb;text-align:center;font-size:12px;color:#9ca3af">
+    This receipt is computer generated and valid without signature
+  </div>
+  <button onclick="window.print()" style="margin-top:16px;padding:10px 24px;background:#1a5c38;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">🖨 Print Receipt</button>
+</div>
+{% endblock %}

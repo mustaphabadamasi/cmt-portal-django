@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block page_title %}Registrar Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Registrar Dashboard</div>
+    <div class="page-sub">Manage student records, fees, documents and photos</div>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card green">
+    <div class="stat-icon green"><i class="bi bi-people-fill" style="font-size:18px;color:var(--green)"></i></div>
+    <div class="stat-value">{{ total_students }}</div>
+    <div class="stat-label">Total Students</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-icon amber"><i class="bi bi-hourglass-split" style="font-size:18px;color:var(--gold)"></i></div>
+    <div class="stat-value">{{ pending_payments }}</div>
+    <div class="stat-label">Pending Payments</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-icon blue"><i class="bi bi-check-circle-fill" style="font-size:18px;color:var(--blue)"></i></div>
+    <div class="stat-value">{{ approved_payments }}</div>
+    <div class="stat-label">Approved Payments</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-icon red"><i class="bi bi-camera-fill" style="font-size:18px;color:var(--red)"></i></div>
+    <div class="stat-value">{{ no_photo }}</div>
+    <div class="stat-label">Missing Photos</div>
+  </div>
+</div>
+
+<!-- QUICK ACTION TILES -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+
+  <a href="{% url 'registrar_fees' %}" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid var(--gold)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:var(--gold-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">💰</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Fee Payments</div>
+      <div style="font-size:12px;color:var(--text3)">Generate, approve & print receipts</div>
+      {% if pending_payments %}<div style="margin-top:8px"><span class="badge badge-rejected">{{ pending_payments }} pending</span></div>{% endif %}
+    </div>
+  </a>
+
+  <a href="{% url 'registrar_photo' %}" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid var(--green3)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:var(--green-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">📷</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Photo Capture</div>
+      <div style="font-size:12px;color:var(--text3)">Webcam or file upload by matric no.</div>
+      {% if no_photo %}<div style="margin-top:8px"><span class="badge badge-rejected">{{ no_photo }} missing</span></div>{% endif %}
+    </div>
+  </a>
+
+  <a href="{% url 'registrar_documents' %}" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid var(--blue)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:#eff6ff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">📄</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Print Documents</div>
+      <div style="font-size:12px;color:var(--text3)">Exam cards, receipts, course reg, transcripts</div>
+    </div>
+  </a>
+
+  <a href="{% url 'registrar_students' %}" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid #8b5cf6" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:#f5f3ff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">👥</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Student Records</div>
+      <div style="font-size:12px;color:var(--text3)">View and manage all students</div>
+    </div>
+  </a>
+
+  <a href="{% url 'semester_result' %}" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid #06b6d4" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:#ecfeff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">📊</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Semester Results</div>
+      <div style="font-size:12px;color:var(--text3)">Generate FUDMA result sheets</div>
+    </div>
+  </a>
+
+  <a href="/admin/" style="text-decoration:none">
+    <div class="card" style="padding:24px;text-align:center;transition:all .2s;cursor:pointer;border-top:3px solid #64748b" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:56px;height:56px;background:#f8fafc;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px">⚙️</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Site Admin</div>
+      <div style="font-size:12px;color:var(--text3)">Django administration panel</div>
+    </div>
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div><div class="card-title">Recent Students</div><div class="card-sub">Latest enrolments</div></div>
+    <a href="{% url 'registrar_students' %}" class="card-action">View all →</a>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Photo</th><th>Name</th><th>Reg No.</th><th>Programme</th><th>Status</th><th>Documents</th></tr></thead>
+    <tbody>
+      {% for s in recent_students %}
+      <tr>
+        <td>
+          {% if s.photo %}<img src="{{ s.photo.url }}" style="width:34px;height:34px;border-radius:99px;object-fit:cover;border:2px solid var(--border)">
+          {% else %}<div style="width:34px;height:34px;border-radius:99px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green);border:2px dashed var(--border2)">{{ s.user.first_name|first }}</div>{% endif %}
+        </td>
+        <td style="font-weight:600">{{ s.user.get_full_name }}</td>
+        <td style="font-family:monospace;font-size:12px;color:var(--text2)">{{ s.reg_number }}</td>
+        <td style="font-size:12px;color:var(--text2)">{{ s.programme }}</td>
+        <td><span class="badge badge-active">{{ s.status }}</span></td>
+        <td>
+          <a href="{% url 'exam_card' s.pk %}" target="_blank" class="btn btn-ghost btn-sm" title="Exam Card"><i class="bi bi-card-heading"></i></a>
+          <a href="{% url 'course_reg_form' s.pk %}" target="_blank" class="btn btn-ghost btn-sm" title="Course Reg"><i class="bi bi-journal-check"></i></a>
+          <a href="{% url 'registrar_photo' %}?reg={{ s.reg_number }}" class="btn btn-ghost btn-sm" title="Add Photo"><i class="bi bi-camera"></i></a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3)">No students yet</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+<!-- <a href="#" class="btn btn-ghost btn-sm" title="Exam Card"><i class="bi bi-card-heading"></i></a> -->
+<!-- <a href="#" class="btn btn-ghost btn-sm" title="Course Reg"><i class="bi bi-journal-check"></i></a> -->
+<a href="{% url 'registrar_photo' %}?reg={{ s.reg_number }}" class="btn btn-ghost btn-sm" title="Add Photo"><i class="bi bi-camera"></i></a>

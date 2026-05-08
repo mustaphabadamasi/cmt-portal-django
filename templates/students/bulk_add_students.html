@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block full_content %}
+<div class="container mt-4">
+    <h2>Bulk Add Students (CSV Import)</h2>
+    <div class="card mt-3">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Upload CSV File</label>
+                    <input type="file" name="csv_file" accept=".csv" class="form-control" required>
+                    <div class="form-text">
+                        Required columns: <code>username, first_name, last_name, email, matric_number, programme_code, level, password</code>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Import Students</button>
+                <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to List</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">Download Sample CSV</div>
+        <div class="card-body">
+            <p>You can download a sample CSV file to see the correct format.</p>
+            <a href="{% static 'samples/student_sample.csv' %}" class="btn btn-outline-primary btn-sm">Download Sample</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

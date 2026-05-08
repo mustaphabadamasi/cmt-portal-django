@@ -30,7 +30,7 @@
   </div>
   <div class="stat-card blue">
     <div class="stat-icon blue"><i class="bi bi-calendar3" style="font-size:18px;color:var(--blue)"></i></div>
-    <div class="stat-value" style="font-size:18px;margin-top:4px">{{ active_session|default:"—" }}</div>
+    <div class="stat-value" style="font-size:18px;margin-top:4px">{{ active_session|default:"â€”" }}</div>
     <div class="stat-label">Active Session</div>
   </div>
 </div>
@@ -57,7 +57,7 @@
             <td><a href="{% url 'student_detail' s.pk %}" class="card-action">View</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:28px">No students yet — <a href="{% url 'add_student' %}" style="color:var(--green)">Add first student</a></td></tr>
+          <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:28px">No students yet â€” <a href="{% url 'add_student' %}" style="color:var(--green)">Add first student</a></td></tr>
           {% endfor %}
         </tbody>
       </table>

@@ -1,0 +1,249 @@
+<!-- ══════════════════════════════════════════════════════════
+     FILE: templates/fees/registrar_fees.html
+     ══════════════════════════════════════════════════════════ -->
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Fee Payments</div>
+  <div class="page-sub">Review and approve student payment submissions</div>
+</div>
+
+<style>
+  .tab-row{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .tab{padding:8px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500;border:1px solid #e5e7eb;color:#6b7280;background:#fff}
+  .tab.active{background:#1a5c38;color:#fff;border-color:#1a5c38}
+  .tab .cnt{display:inline-block;background:rgba(255,255,255,.25);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px}
+  .tab:not(.active) .cnt{background:#f3f4f6;color:#374151}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}
+  th{background:#1a5c38;color:#fff;padding:10px 14px;text-align:left;font-weight:500}
+  td{padding:10px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#f9fafb}
+  .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600}
+  .badge-pending{background:#fef3c7;color:#92400e}
+  .badge-approved{background:#d1fae5;color:#065f46}
+  .badge-rejected{background:#fee2e2;color:#991b1b}
+  .btn-sm{padding:5px 12px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer}
+  .btn-approve{background:#1a5c38;color:#fff}
+  .btn-reject{background:#dc2626;color:#fff}
+  .btn-view{background:#e5e7eb;color:#374151;text-decoration:none;display:inline-block}
+  .evidence-thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:420px}
+  .modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+  .modal textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;height:80px}
+  .modal-btns{display:flex;gap:10px;margin-top:16px}
+  .modal-btns button{flex:1;padding:10px;border-radius:8px;border:none;font-size:14px;font-weight:500;cursor:pointer}
+</style>
+
+<!-- Tabs -->
+<div class="tab-row">
+  <a href="?status=pending"  class="tab {% if status == 'pending' %}active{% endif %}">
+    Pending <span class="cnt">{{ pending_count }}</span>
+  </a>
+  <a href="?status=approved" class="tab {% if status == 'approved' %}active{% endif %}">
+    Approved <span class="cnt">{{ approved_count }}</span>
+  </a>
+  <a href="?status=rejected" class="tab {% if status == 'rejected' %}active{% endif %}">
+    Rejected <span class="cnt">{{ rejected_count }}</span>
+  </a>
+</div>
+
+{% if payments %}
+<table>
+  <thead>
+    <tr>
+      <th>Student</th><th>Type</th><th>Amount</th><th>Reference</th>
+      <th>Date</th><th>Evidence</th><th>Status</th><th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for payment in payments %}
+    <tr>
+      <td>
+        <div style="font-weight:500">{{ payment.student.user.get_full_name }}</div>
+        <div style="font-size:11px;color:#9ca3af">{{ payment.student.reg_number }}</div>
+      </td>
+      <td>{{ payment.get_payment_type_display }}</td>
+      <td style="font-weight:600">₦{{ payment.amount|floatformat:2 }}</td>
+      <td style="font-family:monospace;font-size:12px">{{ payment.reference }}</td>
+      <td style="font-size:12px">{{ payment.created_at|date:"d M Y" }}</td>
+      <td>
+        {% if payment.evidence %}
+        <a href="{{ payment.evidence.url }}" target="_blank">
+          <img src="{{ payment.evidence.url }}" class="evidence-thumb" alt="Evidence"/>
+        </a>
+        {% else %}
+        <span style="color:#9ca3af;font-size:12px">None</span>
+        {% endif %}
+      </td>
+      <td><span class="badge badge-{{ payment.status }}">{{ payment.get_status_display }}</span></td>
+      <td>
+        {% if payment.status == 'pending' %}
+        <div style="display:flex;gap:6px">
+          <form method="post" action="{% url 'approve_payment' payment.pk %}" style="display:inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve"/>
+            <button class="btn-sm btn-approve">✓ Approve</button>
+          </form>
+          <button class="btn-sm btn-reject" onclick="openReject({{ payment.pk }})">✗ Reject</button>
+        </div>
+        {% elif payment.status == 'approved' %}
+        <a href="{% url 'payment_receipt' payment.pk %}" class="btn-sm btn-view" target="_blank">🖨 Receipt</a>
+        {% else %}
+        <span style="font-size:12px;color:#9ca3af">{{ payment.note|truncatechars:30 }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div style="text-align:center;padding:48px;color:#9ca3af;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
+  <div style="font-size:36px;margin-bottom:8px">💳</div>
+  <p>No {{ status }} payments</p>
+</div>
+{% endif %}
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <h3>Reject Payment</h3>
+    <form method="post" id="rejectForm" action="">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reject"/>
+      <label style="font-size:13px;color:#6b7280">Reason for rejection:</label>
+      <textarea name="note" placeholder="e.g. Invalid reference number, amount mismatch..."></textarea>
+      <div class="modal-btns">
+        <button type="button" onclick="closeReject()" style="background:#f3f4f6;color:#374151">Cancel</button>
+        <button type="submit" style="background:#dc2626;color:#fff">Reject Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openReject(id) {
+  document.getElementById('rejectForm').action = `/students/payment/${id}/approve/`;
+  document.getElementById('rejectModal').classList.add('show');
+}
+function closeReject() {
+  document.getElementById('rejectModal').classList.remove('show');
+}
+</script>
+{% endblock %}
+
+
+<!-- ══════════════════════════════════════════════════════════
+     FILE: templates/students/course_structure.html
+     ══════════════════════════════════════════════════════════ -->
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Semester Course Structure</div>
+  <div class="page-sub">Define which courses each programme registers per semester</div>
+</div>
+
+<style>
+  .filter-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:20px}
+  .filter-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end}
+  select,input{padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:100%}
+  .btn-green{background:#1a5c38;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+  .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:20px}
+  .course-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer}
+  .course-item:hover{border-color:#1a5c38;background:#f0fdf4}
+  .course-item input{width:auto;margin:0}
+  .course-item.selected{border-color:#1a5c38;background:#f0fdf4}
+  .code{font-weight:600;font-size:12px;color:#1a5c38;min-width:70px}
+  .title{font-size:13px;color:#374151}
+  .units{font-size:11px;color:#9ca3af;margin-left:auto}
+  .total-bar{background:#1a5c38;color:#fff;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;font-weight:500}
+  @media(max-width:768px){.filter-grid{grid-template-columns:1fr}}
+</style>
+
+<!-- Filter Form -->
+<div class="filter-card">
+  <form method="get" class="filter-grid">
+    <div>
+      <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">SEMESTER</label>
+      <select name="semester" onchange="this.form.submit()">
+        <option value="">-- Select Semester --</option>
+        {% for sem in semesters %}
+        <option value="{{ sem.pk }}" {% if request.GET.semester == sem.pk|stringformat:'s' %}selected{% endif %}>
+          {{ sem }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">PROGRAMME</label>
+      <select name="programme" onchange="this.form.submit()">
+        <option value="">-- Select Programme --</option>
+        {% for p in programmes %}
+        <option value="{{ p.pk }}" {% if request.GET.programme == p.pk|stringformat:'s' %}selected{% endif %}>
+          {{ p.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px">LEVEL</label>
+      <select name="level" onchange="this.form.submit()">
+        <option value="Diploma I"  {% if request.GET.level == 'Diploma I' %}selected{% endif %}>Diploma I</option>
+        <option value="Diploma II" {% if request.GET.level == 'Diploma II' %}selected{% endif %}>Diploma II</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-green">Load</button>
+  </form>
+</div>
+
+{% if structure %}
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="semester_id" value="{{ request.GET.semester }}"/>
+  <input type="hidden" name="programme_id" value="{{ request.GET.programme }}"/>
+  <input type="hidden" name="level" value="{{ request.GET.level }}"/>
+
+  <div class="total-bar">
+    <span id="selectedCount">0</span> courses selected —
+    Total Units: <span id="totalUnits">0</span>
+  </div>
+
+  <div class="course-grid">
+    {% for course in courses %}
+    <label class="course-item {% if course in structure.courses.all %}selected{% endif %}" id="label-{{ course.pk }}">
+      <input type="checkbox" name="courses" value="{{ course.pk }}"
+        data-units="{{ course.units }}"
+        {% if course in structure.courses.all %}checked{% endif %}
+        onchange="updateCount()"/>
+      <span class="code">{{ course.code }}</span>
+      <span class="title">{{ course.title }}</span>
+      <span class="units">{{ course.units }}u</span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <button type="submit" class="btn-green">💾 Save Course Structure</button>
+</form>
+{% else %}
+<div style="text-align:center;padding:48px;color:#9ca3af;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
+  <div style="font-size:36px;margin-bottom:8px">📚</div>
+  <p>Select a semester, programme and level above to configure courses</p>
+</div>
+{% endif %}
+
+<script>
+function updateCount() {
+  const boxes = document.querySelectorAll('input[name=courses]:checked');
+  let units = 0;
+  boxes.forEach(b => {
+    units += parseInt(b.dataset.units || 0);
+    b.closest('label').classList.toggle('selected', b.checked);
+  });
+  document.getElementById('selectedCount').textContent = boxes.length;
+  document.getElementById('totalUnits').textContent = units;
+}
+updateCount();
+</script>
+{% endblock %}

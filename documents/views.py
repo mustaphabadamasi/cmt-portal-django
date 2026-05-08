@@ -4,7 +4,8 @@ from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required
 from xhtml2pdf import pisa
 import io
-from students.models import Student, CourseRegistration
+from students.models import Student
+from academics.models import CourseRegistration
 from fees.models import FeePayment
 from core.models import Semester
 

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block full_content %}
+<div class="container mt-4">
+    <h2>Capture / Upload Photo</h2>
+    <p>Student: <b>{{ student.user.get_full_name }}</b> ({{ student.matric_number }})</p>
+
+    <div class="row">
+        <!-- Webcam Capture -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Webcam Capture</div>
+                <div class="card-body text-center">
+                    <video id="webcam" autoplay playsinline style="width:100%; max-width:320px; border-radius:8px; background:#000;"></video>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <br>
+                    <button type="button" class="btn btn-primary mt-2" id="btnCapture">Capture Photo</button>
+                    <button type="button" class="btn btn-warning mt-2" id="btnRetake" style="display:none;">Retake</button>
+                    <br>
+                    <img id="capturedImage" style="display:none; width:100%; max-width:320px; margin-top:10px; border-radius:8px;" />
+                </div>
+            </div>
+        </div>
+
+        <!-- File Upload -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">Upload from Device</div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="photoForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Select Photo</label>
+                            <input type="file" name="photo" accept="image/*" class="form-control" id="fileInput">
+                        </div>
+                        <input type="hidden" name="webcam_data" id="webcamData">
+                        <button type="submit" class="btn btn-success">Save Photo</button>
+                        <a href="{% url 'student_profile' student.id %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+
+                    {% if student.photo %}
+                    <div class="mt-3">
+                        <label>Current Photo:</label><br>
+                        <img src="{{ student.photo.url }}" style="width:150px; height:180px; object-fit:cover; border-radius:8px;">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const btnCapture = document.getElementById('btnCapture');
+    const btnRetake = document.getElementById('btnRetake');
+    const capturedImage = document.getElementById('capturedImage');
+    const webcamData = document.getElementById('webcamData');
+    const fileInput = document.getElementById('fileInput');
+
+    let stream = null;
+
+    async function startWebcam() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Webcam access denied or not available.");
+        }
+    }
+
+    startWebcam();
+
+    btnCapture.addEventListener('click', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        capturedImage.src = dataUrl;
+        capturedImage.style.display = 'block';
+        webcamData.value = dataUrl;
+        video.style.display = 'none';
+        btnCapture.style.display = 'none';
+        btnRetake.style.display = 'inline-block';
+        fileInput.value = '';
+    });
+
+    btnRetake.addEventListener('click', () => {
+        capturedImage.style.display = 'none';
+        video.style.display = 'block';
+        btnCapture.style.display = 'inline-block';
+        btnRetake.style.display = 'none';
+        webcamData.value = '';
+    });
+</script>
+{% endblock %}

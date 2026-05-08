@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'course_structure' %}" style="color:#6b7280;text-decoration:none;font-size:20px">←</a>
+    <div>
+      <div class="page-title">{{ outline.name }}</div>
+      <div class="page-sub">{{ outline.programme }} &bull; {{ outline.level }} &bull; {{ outline.semester }} &bull; Min: {{ outline.min_units }}u / Max: {{ outline.max_units }}u</div>
+    </div>
+  </div>
+</div>
+<style>
+.layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+.card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;color:#1a5c38;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #1a5c38}
+.total-bar{background:#1a5c38;color:#fff;padding:12px 16px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;font-size:14px}
+.warn{padding:2px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.search-box{width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;margin-bottom:10px}
+.course-list{max-height:480px;overflow-y:auto;padding-right:4px}
+.ci{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.ci:hover,.ci.sel{border-color:#1a5c38;background:#f0fdf4}
+.ci input{width:16px;height:16px;margin:0;accent-color:#1a5c38;cursor:pointer;flex-shrink:0}
+.code{font-weight:700;font-size:12px;color:#1a5c38;min-width:72px}
+.ctitle{font-size:13px;color:#374151;flex:1}
+.unit{font-size:11px;color:#9ca3af;white-space:nowrap}
+.btn-green{background:#1a5c38;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;width:100%}
+.btn-gray{background:#e5e7eb;color:#374151;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px}
+.limit-bar{height:10px;background:#e5e7eb;border-radius:5px;margin-top:6px;overflow:hidden}
+.limit-fill{height:100%;border-radius:5px;transition:width .3s}
+.co-item{padding:10px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;margin-bottom:8px;font-size:13px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+</style>
+
+{% if messages %}{% for m in messages %}
+<div style="padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13px;background:{% if m.tags == 'error' %}#fee2e2{% else %}#d1fae5{% endif %};color:{% if m.tags == 'error' %}#991b1b{% else %}#065f46{% endif %}">{{ m }}</div>
+{% endfor %}{% endif %}
+
+<form method="post">
+{% csrf_token %}
+<div class="layout">
+  <div>
+    <div class="card">
+      <h3>📚 Select Courses for this Outline</h3>
+      <div class="total-bar">
+        <span><span id="selCount">0</span> courses &mdash; <strong><span id="totalUnits">0</span> units</strong></span>
+        <span id="limitStatus" class="warn" style="background:#c8a845">Loading...</span>
+      </div>
+      <div class="limit-bar"><div class="limit-fill" id="limitFill" style="width:0%;background:#1a5c38"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-bottom:12px">
+        <span>0 units</span><span>Min: {{ outline.min_units }}u</span><span>Max: {{ outline.max_units }}u</span>
+      </div>
+      <input type="text" class="search-box" placeholder="Filter by course code or title..." onkeyup="filterCourses(this.value)"/>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button type="button" onclick="selectAll()" class="btn-gray">Select All</button>
+        <button type="button" onclick="clearAll()" class="btn-gray" style="color:#dc2626">Clear All</button>
+      </div>
+      <div class="course-list" id="courseList">
+        {% for course in courses %}
+        <label class="ci {% if course.pk in assigned_ids %}sel{% endif %}" id="lbl{{ course.pk }}">
+          <input type="checkbox" name="courses" value="{{ course.pk }}" data-units="{{ course.unit }}"
+            {% if course.pk in assigned_ids %}checked{% endif %}
+            onchange="updateStats();this.closest('label').classList.toggle('sel',this.checked)"/>
+          <span class="code">{{ course.code }}</span>
+          <span class="ctitle">{{ course.title }}</span>
+          <span class="unit">{{ course.unit }}u</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div style="margin-top:16px">
+        <button type="submit" class="btn-green">💾 Save Course Outline</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>📋 Outline Details</h3>
+      <div style="font-size:13px;color:#374151;line-height:2">
+        <div><b>Name:</b> {{ outline.name }}</div>
+        <div><b>Programme:</b> {{ outline.programme }}</div>
+        <div><b>Level:</b> {{ outline.level }}</div>
+        <div><b>Semester:</b> {{ outline.semester }}</div>
+        <div><b>Min Units:</b> {{ outline.min_units }}</div>
+        <div><b>Max Units:</b> {{ outline.max_units }}</div>
+      </div>
+    </div>
+
+    {% if outline.level == "Diploma II" %}
+    <div class="card">
+      <h3>⚠️ Carry Over Students</h3>
+      {% if carryover_students %}
+      <p style="font-size:12px;color:#6b7280;margin-bottom:10px">Diploma II students with failed courses:</p>
+      {% for student in carryover_students %}
+      <div class="co-item">
+        <div style="font-weight:600;color:#92400e">{{ student.user.get_full_name }}</div>
+        <div style="font-size:11px;color:#92400e">{{ student.reg_number }}</div>
+        <div style="margin-top:4px">
+          {% for reg in student.course_registrations.all %}
+            {% if reg.status == "failed" %}
+            <span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;font-size:11px">{{ reg.course.code }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:16px;color:#9ca3af;font-size:13px">
+        <div style="font-size:24px">✅</div>No carryover students
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+</form>
+
+<script>
+const minU={{ outline.min_units }}, maxU={{ outline.max_units }};
+function updateStats(){
+  const boxes=document.querySelectorAll("input[name=courses]:checked");
+  let u=0; boxes.forEach(b=>u+=parseInt(b.dataset.units||0));
+  document.getElementById("selCount").textContent=boxes.length;
+  document.getElementById("totalUnits").textContent=u;
+  const pct=Math.min((u/maxU)*100,100);
+  const fill=document.getElementById("limitFill");
+  const st=document.getElementById("limitStatus");
+  fill.style.width=pct+"%";
+  if(u<minU){fill.style.background="#c8a845";st.textContent="Below min ("+u+"/"+minU+"u)";st.style.background="#c8a845";}
+  else if(u>maxU){fill.style.background="#dc2626";st.textContent="Over max ("+u+"u)";st.style.background="#dc2626";}
+  else{fill.style.background="#1a5c38";st.textContent="Valid ("+u+"u)";st.style.background="#065f46";}
+}
+function filterCourses(q){
+  q=q.toLowerCase();
+  document.querySelectorAll(".ci").forEach(el=>{
+    el.style.display=(el.querySelector(".code").textContent.toLowerCase().includes(q)||el.querySelector(".ctitle").textContent.toLowerCase().includes(q))?"":"none";
+  });
+}
+function selectAll(){document.querySelectorAll("input[name=courses]").forEach(c=>{c.checked=true;document.getElementById("lbl"+c.value).classList.add("sel")});updateStats();}
+function clearAll(){document.querySelectorAll("input[name=courses]").forEach(c=>{c.checked=false;document.getElementById("lbl"+c.value).classList.remove("sel")});updateStats();}
+document.addEventListener("DOMContentLoaded",updateStats);
+</script>
+{% endblock %}

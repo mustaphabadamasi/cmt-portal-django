@@ -150,7 +150,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div class="logo-icon">??</div>
       <div>
         <div class="logo-text">CMT Portal</div>
-        <div class="logo-sub">FUD Affiliate — Katsina</div>
+        <div class="logo-sub">FUD Affiliate &mdash; Katsina</div>
       </div>
     </div>
   </div>
@@ -165,6 +165,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <div class="nav-section">Finance</div>
   <a href="{% url 'make_payment' %}" class="nav-item {% if request.resolver_match.url_name == 'make_payment' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>Pay Fees</a>
   <a href="{% url 'my_payments' %}" class="nav-item {% if request.resolver_match.url_name == 'my_payments' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-receipt-cutoff"></i></div>My Payments</a>
+
+  {% elif user.role == 'registrar' %}
+  <div class="nav-section">Registrar Office</div>
+  <a href="{% url 'registrar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
+  <a href="{% url 'registrar_students' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_students' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-people-fill"></i></div>Student Records</a>
+  <a href="{% url 'registrar_fees' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_fees' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>Fee Payments</a>
+  <a href="{% url 'registrar_photo' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_photo' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-fill"></i></div>Photo Capture</a>
+  <a href="{% url 'registrar_documents' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_documents' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>Print Documents</a>
+
+  {% elif user.role == 'bursar' %}
+  <div class="nav-section">Bursar Office</div>
+  <a href="{% url 'bursar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'bursar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
+  <a href="{% url 'bursar_dashboard' %}" class="nav-item"><div class="nav-icon"><i class="bi bi-cash-stack"></i></div>Payment Approvals</a>
+
   {% else %}
   <div class="nav-section">Overview</div>
   <a href="{% url 'admin_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
@@ -173,11 +187,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <a href="{% url 'add_student' %}" class="nav-item {% if request.resolver_match.url_name == 'add_student' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-person-plus-fill"></i></div>Add Student</a>
   <a href="{% url 'admin_photo_capture' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_photo_capture' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-fill"></i></div>Photo Capture</a>
   <div class="nav-section">Academic</div>
-  <a href="{% url 'semester_result' %}" class="nav-item {% if request.resolver_match.url_name == 'semester_result' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>Semester Result</a>
   <a href="{% url 'user_management' %}" class="nav-item {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-shield-lock-fill"></i></div>User Management</a>
-  {% if user.role == 'bursar' or user.role == 'admin' %}
   <div class="nav-section">Finance</div>
-  <a href="{% url 'bursar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'bursar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-stack"></i></div>Payments{% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}</a>
+  <a href="{% url 'bursar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'bursar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-stack"></i></div>Payments</a>
+  <div class="nav-section">System</div>
+  <a href="/admin/" class="nav-icon"><div class="nav-icon"><i class="bi bi-gear-fill"></i></div>Site Admin</a>
   {% endif %}
   <div class="nav-section">System</div>
   <a href="/admin/" class="nav-item"><div class="nav-icon"><i class="bi bi-gear-fill"></i></div>Site Admin</a>
@@ -211,11 +225,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </div>
     {% endfor %}
     {% block content %}{% endblock %}
+    {% block full_content %}{% endblock %}
   </div>
 </div>
 </div>
-{% else %}
-{% block full_content %}{% endblock %}
-{% endif %}
+
 </body>
 </html>

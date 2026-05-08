@@ -1,51 +1,283 @@
-{% extends "base.html" %}
-{% block title %}My Dashboard{% endblock %}
-{% block content %}
-<h4 class="fw-bold mb-1">Welcome, {{ student.user.first_name }}!</h4>
-<p class="text-muted mb-4">{{ student.programme }} &nbsp;|&nbsp; {{ student.current_session|default:"No session assigned" }}</p>
-{% if not student.photo %}
-<div class="alert alert-warning"><i class="bi bi-camera me-2"></i>You have not uploaded a passport photo yet. <a href="{% url 'upload_photo' %}" class="alert-link">Upload photo now</a> � required for exam card.</div>
-{% endif %}
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body text-center">
-        {% if student.photo %}<img src="{{ student.photo.url }}" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover">
-        {% else %}<div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-2" style="width:80px;height:80px;font-size:28px">{{ student.user.first_name|first }}</div>{% endif %}
-        <h6 class="fw-bold mb-0">{{ student.user.get_full_name }}</h6>
-        <small class="text-muted">{{ student.reg_number }}</small>
-        <div class="mt-2"><a href="{% url 'upload_photo' %}" class="btn btn-sm btn-outline-secondary">Update Photo</a></div>
-      </div>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Student Portal — CMT Katsina</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green:#0d5c2f;--green2:#1a7a42;--gold:#c8881a;--dark:#0a1a0f;
+  --bg:#f4f6f3;--white:#fff;--border:#d8e0d4;--muted:#5a6e57;
+  --sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;display:flex;font-size:14px}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);background:var(--green);min-height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-logo .school{font-family:"EB Garamond",serif;color:#fff;font-size:13px;font-weight:600;line-height:1.3}
+.sidebar-logo .sub{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sidebar-avatar{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;margin-bottom:8px;overflow:hidden;flex-shrink:0}
+.sidebar-avatar img{width:100%;height:100%;object-fit:cover}
+.sidebar-user{padding:16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.sidebar-user .name{color:#fff;font-size:13px;font-weight:500}
+.sidebar-user .matric{color:rgba(255,255,255,.5);font-size:11px}
+nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-section{padding:8px 16px 4px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:500}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.08);color:#fff;border-left-color:var(--gold)}
+.nav-item .ico{font-size:16px;width:20px;text-align:center}
+.nav-item .badge{background:var(--gold);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.1)}
+.logout-btn{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.6);text-decoration:none;font-size:13px}
+.logout-btn:hover{color:#fff}
+
+/* ── Main ── */
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:"EB Garamond",serif;font-size:18px;font-weight:600;color:var(--green)}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.session-badge{background:#e8f5e0;color:var(--green);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.content{padding:24px}
+
+/* ── Welcome banner ── */
+.welcome-banner{background:linear-gradient(135deg,var(--green) 0%,var(--green2) 100%);border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden}
+.welcome-banner::before{content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05)}
+.welcome-banner::after{content:"";position:absolute;right:60px;bottom:-60px;width:150px;height:150px;border-radius:50%;background:rgba(200,136,26,.1)}
+.wb-text h2{font-family:"EB Garamond",serif;font-size:24px;color:#fff;margin-bottom:4px}
+.wb-text p{color:rgba(255,255,255,.65);font-size:13px}
+.wb-text .reg{color:var(--gold);font-weight:600;font-size:12px;margin-top:6px;letter-spacing:.5px}
+.wb-photo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.25);object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:28px;color:rgba(255,255,255,.4)}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border-radius:12px;padding:18px;border:1px solid var(--border);position:relative;overflow:hidden}
+.stat-card::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)}
+.stat-card.gold::after{background:var(--gold)}
+.stat-card.red::after{background:#dc2626}
+.stat-card.blue::after{background:#2563eb}
+.stat-num{font-family:"EB Garamond",serif;font-size:32px;font-weight:700;color:var(--dark);line-height:1}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-icon{position:absolute;right:14px;top:14px;font-size:22px;opacity:.15}
+
+/* ── Cards ── */
+.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:var(--white);border-radius:12px;border:1px solid var(--border)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-family:"EB Garamond",serif;font-size:16px;color:var(--dark)}
+.card-header a{font-size:12px;color:var(--green);text-decoration:none;font-weight:500}
+.card-body{padding:20px}
+.action-list{list-style:none}
+.action-list li{margin-bottom:8px}
+.action-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);text-decoration:none;color:var(--dark);transition:all .15s;background:var(--white)}
+.action-btn:hover{border-color:var(--green);background:#f0f8f0;transform:translateX(3px)}
+.action-btn .ico{font-size:18px}
+.action-btn .label{font-size:13px;font-weight:500}
+.action-btn .sub{font-size:11px;color:var(--muted)}
+.action-btn .arrow{margin-left:auto;color:var(--muted);font-size:16px}
+.course-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.course-row:last-child{border-bottom:none}
+.course-code{font-size:12px;font-weight:700;color:var(--green);min-width:70px}
+.course-title{font-size:13px;color:var(--dark);flex:1}
+.course-unit{font-size:11px;color:var(--muted);background:#f0f0f0;padding:2px 8px;border-radius:10px}
+.pay-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.pay-row:last-child{border-bottom:none}
+.pay-amount{font-weight:700;color:var(--dark)}
+.pay-ref{font-size:11px;color:var(--muted);font-family:monospace}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-approved{background:#d1fae5;color:#065f46}
+.badge-rejected{background:#fee2e2;color:#991b1b}
+.empty{text-align:center;padding:32px;color:var(--muted)}
+.empty .ico{font-size:36px;margin-bottom:8px}
+.notice{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#92400e;display:flex;gap:10px;align-items:flex-start}
+
+@media(max-width:1024px){.stats-grid{grid-template-columns:1fr 1fr}.section-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="school">College of Management &amp; Technology</div>
+    <div class="sub">Katsina · FUD Affiliate</div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="sidebar-avatar">
+      {% if student.photo %}<img src="{{ student.photo.url }}" alt="Photo"/>{% else %}{{ student.user.first_name|first }}{% endif %}
+    </div>
+    <div>
+      <div class="name">{{ student.user.get_full_name }}</div>
+      <div class="matric">{{ student.reg_number }}</div>
     </div>
   </div>
-  <div class="col-md-8">
-    <div class="row g-3">
-      <div class="col-6"><div class="card border-0 bg-light h-100"><div class="card-body"><small class="text-muted">Active Semester</small><p class="fw-bold mb-0">{{ active_semester|default:"Not set" }}</p></div></div></div>
-      <div class="col-6"><div class="card border-0 bg-light h-100"><div class="card-body"><small class="text-muted">Course Registration</small><p class="fw-bold mb-0">{% if registration %}Registered ({{ registration.courses.count }} courses){% else %}Not registered{% endif %}</p></div></div></div>
-      <div class="col-12">
-        <div class="d-flex gap-2 flex-wrap">
-          <a href="{% url 'make_payment' %}" class="btn btn-cmt btn-sm"><i class="bi bi-cash me-1"></i>Pay Fees</a>
-          <a href="{% url 'register_courses' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-journal-check me-1"></i>Register Courses</a>
-          <a href="{% url 'exam_card' student.pk %}" target="_blank" class="btn btn-outline-success btn-sm"><i class="bi bi-card-heading me-1"></i>Exam Card</a>
-          {% if registration %}<a href="{% url 'course_reg_form' student.pk %}" target="_blank" class="btn btn-outline-info btn-sm"><i class="bi bi-file-pdf me-1"></i>Course Reg Form</a>{% endif %}
+
+  <nav>
+    <div class="nav-section">Academic</div>
+    <a href="{% url 'student_dashboard' %}" class="nav-item active"><span class="ico">🏠</span> Dashboard</a>
+    <a href="{% url 'register_courses' %}" class="nav-item"><span class="ico">📝</span> Course Registration
+      {% if semester and semester.reg_open %}<span class="badge">Open</span>{% endif %}
+    </a>
+    <a href="{% url 'my_courses' %}" class="nav-item"><span class="ico">📚</span> My Courses</a>
+    <a href="{% url 'print_course_reg' %}" class="nav-item"><span class="ico">🖨</span> Print Course Form</a>
+    <a href="{% url 'exam_card' %}" class="nav-item"><span class="ico">🎫</span> Exam Card</a>
+
+    <div class="nav-section">Finance</div>
+    <a href="{% url 'generate_payment' %}" class="nav-item"><span class="ico">💳</span> Pay School Fees</a>
+    <a href="{% url 'my_payments' %}" class="nav-item"><span class="ico">🧾</span> Payment History</a>
+
+    <div class="nav-section">Profile</div>
+    <a href="{% url 'student_profile' %}" class="nav-item"><span class="ico">👤</span> My Profile</a>
+    <a href="{% url 'upload_photo' %}" class="nav-item"><span class="ico">📷</span> Upload Photo</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{% url 'logout' %}" class="logout-btn"><span>🚪</span> Logout</a>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Student Portal</div>
+    <div class="topbar-right">
+      {% if session %}<span class="session-badge">📅 {{ session.name }}</span>{% endif %}
+      {% if semester %}<span class="session-badge" style="background:#e0f0ff;color:#1e40af">📖 {{ semester.name }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Welcome -->
+    <div class="welcome-banner">
+      <div class="wb-text">
+        <h2>Welcome, {{ student.user.first_name }}!</h2>
+        <p>{{ student.programme }} &mdash; {{ student.level }}</p>
+        <div class="reg">MATRIC: {{ student.reg_number }}</div>
+      </div>
+      {% if student.photo %}
+      <img src="{{ student.photo.url }}" class="wb-photo" alt="Photo"/>
+      {% else %}
+      <div class="wb-photo">👤</div>
+      {% endif %}
+    </div>
+
+    {% if messages %}{% for m in messages %}
+    <div class="notice">⚠️ {{ m }}</div>
+    {% endfor %}{% endif %}
+
+    {% if not has_paid %}
+    <div class="notice">⚠️ <span>You have not paid your school fees for this session. <a href="{% url 'generate_payment' %}" style="color:#92400e;font-weight:600">Pay now →</a></span></div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-num">{{ reg_count }}</div>
+        <div class="stat-label">Courses Registered</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-num">{{ total_units }}</div>
+        <div class="stat-label">Credit Units</div>
+      </div>
+      <div class="stat-card {% if has_paid %}blue{% else %}red{% endif %}">
+        <div class="stat-icon">💳</div>
+        <div class="stat-num">{% if has_paid %}Paid{% else %}Unpaid{% endif %}</div>
+        <div class="stat-label">Fee Status</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎓</div>
+        <div class="stat-num">{{ student.level|slice:"-1" }}</div>
+        <div class="stat-label">Current Level</div>
+      </div>
+    </div>
+
+    <div class="section-grid">
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header"><h3>Quick Actions</h3></div>
+        <div class="card-body">
+          <ul class="action-list">
+            <li><a href="{% url 'register_courses' %}" class="action-btn">
+              <span class="ico">📝</span>
+              <div><div class="label">Register Courses</div><div class="sub">{% if semester and semester.reg_open %}Registration is open{% else %}Check if registration is open{% endif %}</div></div>
+              <span class="arrow">›</span>
+            </a></li>
+            <li><a href="{% url 'print_course_reg' %}" class="action-btn">
+              <span class="ico">🖨</span>
+              <div><div class="label">Print Course Registration Form</div><div class="sub">Download printable form</div></div>
+              <span class="arrow">›</span>
+            </a></li>
+            <li><a href="{% url 'generate_payment' %}" class="action-btn">
+              <span class="ico">💳</span>
+              <div><div class="label">Generate Payment Invoice</div><div class="sub">₦25,000 semester / ₦50,000 session</div></div>
+              <span class="arrow">›</span>
+            </a></li>
+            <li><a href="{% url 'exam_card' %}" class="action-btn">
+              <span class="ico">🎫</span>
+              <div><div class="label">Print Exam Card</div><div class="sub">Download your examination card</div></div>
+              <span class="arrow">›</span>
+            </a></li>
+          </ul>
         </div>
       </div>
+
+      <!-- Registered Courses -->
+      <div class="card">
+        <div class="card-header"><h3>Registered Courses</h3><a href="{% url 'my_courses' %}">View all →</a></div>
+        <div class="card-body">
+          {% if registrations %}
+          {% for reg in registrations %}
+          <div class="course-row">
+            <span class="course-code">{{ reg.course.code }}</span>
+            <span class="course-title">{{ reg.course.title }}</span>
+            <span class="course-unit">{{ reg.course.unit }}u</span>
+            {% if reg.is_carryover %}<span class="badge badge-pending">CO</span>{% endif %}
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="empty"><div class="ico">📚</div><p>No courses registered yet</p></div>
+          {% endif %}
+        </div>
+      </div>
+
     </div>
-  </div>
-</div>
-<div class="card border-0 shadow-sm">
-  <div class="card-header card-header-cmt"><strong>Recent Payment Activity</strong></div>
-  <div class="card-body p-0">
-    <table class="table mb-0 small">
-      <thead class="table-light"><tr><th>Receipt</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-      <tbody>
+
+    <!-- Payments -->
+    <div class="card">
+      <div class="card-header"><h3>Recent Payments</h3><a href="{% url 'my_payments' %}">View all →</a></div>
+      <div class="card-body">
+        {% if payments %}
         {% for p in payments %}
-        <tr><td>{{ p.receipt_number }}</td><td>{{ p.get_payment_type_display }}</td><td>&#8358;{{ p.amount|floatformat:0 }}</td>
-        <td><span class="badge {% if p.status == 'approved' %}bg-success{% elif p.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.status }}</span></td>
-        <td>{{ p.date_requested|date:"d M Y" }}</td></tr>
-        {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">No payment history yet.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+        <div class="pay-row">
+          <div>
+            <div class="pay-amount">₦{{ p.amount|floatformat:0 }}</div>
+            <div class="pay-ref">{{ p.reference }}</div>
+          </div>
+          <span class="badge badge-{{ p.status }}">{{ p.get_status_display }}</span>
+          {% if p.status == "approved" %}
+          <a href="{% url 'student_receipt' p.pk %}" style="font-size:12px;color:var(--green);text-decoration:none;margin-left:8px">🖨 Receipt</a>
+          {% endif %}
+          <span style="font-size:12px;color:var(--muted);margin-left:auto">{{ p.created_at|date:"d M Y" }}</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty"><div class="ico">💳</div><p>No payments yet</p></div>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 </div>
-{% endblock %}
+
+</body>
+</html>

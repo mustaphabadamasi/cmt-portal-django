@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/><title>Course Registration Form</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:#f4f6f3;padding:20px}
+.page{max-width:210mm;margin:0 auto;background:#fff;padding:20mm 16mm}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.header .logos{display:flex;gap:20px;align-items:center}
+.header img{width:64px;height:64px;object-fit:contain}
+.header .center{text-align:center;flex:1}
+.header .center h1{font-size:15px;font-weight:700;text-transform:uppercase}
+.header .center p{font-size:11px;color:#555;margin-top:2px}
+.header .center .affil{font-style:italic;font-size:11px}
+.header .center .univ{color:#c00;font-weight:700;font-size:12px}
+hr{border:none;border-top:2px solid #0d5c2f;margin:10px 0}
+.form-title{font-family:"EB Garamond",serif;font-size:18px;font-weight:700;text-align:center;text-decoration:underline;text-transform:uppercase;margin:10px 0}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px}
+.info-row{display:flex;gap:6px;align-items:baseline}
+.info-row .lbl{font-weight:700;min-width:100px}
+.info-row .val{border-bottom:1px solid #000;flex:1;min-height:18px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+th{background:#0d5c2f;color:#fff;padding:7px 10px;text-align:left;font-weight:600;border:1px solid #0d5c2f}
+td{border:1px solid #aaa;padding:7px 10px}
+.sig-section{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.sig-box{font-size:12px}
+.sig-box .sig-line{border-bottom:1px solid #000;margin:24px 0 4px}
+.total-row td{font-weight:700;background:#f0f8f0}
+.print-btn{text-align:center;margin-top:20px}
+.print-btn button{padding:10px 24px;background:#0d5c2f;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+@media print{.print-btn{display:none}body{background:#fff;padding:0}.page{padding:10mm}}
+</style></head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logos">
+      <img src="{% static 'images/cmt_logo.png' %}" onerror="this.style.display='none'" alt="CMT"/>
+    </div>
+    <div class="center">
+      <h1>College of Management and Technology Katsina</h1>
+      <p>11, Batsari Road, Day Kofar Yandaka, Katsina</p>
+      <p class="affil">Affiliated to</p>
+      <p class="univ">Federal University Dutsin-Ma, Katsina</p>
+    </div>
+    <div class="logos">
+      <img src="{% static 'images/university_logo.png' %}" onerror="this.style.display='none'" alt="FUDMA"/>
+    </div>
+  </div>
+  <hr/>
+  <div class="form-title">Course Registration Form</div>
+
+  <div class="info-grid">
+    <div class="info-row"><span class="lbl">Name:</span><span class="val">&nbsp;{{ student.user.get_full_name }}</span></div>
+    <div class="info-row"><span class="lbl">Matric No:</span><span class="val">&nbsp;{{ student.reg_number }}</span></div>
+    <div class="info-row"><span class="lbl">Programme:</span><span class="val">&nbsp;{{ student.programme }}</span></div>
+    <div class="info-row"><span class="lbl">Level:</span><span class="val">&nbsp;{{ student.level }}</span></div>
+    <div class="info-row"><span class="lbl">Session:</span><span class="val">&nbsp;{{ student.current_session }}</span></div>
+    <div class="info-row"><span class="lbl">Semester:</span><span class="val">&nbsp;{{ semester }}</span></div>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:36px">S/N</th><th style="width:100px">Course Code</th><th>Course Title</th><th style="width:60px">Units</th><th style="width:60px">Type</th></tr></thead>
+    <tbody>
+      {% for reg in registrations %}
+      <tr>
+        <td style="text-align:center">{{ forloop.counter }}</td>
+        <td>{{ reg.course.code }}</td>
+        <td>{{ reg.course.title }}</td>
+        <td style="text-align:center">{{ reg.course.unit }}</td>
+        <td style="text-align:center">{% if reg.is_carryover %}C/O{% else %}New{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center;color:#999;padding:16px">No courses registered</td></tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="3" style="text-align:right">TOTAL CREDIT UNITS:</td>
+        <td style="text-align:center">{{ total_units }}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sig-section">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>Student Signature &amp; Date</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>HOD Signature &amp; Date</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>Dean Signature &amp; Date</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div>Registrar Signature, Date &amp; Stamp</div>
+    </div>
+  </div>
+</div>
+<div class="print-btn"><button onclick="window.print()">🖨 Print Course Registration Form</button></div>
+</body></html>
