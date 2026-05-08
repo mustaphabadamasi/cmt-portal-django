@@ -33,7 +33,12 @@ class Student(models.Model):
 
     @property
     def level(self):
-        return self.programme.level if self.programme else None
+        reg = str(self.reg_number or "")
+        if "/24/" in reg:
+            return "Diploma II"
+        elif "/25/" in reg:
+            return "Diploma I"
+        return "Diploma I"
 
 
 # ✅ Fixed: Moved outside Student class (proper indentation)

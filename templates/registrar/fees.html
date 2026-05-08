@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "registrar/base.html" %}
 {% block content %}
 <div class="page-header">
   <div class="page-title">Fee Payments</div>
@@ -44,11 +44,11 @@
     <td>
       {% if p.status == 'pending' %}
       <div style="display:flex;gap:6px">
-        <form method="post" action="{% url 'approve_payment' p.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve"/><button class="btn-sm btn-approve">✓</button></form>
+        <form method="post" action="{% url 'registrar_approve_payment' p.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve"/><button class="btn-sm btn-approve">✓</button></form>
         <button class="btn-sm btn-reject" onclick="openReject({{ p.pk }})">✗</button>
       </div>
       {% elif p.status == 'approved' %}
-      <a href="{% url 'payment_receipt' p.pk %}" style="font-size:12px;color:#1a5c38" target="_blank">🖨 Receipt</a>
+      <a href="{% url 'registrar_payment_receipt' p.pk %}" style="font-size:12px;color:#1a5c38" target="_blank">🖨 Receipt</a>
       {% endif %}
     </td>
   </tr>

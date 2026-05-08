@@ -35,7 +35,8 @@ def dashboard(request):
 @login_required
 def students(request):
     all_students = Student.objects.select_related("user","programme").all().order_by("reg_number")
-    return render(request, "registrar/students.html", {"students": all_students})
+    programmes = Programme.objects.all()
+    return render(request, "registrar/students.html", {"students": all_students, "programmes": programmes})
 
 
 @login_required
@@ -247,3 +248,39 @@ def delete_outline(request, outline_id):
     outline.delete()
     messages.success(request, f"Outline '{name}' deleted.")
     return redirect("course_structure")
+
+
+@login_required
+def add_student(request):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    if request.method == "POST":
+        first_name  = request.POST.get("first_name","").strip().title()
+        last_name   = request.POST.get("last_name","").strip().title()
+        reg_number  = request.POST.get("reg_number","").strip()
+        programme_id= request.POST.get("programme")
+        status      = request.POST.get("status","Active")
+
+        if Student.objects.filter(reg_number=reg_number).exists():
+            messages.error(request, f"Student with reg number {reg_number} already exists.")
+            return redirect("registrar_students")
+
+        username = reg_number.replace("/","").upper()
+        if User.objects.filter(username=username).exists():
+            username += "X"
+
+        programme = get_object_or_404(Programme, pk=programme_id)
+        session   = Session.objects.filter(is_active=True).first()
+        semester  = Semester.objects.filter(is_active=True).first()
+
+        user = User.objects.create_user(
+            username=username, password=reg_number,
+            first_name=first_name, last_name=last_name,
+            role="student", must_change_password=False
+        )
+        Student.objects.create(
+            user=user, reg_number=reg_number, programme=programme,
+            current_session=session, current_semester=semester, status=status
+        )
+        messages.success(request, f"Student {first_name} {last_name} added. Login: {username} / {reg_number}")
+    return redirect("registrar_students")
