@@ -435,30 +435,53 @@ def upload_photo(request):
 
 @role_required("student")
 def register_courses(request):
-    student = get_object_or_404(Student, user=request.user)
+    from fees.models import Payment as FP2
+    from academics.models import CourseRegistration, Course
+
+    student         = get_object_or_404(Student, user=request.user)
     active_semester = Semester.objects.filter(is_active=True).first()
+
     if not active_semester:
         messages.error(request, "No active semester. Contact admin.")
         return redirect("student_dashboard")
-    paid = FeePayment.objects.filter(student=student, session=student.current_session, status="approved").exists()
+
+    # Payment check
+    paid = FP2.objects.filter(student=student, status="approved").exists()
     if not paid:
         messages.error(request, "Please pay your fees before registering courses.")
         return redirect("student_dashboard")
-    existing_reg = CourseRegistration.objects.filter(student=student, semester=active_semester).first()
-    sem_num = 1 if active_semester.name == "first" else 2
-    if student.programme.level == "diploma2":
-        sem_num += 2
-    available_courses = Course.objects.filter(programme=student.programme, semester_number=sem_num)
+
+    existing_reg = CourseRegistration.objects.filter(
+        student=student, semester=active_semester
+    ).first()
+
+    from academics.models import CourseOutline
+    try:
+        outline = CourseOutline.objects.get(
+            programme=student.programme,
+            level=student.level,
+            semester=active_semester,
+            is_active=True
+        )
+        available_courses = outline.courses.all()
+    except CourseOutline.DoesNotExist:
+        available_courses = []
+
     if request.method == "POST":
         selected_ids = request.POST.getlist("courses")
-        reg = existing_reg or CourseRegistration.objects.create(student=student, semester=active_semester)
+        reg = existing_reg or CourseRegistration.objects.create(
+            student=student, semester=active_semester
+        )
         reg.courses.set(selected_ids)
         reg.save()
         messages.success(request, "Courses registered successfully.")
         return redirect("my_courses")
+
     return render(request, "students/register_courses.html", {
-        "student": student, "courses": available_courses,
-        "existing_reg": existing_reg, "active_semester": active_semester,
+        "student": student,
+        "courses": available_courses,
+        "existing_reg": existing_reg,
+        "active_semester": active_semester,
     })
 
 
@@ -518,8 +541,15 @@ def my_payments(request):
 @login_required
 def student_receipt(request, payment_id):
     from fees.models import Payment
-    payment = get_object_or_404(Payment, pk=payment_id, student__user=request.user, status="approved")
-    return render(request, "students/receipt.html", {"payment": payment})
+    from students.pdf_utils import render_to_pdf
+    payment  = get_object_or_404(Payment, pk=payment_id, student__user=request.user, status="approved")
+    semester = Semester.objects.filter(is_active=True).first()
+    session  = Session.objects.filter(is_active=True).first()
+    ctx = {"payment": payment, "semester": semester, "session": session}
+    response = render_to_pdf("documents/receipt_pdf.html", ctx)
+    fname = f"Receipt_{payment.receipt_no}_{payment.student.reg_number.replace('/', '_')}.pdf"
+    response["Content-Disposition"] = f'filename="{fname}"'
+    return response
 
 
 @login_required

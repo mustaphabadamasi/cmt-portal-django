@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+@page { size: A4 portrait; margin: 1.5cm 1.5cm 1.5cm 1.5cm; }
+body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+table { width: 100%; border-collapse: collapse; }
+.header-table td { vertical-align: middle; padding: 2px; }
+.logo { width: 65px; height: 65px; }
+.school-name { font-size: 13pt; font-weight: bold; text-align: center; text-transform: uppercase; }
+.school-sub { font-size: 8pt; text-align: center; }
+.affil { font-size: 8pt; text-align: center; }
+.affil-uni { font-size: 9pt; font-weight: bold; text-align: center; color: #cc0000; }
+.divider { border-top: 2px solid #1a5c38; margin: 4px 0; }
+.doc-title { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase;
+             border: 2px solid #1a5c38; padding: 5px; margin: 6px 0; background: #f0f8f0; }
+.info-table td { padding: 4px 6px; font-size: 9pt; }
+.info-label { font-weight: bold; width: 90px; }
+.info-val { border-bottom: 1px solid #000; min-width: 120px; }
+.passport-box { border: 1px solid #000; width: 80px; height: 90px; text-align: center;
+                vertical-align: middle; font-size: 7pt; color: #888; }
+.section-title { background: #1a5c38; color: #fff; font-weight: bold; font-size: 9pt;
+                 text-align: center; padding: 4px; margin: 8px 0 0 0; }
+.courses-table th { background: #1a5c38; color: #fff; padding: 5px 4px; font-size: 8pt;
+                    border: 1px solid #1a5c38; text-align: left; }
+.courses-table td { border: 1px solid #aaa; padding: 5px 4px; font-size: 8pt; }
+.sig-table td { padding: 14px 8px 2px 8px; font-size: 8pt; vertical-align: bottom; }
+.sig-line { border-top: 1px solid #000; padding-top: 2px; font-size: 7.5pt; }
+.regs-title { font-weight: bold; font-size: 9pt; text-align: center; margin: 10px 0 4px;
+              text-decoration: underline; text-transform: uppercase; }
+.regs-list { font-size: 7.5pt; line-height: 1.5; }
+.ec-ref { font-size: 8pt; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<table class="header-table">
+<tr>
+  <td style="width:70px"><img src="{{ CMT_LOGO }}" class="logo"/></td>
+  <td>
+    <div class="school-name">College of Management and Technology Katsina</div>
+    <div class="school-sub">11, Batsari Road, Day Kofar Yandaka, Katsina</div>
+    <div class="affil">Affiliated to</div>
+    <div class="affil-uni">Federal University Dutsin-Ma, Katsina</div>
+  </td>
+  <td style="width:70px; text-align:right"><img src="{{ FUDMA_LOGO }}" class="logo"/></td>
+</tr>
+</table>
+
+<div class="divider"></div>
+<div class="doc-title">Examination Card</div>
+
+<!-- STUDENT INFO + PASSPORT -->
+<table style="width:100%; margin-top:4px;">
+<tr>
+  <td style="width:75%">
+    <table class="info-table">
+      <tr>
+        <td class="info-label">Name:</td>
+        <td class="info-val">{{ student.user.get_full_name }}</td>
+        <td style="width:20px"></td>
+        <td class="info-label">Level:</td>
+        <td class="info-val">{{ student.level }}</td>
+      </tr>
+      <tr>
+        <td class="info-label">Matric No:</td>
+        <td class="info-val">{{ student.reg_number }}</td>
+        <td></td>
+        <td class="info-label">Session:</td>
+        <td class="info-val">{{ session }}</td>
+      </tr>
+      <tr>
+        <td class="info-label">Programme:</td>
+        <td class="info-val" colspan="3">{{ student.programme }}</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="info-label">Semester:</td>
+        <td class="info-val" colspan="3">{{ semester }}</td>
+        <td></td>
+      </tr>
+    </table>
+  </td>
+  <td style="text-align:center; vertical-align:top; width:25%">
+    {% if student.photo %}
+    <img src="{{ student.photo.path }}" style="width:80px;height:90px;object-fit:cover;border:1px solid #ccc;"/>
+    {% else %}
+    <div class="passport-box">2x2<br/>Passport<br/>Photo</div>
+    {% endif %}
+  </td>
+</tr>
+</table>
+
+<!-- COURSES -->
+<div class="section-title">COURSE(S) REGISTERED</div>
+<table class="courses-table" style="margin-top:0">
+<thead>
+  <tr>
+    <th style="width:28px">S/N</th>
+    <th style="width:80px">Course Code</th>
+    <th>Course Title</th>
+    <th style="width:130px">Invigilator's Signature</th>
+    <th style="width:60px">Date</th>
+  </tr>
+</thead>
+<tbody>
+  {% for reg in registrations %}
+  <tr>
+    <td style="text-align:center">{{ forloop.counter }}</td>
+    <td>{{ reg.course.code }}</td>
+    <td>{{ reg.course.title }}</td>
+    <td></td>
+    <td></td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5" style="text-align:center;color:#999;padding:10px">No courses registered</td></tr>
+  {% endfor %}
+</tbody>
+</table>
+
+<!-- SIGNATURES -->
+<table class="sig-table" style="margin-top:16px">
+<tr>
+  <td style="width:33%">
+    <div style="border-top:1px solid #000;padding-top:3px">Student's Sign &amp; Date</div>
+  </td>
+  <td style="width:33%">
+    <div style="border-top:1px solid #000;padding-top:3px">HOD's Sign &amp; Date</div>
+  </td>
+  <td style="width:33%">
+    <div class="ec-ref">{{ exam_card_ref }}</div>
+    <div style="border-top:1px solid #000;padding-top:3px">Registrar's Sign, Date &amp; Stamp</div>
+  </td>
+</tr>
+</table>
+
+<!-- REGULATIONS -->
+<div class="regs-title">Examination Regulations</div>
+<div class="regs-list">
+<ol>
+  <li>Student shall be at the examination room at least fifteen (15) minutes before the time appointed for the commencement of the examination. Candidates should, therefore, refrain from studying in halls earmarked for examinations.</li>
+  <li>Students must NOT take into the examination hall any programmed electronic device, handset, book, paper, or any other form of printed or written material, hand bags and brief cases.</li>
+  <li>Student must bring his/her examination room and college ID card to the examination hall and display them on his/her desk.</li>
+  <li>While examination is in progress, communication between candidates is strictly forbidden, and any candidate found talking or receiving/giving illegal assistance may be required to withdraw from the examination.</li>
+  <li>Student must sign in the attendance form with his/her Reg. number and must sign out on submission of his/her script at the end of the examination.</li>
+  <li>Student must correctly fill in all the spaces provided on the cover of the answer booklet and all additional sheets of paper issued during the examination.</li>
+  <li>No candidate will be permitted to: (a) Enter examination room 30 minutes after the commencement of the examination; (b) Leave the examination room before the first 45 minutes of the examination; (c) Write examination without college ID Card.</li>
+  <li>Examination answer scripts/sheets whether used or unused should not be taken out of the examination hall by students.</li>
+  <li>A student involved in examination misconduct or malpractice may be expelled from the College.</li>
+  <li>Candidates must adhere strictly to the sitting arrangement made by the Chief Invigilator.</li>
+</ol>
+</div>
+
+</body>
+</html>
