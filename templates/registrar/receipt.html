@@ -7,7 +7,7 @@
     <h3 style="font-size:16px;margin-top:8px;text-decoration:underline">PAYMENT RECEIPT</h3>
   </div>
   <table style="width:100%;font-size:14px;border-collapse:collapse">
-    <tr><td style="padding:8px 0;font-weight:600;width:40%">Receipt No:</td><td>{{ payment.receipt_no }}</td></tr>
+    <tr><td style="padding:8px 0;font-weight:600;width:40%">Receipt No:</td><td>{{ payment.receipt_number }}</td></tr>
     <tr><td style="padding:8px 0;font-weight:600">Student Name:</td><td>{{ payment.student.user.get_full_name }}</td></tr>
     <tr><td style="padding:8px 0;font-weight:600">Matric No:</td><td>{{ payment.student.reg_number }}</td></tr>
     <tr><td style="padding:8px 0;font-weight:600">Payment Type:</td><td>{{ payment.get_payment_type_display }}</td></tr>

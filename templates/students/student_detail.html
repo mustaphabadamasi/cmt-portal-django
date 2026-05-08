@@ -35,9 +35,9 @@
           <thead class="table-light"><tr><th>Receipt No.</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr></thead>
           <tbody>
             {% for p in payments %}
-            <tr><td>{{ p.receipt_number }}</td><td>{{ p.payment_type }}</td><td>&#8358;{{ p.amount|floatformat:0 }}</td>
+            <tr><td>{{ p.receipt_no }}</td><td>{{ p.payment_type }}</td><td>&#8358;{{ p.amount|floatformat:0 }}</td>
             <td><span class="badge {% if p.status == 'approved' %}bg-success{% elif p.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ p.status }}</span></td>
-            <td>{{ p.date_requested|date:"d M Y" }}</td>
+            <td>{{ p.created_at|date:"d M Y" }}</td>
             <td>{% if p.status == 'approved' %}<a href="{% url 'payment_receipt' p.pk %}" target="_blank" class="btn btn-sm btn-outline-success">Receipt</a>{% endif %}</td></tr>
             {% empty %}<tr><td colspan="6" class="text-center text-muted">No payments</td></tr>{% endfor %}
           </tbody>

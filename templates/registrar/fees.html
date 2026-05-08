@@ -38,7 +38,7 @@
     <td>{{ p.get_payment_type_display }}</td>
     <td style="font-weight:600">₦{{ p.amount|floatformat:2 }}</td>
     <td style="font-size:12px;font-family:monospace">{{ p.reference }}</td>
-    <td style="font-size:12px">{{ p.created_at|date:"d M Y" }}</td>
+    <td style="font-size:12px">{{ p.date_requested|date:"d M Y" }}</td>
     <td>{% if p.evidence %}<a href="{{ p.evidence.url }}" target="_blank"><img src="{{ p.evidence.url }}" style="width:36px;height:36px;object-fit:cover;border-radius:6px"/></a>{% else %}<span style="color:#9ca3af;font-size:12px">None</span>{% endif %}</td>
     <td><span class="badge badge-{{ p.status }}">{{ p.get_status_display }}</span></td>
     <td>

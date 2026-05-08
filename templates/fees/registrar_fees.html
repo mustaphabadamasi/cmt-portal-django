@@ -68,7 +68,7 @@
       <td>{{ payment.get_payment_type_display }}</td>
       <td style="font-weight:600">₦{{ payment.amount|floatformat:2 }}</td>
       <td style="font-family:monospace;font-size:12px">{{ payment.reference }}</td>
-      <td style="font-size:12px">{{ payment.created_at|date:"d M Y" }}</td>
+      <td style="font-size:12px">{{ payment.date_requested|date:"d M Y" }}</td>
       <td>
         {% if payment.evidence %}
         <a href="{{ payment.evidence.url }}" target="_blank">

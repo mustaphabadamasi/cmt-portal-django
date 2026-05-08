@@ -373,15 +373,34 @@ def registrar_photo(request):
 
 @role_required("student")
 def student_dashboard(request):
-    student = get_object_or_404(Student, user=request.user)
-    active_semester = Semester.objects.filter(is_active=True).first()
-    registration = None
-    if active_semester:
-        registration = CourseRegistration.objects.filter(student=student, semester=active_semester).first()
-    payments = FeePayment.objects.filter(student=student).order_by("-date_requested")[:5]
+    from academics.models import CourseRegistration as AcadCR
+    student  = get_object_or_404(Student, user=request.user)
+    session  = Session.objects.filter(is_active=True).first()
+    semester = Semester.objects.filter(is_active=True).first()
+
+    registrations = AcadCR.objects.filter(
+        student=student, semester=semester
+    ).select_related("course", "semester") if semester else []
+
+    total_units = sum(r.course.unit for r in registrations)
+    reg_count   = len(list(registrations))
+
+    from fees.models import Payment as FeePayment2
+    payments = FeePayment2.objects.filter(student=student).order_by("-created_at")[:5]
+
+    has_paid = FeePayment2.objects.filter(
+        student=student, status="approved"
+    ).exists()
+
     return render(request, "students/student_dashboard.html", {
-        "student": student, "active_semester": active_semester,
-        "registration": registration, "payments": payments,
+        "student": student,
+        "session": session,
+        "semester": semester,
+        "registrations": registrations,
+        "total_units": total_units,
+        "reg_count": reg_count,
+        "payments": payments,
+        "has_paid": has_paid,
     })
 
 
@@ -458,7 +477,7 @@ def print_course_reg(request):
     from academics.models import CourseRegistration
     student = get_object_or_404(Student, user=request.user)
     semester = Semester.objects.filter(is_active=True).first()
-    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course") if semester else []
+    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course", "semester") if semester else []
     total_units = sum(r.course.unit for r in registrations)
     return render(request, "students/print_course_reg.html", {"student": student, "semester": semester, "registrations": registrations, "total_units": total_units})
 
@@ -492,7 +511,7 @@ def generate_payment(request):
 def my_payments(request):
     from fees.models import Payment
     student  = get_object_or_404(Student, user=request.user)
-    payments = Payment.objects.filter(student=student).order_by("-created_at")
+    payments = Payment.objects.filter(student=student).order_by("-date_requested")
     return render(request, "students/my_payments.html", {"student": student, "payments": payments})
 
 
@@ -512,7 +531,7 @@ def exam_card(request, student_id=None):
         student = get_object_or_404(Student, user=request.user)
     semester = Semester.objects.filter(is_active=True).first()
     session  = Session.objects.filter(is_active=True).first()
-    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course") if semester else []
+    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course", "semester") if semester else []
     ref = ("EC" + str(abs(hash(student.reg_number))))[:10].upper()
     return render(request, "documents/exam_card.html", {"student": student, "semester": semester, "session": session, "registrations": registrations, "exam_card_ref": ref})
 
@@ -522,7 +541,7 @@ def course_reg_form(request, student_id):
     from academics.models import CourseRegistration
     student  = get_object_or_404(Student, pk=student_id)
     semester = Semester.objects.filter(is_active=True).first()
-    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course") if semester else []
+    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course", "semester") if semester else []
     total_units = sum(r.course.unit for r in registrations)
     return render(request, "students/print_course_reg.html", {"student": student, "semester": semester, "registrations": registrations, "total_units": total_units})
 
