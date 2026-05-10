@@ -469,12 +469,24 @@ def register_courses(request):
 
     if request.method == "POST":
         selected_ids = request.POST.getlist("courses")
-        reg = existing_reg or CourseRegistration.objects.create(
+        # Delete previous registrations for this semester
+        CourseRegistration.objects.filter(
             student=student, semester=active_semester
-        )
-        reg.courses.set(selected_ids)
-        reg.save()
-        messages.success(request, "Courses registered successfully.")
+        ).delete()
+        # Create one record per course
+        for cid in selected_ids:
+            try:
+                course = Course.objects.get(pk=cid)
+                CourseRegistration.objects.create(
+                    student=student,
+                    semester=active_semester,
+                    course=course,
+                    status="registered",
+                    is_carryover=False
+                )
+            except Course.DoesNotExist:
+                pass
+        messages.success(request, f"Successfully registered {len(selected_ids)} course(s).")
         return redirect("my_courses")
 
     return render(request, "students/register_courses.html", {
@@ -541,29 +553,38 @@ def my_payments(request):
 @login_required
 def student_receipt(request, payment_id):
     from fees.models import Payment
-    from students.pdf_utils import render_to_pdf
+    from students.receipt_generator import generate_receipt_pdf
+    from django.http import HttpResponse
     payment  = get_object_or_404(Payment, pk=payment_id, student__user=request.user, status="approved")
-    semester = Semester.objects.filter(is_active=True).first()
-    session  = Session.objects.filter(is_active=True).first()
-    ctx = {"payment": payment, "semester": semester, "session": session}
-    response = render_to_pdf("documents/receipt_pdf.html", ctx)
-    fname = f"Receipt_{payment.receipt_no}_{payment.student.reg_number.replace('/', '_')}.pdf"
+    pdf      = generate_receipt_pdf(payment)
+    fname    = f"Receipt_{payment.receipt_no}_{payment.student.reg_number.replace('/', '_')}.pdf"
+    response = HttpResponse(pdf, content_type="application/pdf")
     response["Content-Disposition"] = f'filename="{fname}"'
     return response
 
 
 @login_required
 def exam_card(request, student_id=None):
-    from academics.models import CourseRegistration
+    from academics.models import CourseRegistration as AcadCR
+    from students.pdf_utils import render_to_pdf
     if student_id:
         student = get_object_or_404(Student, pk=student_id)
     else:
         student = get_object_or_404(Student, user=request.user)
     semester = Semester.objects.filter(is_active=True).first()
     session  = Session.objects.filter(is_active=True).first()
-    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course", "semester") if semester else []
+    registrations = list(AcadCR.objects.filter(
+        student=student, semester=semester
+    ).select_related("course")) if semester else []
     ref = ("EC" + str(abs(hash(student.reg_number))))[:10].upper()
-    return render(request, "documents/exam_card.html", {"student": student, "semester": semester, "session": session, "registrations": registrations, "exam_card_ref": ref})
+    ctx = {"student": student, "semester": semester, "session": session,
+           "registrations": registrations, "exam_card_ref": ref}
+    response = render_to_pdf("documents/exam_card_pdf.html", ctx)
+    sem_name = semester.name.upper().replace(" ", "_") if semester else "SEM"
+    sess_name = str(session).replace("/", "-") if session else "SESSION"
+    fname = f"Exam_Card_{student.reg_number.replace('/', '_')}_{sem_name}_{sess_name}.pdf"
+    response["Content-Disposition"] = f'filename="{fname}"'
+    return response
 
 
 @login_required

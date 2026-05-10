@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Semester Result Sheets</div>
+  <div class="page-sub">Enter scores and print result sheets for submission to CPCS/FUDMA</div>
+</div>
+<style>
+.card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.card-info .name{font-weight:700;font-size:15px;color:#111;margin-bottom:4px}
+.card-info .meta{font-size:13px;color:#6b7280}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-right:6px}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.btn{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-green{background:#1a5c38;color:#fff}
+.btn-outline{border:1px solid #1a5c38;color:#1a5c38;background:#fff}
+.btn-row{display:flex;gap:8px}
+</style>
+
+{% if messages %}{% for m in messages %}<div style="background:#d1fae5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:16px">{{ m }}</div>{% endfor %}{% endif %}
+
+<div style="font-size:14px;color:#6b7280;margin-bottom:16px">{{ outlines|length }} course outline(s) available</div>
+
+{% for o in outlines %}
+<div class="card">
+  <div class="card-info">
+    <div class="name">{{ o.name }}</div>
+    <div class="meta">
+      <span class="badge badge-green">{{ o.level }}</span>
+      <span class="badge badge-blue">{{ o.semester }}</span>
+      {{ o.courses.count }} courses &bull; {{ o.total_units }} units
+    </div>
+  </div>
+  <div class="btn-row">
+    <a href="{% url 'result_entry' o.pk %}" class="btn btn-outline">✏ Enter Scores</a>
+    <a href="{% url 'bulk_upload_results' o.pk %}" class="btn" style="background:#c8881a;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px">📊 CSV Upload</a>
+    <a href="{% url 'result_sheet_pdf' o.pk %}" class="btn btn-green" target="_blank">🖨 Print Result Sheet</a>
+  </div>
+</div>
+{% empty %}
+<div style="text-align:center;padding:60px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;color:#9ca3af">
+  <div style="font-size:48px;margin-bottom:12px">📊</div>
+  <p>No course outlines found. Create outlines first in Course Outlines.</p>
+</div>
+{% endfor %}
+{% endblock %}

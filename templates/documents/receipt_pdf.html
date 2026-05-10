@@ -3,25 +3,32 @@
 <head>
 <meta charset="UTF-8"/>
 <style>
-@page { size: A4 portrait; margin: 2cm; }
-body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+@page { size: A4 portrait; margin: 2cm 2cm 2cm 2cm; }
+body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; margin:0; padding:0; }
 table { width: 100%; border-collapse: collapse; }
-.logo { width: 65px; height: 65px; }
-.school-name { font-size: 13pt; font-weight: bold; text-align: center; }
-.school-sub { font-size: 8pt; text-align: center; }
-.doc-title { font-size: 12pt; font-weight: bold; text-align: center;
-             text-transform: uppercase; margin-top: 4px; }
-.divider { border-top: 2px solid #1a5c38; margin: 6px 0; }
-.txn-box { background: #e8f5e0; border: 1px solid #1a5c38; padding: 8px 12px;
-           border-radius: 4px; margin: 10px 0; }
-.txn-id { font-size: 10pt; font-weight: bold; color: #1a5c38; }
-.txn-ref { font-size: 8.5pt; color: #333; }
-.passport-box { border: 1px solid #000; width: 85px; height: 100px;
-                text-align: center; vertical-align: middle; font-size: 7pt; color: #888; }
-.detail-table td { padding: 7px 10px; font-size: 9pt; border-bottom: 1px solid #eee; }
-.detail-label { font-weight: bold; width: 140px; color: #333; }
-.footer { font-size: 8pt; text-align: center; font-style: italic;
-          color: #666; margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 10px; }
+.hdr-school { font-size: 13pt; font-weight: bold; text-align: center; text-transform: uppercase; }
+.hdr-sub    { font-size: 8.5pt; text-align: center; margin-top: 2px; }
+.hdr-affil  { font-size: 8.5pt; text-align: center; font-style: italic; margin-top: 1px; }
+.divider    { border-top: 3px solid #1a5c38; margin: 8px 0; }
+.doc-title  { font-size: 13pt; font-weight: bold; text-align: center;
+              text-decoration: underline; text-transform: uppercase; margin: 6px 0 14px; }
+.ref-box    { background: #e8f5e0; border: 1px solid #1a5c38; border-radius: 4px;
+              padding: 10px 14px; margin-bottom: 14px; }
+.ref-id     { font-size: 11pt; font-weight: bold; color: #1a5c38; }
+.ref-no     { font-size: 9pt; color: #333; margin-top: 3px; }
+.dt-table td { padding: 8px 10px; font-size: 10pt; border-bottom: 1px solid #eee; }
+.dt-label   { font-weight: bold; width: 150px; color: #333; }
+.amount-box { background: #f0f8f0; border-radius: 8px; padding: 14px;
+              text-align: center; margin: 14px 0; }
+.amount-lbl { font-size: 9pt; color: #5a6e57; margin-bottom: 4px; }
+.amount-val { font-size: 22pt; font-weight: bold; color: #1a5c38; }
+.status-paid{ font-weight: bold; color: #1a5c38; font-size: 10pt; }
+.footer     { font-size: 8pt; text-align: center; font-style: italic;
+              color: #666; margin-top: 30px; border-top: 1px dashed #ccc;
+              padding-top: 10px; }
+.passport-box { border: 1px solid #000; width: 90px; height: 105px;
+                font-size: 7.5pt; color: #888; text-align: center;
+                vertical-align: middle; padding-top: 40px; }
 </style>
 </head>
 <body>
@@ -29,71 +36,62 @@ table { width: 100%; border-collapse: collapse; }
 <!-- HEADER -->
 <table>
 <tr>
-  <td style="width:72px"><img src="{{ CMT_LOGO }}" class="logo"/></td>
-  <td>
-    <div class="school-name">College of Management and Technology, Katsina</div>
-    <div class="school-sub">Affiliated to Federal University Dutsin-Ma</div>
-    <div class="doc-title">Official Payment Receipt</div>
+  <td style="width:72px; vertical-align:middle;">
+    <img src="{{ CMT_LOGO }}" style="width:66px;height:70px;"/>
   </td>
-  <td style="width:72px; text-align:right"><img src="{{ FUDMA_LOGO }}" class="logo"/></td>
+  <td style="text-align:center; vertical-align:middle; padding:0 8px;">
+    <div class="hdr-school">College of Management and Technology, Katsina</div>
+    <div class="hdr-affil">Affiliated to Federal University Dutsin-Ma</div>
+  </td>
+  <td style="width:72px; vertical-align:middle; text-align:right;">
+    <img src="{{ FUDMA_LOGO }}" style="width:66px;height:70px;"/>
+  </td>
 </tr>
 </table>
-
 <div class="divider"></div>
+<div class="doc-title">Official Payment Receipt</div>
 
-<!-- TXN BOX + PASSPORT -->
-<table style="margin-top:8px">
+<!-- REFERENCE BOX + PASSPORT -->
+<table>
 <tr>
-  <td style="width:65%; vertical-align:top">
-    <div class="txn-box">
-      <div class="txn-id">Transaction ID: {{ payment.reference }}</div>
-      <div class="txn-ref">Receipt #: {{ payment.receipt_no }}</div>
+  <td style="width:68%; vertical-align:top;">
+    <div class="ref-box">
+      <div class="ref-id">Transaction ID: {{ payment.reference }}</div>
+      <div class="ref-no">Receipt No: {{ payment.receipt_no }}</div>
     </div>
   </td>
-  <td style="width:35%; text-align:center; vertical-align:top; padding-left:10px">
+  <td style="width:32%; text-align:center; vertical-align:top; padding-left:10px;">
     {% if payment.student.photo %}
-    <img src="{{ payment.student.photo.path }}" style="width:85px;height:100px;object-fit:cover;border:1px solid #ccc"/>
+    <img src="{{ payment.student.photo.path }}" style="width:90px;height:105px;object-fit:cover;border:1px solid #000;"/>
     {% else %}
-    <div class="passport-box">2x2<br/>Passport<br/>Photo</div>
+    <div class="passport-box">2x2<br/>Passport</div>
     {% endif %}
   </td>
 </tr>
 </table>
 
-<!-- DETAILS -->
-<table class="detail-table" style="margin-top:10px">
-<tr>
-  <td class="detail-label">Student Name:</td>
-  <td>{{ payment.student.user.get_full_name }}</td>
-</tr>
-<tr>
-  <td class="detail-label">Matric Number:</td>
-  <td>{{ payment.student.reg_number }}</td>
-</tr>
-<tr>
-  <td class="detail-label">Amount Paid:</td>
-  <td style="font-weight:bold; font-size:11pt">NGN {{ payment.amount|floatformat:0 }}</td>
-</tr>
-<tr>
-  <td class="detail-label">Description:</td>
-  <td>{{ payment.get_payment_type_display }} School Fees — {{ session }} {{ semester.name }}</td>
-</tr>
-<tr>
-  <td class="detail-label">Payment Status:</td>
-  <td style="font-weight:bold; color:#1a5c38">PAID</td>
-</tr>
-<tr>
-  <td class="detail-label">Date Paid:</td>
-  <td>{{ payment.approved_at|date:"F jS, Y" }}</td>
-</tr>
-<tr>
-  <td class="detail-label">Semester:</td>
-  <td>{{ semester.name }} ({{ session }})</td>
-</tr>
+<!-- AMOUNT -->
+<div class="amount-box">
+  <div class="amount-lbl">Amount Paid</div>
+  <div class="amount-val">&#8358;{{ payment.amount|floatformat:0 }}</div>
+</div>
+
+<!-- DETAILS TABLE -->
+<table class="dt-table">
+<tr><td class="dt-label">Student Name:</td><td>{{ payment.student.user.get_full_name }}</td></tr>
+<tr><td class="dt-label">Matric Number:</td><td>{{ payment.student.reg_number }}</td></tr>
+<tr><td class="dt-label">Programme:</td><td>{{ payment.student.programme.name }}</td></tr>
+<tr><td class="dt-label">Payment Type:</td><td>{{ payment.get_payment_type_display }} School Fees</td></tr>
+<tr><td class="dt-label">Session:</td><td>{{ payment.session }}</td></tr>
+<tr><td class="dt-label">Semester:</td><td>{% if payment.semester %}{{ payment.semester }}{% else %}{{ semester }}{% endif %}</td></tr>
+<tr><td class="dt-label">Payment Status:</td><td class="status-paid">&#10003; PAID</td></tr>
+<tr><td class="dt-label">Date Approved:</td><td>{{ payment.approved_at|date:"d F Y, g:i A" }}</td></tr>
+<tr><td class="dt-label">Approved By:</td><td>{{ payment.approved_by.get_full_name }}</td></tr>
 </table>
 
 <div class="footer">
-  This is an official receipt of payment generated by the College Management System.
+  This receipt is computer-generated and is valid without a physical stamp or signature.<br/>
+  CMT Katsina Academic Portal
 </div>
 
 </body>

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'batch_operations' %}" style="color:#6b7280;text-decoration:none;font-size:20px">←</a>
+    <div>
+      <div class="page-title">Batch Generate Fee Invoices</div>
+      <div class="page-sub">Generate payment invoices for up to 20 students at once</div>
+    </div>
+  </div>
+</div>
+<style>
+.filter-bar{background:#fff;border-radius:10px;border:1px solid #e5e7eb;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.filter-bar select,.filter-bar input{padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px}
+.filter-bar label{font-size:11px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase}
+.btn{padding:9px 18px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer}
+.btn-green{background:#1a5c38;color:#fff}
+.btn-gray{background:#e5e7eb;color:#374151}
+.action-bar{background:#fff;border-radius:10px;border:1px solid #e5e7eb;padding:14px 20px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;font-size:13px}
+th{background:#1a5c38;color:#fff;padding:10px 14px;text-align:left}
+td{padding:9px 14px;border-bottom:1px solid #f3f4f6}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600}
+.badge-paid{background:#d1fae5;color:#065f46}
+.badge-none{background:#f3f4f6;color:#6b7280}
+.sel-count{font-weight:600;color:#1a5c38;font-size:14px}
+.notice{background:#d1fae5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:16px}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:16px}
+</style>
+
+{% if messages %}{% for m in messages %}
+<div class="notice">{{ m }}</div>
+{% endfor %}{% endif %}
+
+<!-- Filters -->
+<form method="get" class="filter-bar">
+  <div>
+    <label>Programme</label>
+    <select name="programme" onchange="this.form.submit()">
+      <option value="">All Programmes</option>
+      {% for p in programmes %}<option value="{{ p.pk }}" {% if selected_programme == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Level (by year)</label>
+    <select name="level" onchange="this.form.submit()">
+      <option value="">All Levels</option>
+      <option value="24" {% if selected_level == "24" %}selected{% endif %}>Diploma II (/24/)</option>
+      <option value="25" {% if selected_level == "25" %}selected{% endif %}>Diploma I (/25/)</option>
+    </select>
+  </div>
+</form>
+
+<form method="post">
+{% csrf_token %}
+<!-- Action Bar -->
+<div class="action-bar">
+  <div>
+    <label style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;margin-bottom:4px;display:block">Payment Type</label>
+    <select name="payment_type" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+      <option value="session">Full Session — ₦50,000</option>
+      <option value="semester">Semester Only — ₦25,000</option>
+    </select>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+    <span class="sel-count" id="selCount">0 selected</span>
+    <button type="button" class="btn btn-gray" onclick="selectAll()">Select All</button>
+    <button type="button" class="btn btn-gray" onclick="clearAll()">Clear</button>
+    <button type="submit" class="btn btn-green" onclick="return confirmSubmit()">⚡ Generate Invoices</button>
+  </div>
+</div>
+<div class="warn">⚠️ Maximum 20 students per batch. Students who already have an invoice of the same type will be skipped.</div>
+
+<!-- Students Table -->
+<table>
+  <thead><tr>
+    <th style="width:36px"><input type="checkbox" id="checkAll" onchange="toggleAll(this)"/></th>
+    <th>#</th><th>Name</th><th>Matric No</th><th>Programme</th><th>Level</th><th>Invoice Status</th>
+  </tr></thead>
+  <tbody>
+  {% for item in student_data %}
+  <tr>
+    <td><input type="checkbox" name="student_ids" value="{{ item.student.pk }}" class="row-check" onchange="updateCount()"/></td>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ item.student.user.get_full_name }}</td>
+    <td>{{ item.student.reg_number }}</td>
+    <td>{{ item.student.programme }}</td>
+    <td>{{ item.student.level }}</td>
+    <td>{% if item.has_any %}<span class="badge badge-paid">Has Invoice</span>{% else %}<span class="badge badge-none">No Invoice</span>{% endif %}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" style="text-align:center;padding:24px;color:#9ca3af">No students found</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</form>
+
+<script>
+function updateCount(){
+  const n=document.querySelectorAll(".row-check:checked").length;
+  document.getElementById("selCount").textContent=n+" selected";
+  if(n>20)document.getElementById("selCount").style.color="#dc2626";
+  else document.getElementById("selCount").style.color="#1a5c38";
+}
+function toggleAll(cb){document.querySelectorAll(".row-check").forEach(c=>c.checked=cb.checked);updateCount();}
+function selectAll(){document.querySelectorAll(".row-check").forEach(c=>c.checked=true);updateCount();}
+function clearAll(){document.querySelectorAll(".row-check").forEach(c=>c.checked=false);updateCount();}
+function confirmSubmit(){
+  const n=document.querySelectorAll(".row-check:checked").length;
+  if(n===0){alert("Please select at least one student.");return false;}
+  if(n>20){alert("Maximum 20 students per batch. Please deselect some.");return false;}
+  return confirm("Generate invoices for "+n+" student(s)?");
+}
+</script>
+{% endblock %}

@@ -3,29 +3,36 @@
 <head>
 <meta charset="UTF-8"/>
 <style>
-@page { size: A4 portrait; margin: 1.5cm; }
-body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; }
+@page { size: A4 portrait; margin: 1.2cm 1.5cm 1.5cm 1.5cm; }
+body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; margin:0; padding:0; }
 table { width: 100%; border-collapse: collapse; }
-.logo { width: 65px; height: 65px; }
-.school-name { font-size: 12pt; font-weight: bold; text-align: center; text-transform: uppercase; }
-.school-sub { font-size: 8pt; text-align: center; }
-.affil-uni { font-size: 9pt; font-weight: bold; text-align: center; text-transform: uppercase; }
-.contact { font-size: 7.5pt; text-align: center; }
-.divider { border-top: 2px solid #1a5c38; margin: 5px 0; }
-.office { font-size: 9pt; text-align: center; font-style: italic; margin: 3px 0; }
-.doc-title { font-size: 12pt; font-weight: bold; text-align: center; text-transform: uppercase;
-             text-decoration: underline; margin: 5px 0 8px 0; }
-.info-label { font-weight: bold; font-size: 8.5pt; width: 110px; vertical-align: middle; }
-.info-val { font-size: 8.5pt; border-bottom: 1px solid #000; padding-bottom: 1px; }
-.passport-box { border: 1px solid #000; width: 85px; height: 100px; text-align: center;
-                vertical-align: middle; font-size: 7pt; color: #888; }
-.courses-table th { background: #1a5c38; color: #fff; padding: 5px 6px; font-size: 8.5pt;
-                    border: 1px solid #1a5c38; text-align: left; }
-.courses-table td { border: 1px solid #aaa; padding: 5px 6px; font-size: 8.5pt; }
-.total-row td { font-weight: bold; background: #f0f8f0; border: 1px solid #aaa; }
-.declaration { font-size: 8pt; text-align: center; font-style: italic; margin: 8px 0 4px; }
-.decl-title { font-size: 10pt; font-weight: bold; text-align: center; text-decoration: underline;
-              text-transform: uppercase; margin: 10px 0 4px; }
+.hdr-school { font-size: 13pt; font-weight: bold; text-transform: uppercase; line-height: 1.2; }
+.hdr-affil { font-size: 8.5pt; margin-top: 3px; }
+.hdr-uni { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
+.hdr-contact { font-size: 8pt; margin-top: 3px; }
+.office { font-size: 9pt; font-style: italic; text-align: center; margin: 5px 0 2px; }
+.form-title { font-size: 13pt; font-weight: bold; text-align: center;
+              text-decoration: underline; text-transform: uppercase; margin: 4px 0 10px; }
+.si-heading { font-weight: bold; font-size: 9pt; margin-bottom: 4px; }
+.si-row { font-size: 9pt; line-height: 1.8; }
+.ct th { background: #2d6a4f; color: #fff; padding: 6px 8px; font-size: 9pt;
+         font-weight: bold; text-align: left; border: 1px solid #2d6a4f; }
+.ct td { border: 1px solid #ccc; padding: 6px 8px; font-size: 9pt; }
+.ct td:first-child { text-align: center; width: 30px; }
+.total-row td { font-weight: bold; text-align: right; border: none;
+                font-size: 9.5pt; padding: 6px 8px 0 0; }
+.decl-title { font-size: 10pt; font-weight: bold; text-align: center;
+              margin: 18px 0 6px; text-transform: uppercase; }
+.decl-text { font-size: 8.5pt; font-style: italic; text-align: center; margin-bottom: 20px; }
+.sig-name { font-weight: bold; font-size: 9pt; text-align: center; }
+.sig-sub { font-size: 8pt; text-align: center; color: #333; }
+.stamp-box { border: 1px dashed #000; height: 55px; font-size: 8pt;
+             font-style: italic; color: #888; text-align: center;
+             vertical-align: middle; padding-top: 20px; }
+.passport-box { border: 1px solid #000; width: 100px; height: 120px;
+                text-align: center; vertical-align: middle;
+                font-size: 8pt; font-weight: bold; color: #555;
+                padding-top: 48px; }
 </style>
 </head>
 <body>
@@ -33,132 +40,117 @@ table { width: 100%; border-collapse: collapse; }
 <!-- HEADER -->
 <table>
 <tr>
-  <td style="width:72px"><img src="{{ CMT_LOGO }}" class="logo"/></td>
-  <td>
-    <div class="school-name">College of Management and Technology Katsina</div>
-    <div class="affil-uni">Affiliated to Federal University Dutsin-Ma</div>
-    <div class="contact">Tel: 08028176640 &nbsp;|&nbsp; Email: academicaffairs@cmtkatsina.com.ng</div>
+  <td style="width:100px; vertical-align:middle;">
+    <img src="{{ CMT_LOGO }}" style="width:95px; height:95px;"/>
   </td>
-  <td style="width:72px; text-align:right"><img src="{{ FUDMA_LOGO }}" class="logo"/></td>
+  <td style="text-align:center; vertical-align:middle; padding:0 6px;">
+    <div class="hdr-school">College of Management and Technology Katsina</div>
+    <div class="hdr-affil">Affiliate of</div>
+    <div class="hdr-uni">Federal University Dutsin-Ma</div>
+    <div class="hdr-contact">Tel.: 08028176640 &nbsp;|&nbsp; Email: academicaffairs@cmtkatsina.com.ng</div>
+  </td>
+  <td style="width:100px; vertical-align:middle; text-align:right;">
+    <img src="{{ FUDMA_LOGO }}" style="width:95px; height:95px;"/>
+  </td>
+  <td style="width:25%; vertical-align:top; text-align:center; padding-left:6px;">
+    {% if student.photo %}
+    <img src="{{ student.photo.path }}" style="width:120px;height:130px;object-fit:cover;border:1px solid #000;"/>
+    {% else %}
+    <div style="border:1px solid #000;width:120px;height:130px;font-size:7.5pt;color:#555;text-align:center;padding-top:34px;">2x2<br/>Passport</div>
+    {% endif %}
+  </td>
 </tr>
 </table>
 
-<div class="divider"></div>
 <div class="office">(OFFICE OF THE REGISTRAR)</div>
-<div class="doc-title">Student's Course Registration Form</div>
+<div class="form-title">Student's Course Registration Form</div>
 
 <!-- STUDENT INFO + PASSPORT -->
-<table style="width:100%">
+<table>
 <tr>
-  <td style="width:72%; vertical-align:top">
-    <table style="width:100%">
-      <tr>
-        <td class="info-label">Name:</td>
-        <td class="info-val">{{ student.user.get_full_name }}</td>
-      </tr>
-      <tr><td style="height:4px"></td></tr>
-      <tr>
-        <td class="info-label">Matric No:</td>
-        <td class="info-val">{{ student.reg_number }}</td>
-      </tr>
-      <tr><td style="height:4px"></td></tr>
-      <tr>
-        <td class="info-label">Department:</td>
-        <td class="info-val">{{ student.programme }}</td>
-      </tr>
-      <tr><td style="height:4px"></td></tr>
-      <tr>
-        <td class="info-label">Enrollment Year:</td>
-        <td class="info-val">{{ student.year_of_admission }}</td>
-      </tr>
-      <tr><td style="height:4px"></td></tr>
-      <tr>
-        <td class="info-label">Semester:</td>
-        <td class="info-val">{{ semester.name }}</td>
-      </tr>
-      <tr><td style="height:4px"></td></tr>
-      <tr>
-        <td class="info-label">Academic Year:</td>
-        <td class="info-val">{{ session }}</td>
-      </tr>
-    </table>
+  <td style="vertical-align:top; width:68%;">
+    <div class="si-heading">Student Information</div>
+    <div class="si-row">Name: {{ student.user.get_full_name }}</div>
+    <div class="si-row">Matric No: {{ student.reg_number }}</div>
+    <div class="si-row">Department: {{ student.programme.name }}</div>
+    <div class="si-row">Enrollment Year: {{ student.year_of_admission }}</div>
+    <div class="si-row">Semester: {{ semester.name }}</div>
+    <div class="si-row">Academic Year: {{ session }}</div>
   </td>
-  <td style="width:28%; text-align:center; vertical-align:top; padding-left:10px">
+  <td style="width:32%; text-align:center; vertical-align:top; padding-left:10px;">
     {% if student.photo %}
-    <img src="{{ student.photo.path }}" style="width:85px;height:100px;object-fit:cover;border:1px solid #ccc"/>
+    <img src="{{ student.photo.path }}" style="width:100px;height:120px;object-fit:cover;border:1px solid #000;"/>
     {% else %}
-    <div class="passport-box">2x2<br/>Passport<br/>Photo</div>
+    <div class="passport-box">2x2<br/>Passport</div>
     {% endif %}
   </td>
 </tr>
 </table>
 
 <!-- COURSES TABLE -->
-<table class="courses-table" style="margin-top:12px">
+<table class="ct" style="margin-top:12px;">
 <thead>
   <tr>
-    <th style="width:28px">S/N</th>
-    <th style="width:90px">Course Code</th>
+    <th style="width:30px;">S/N</th>
+    <th style="width:95px;">Course Code</th>
     <th>Course Title</th>
-    <th style="width:45px; text-align:center">Units</th>
-    <th style="width:100px">Signature</th>
+    <th style="width:50px; text-align:center;">Units</th>
+    <th style="width:100px;">Signature</th>
   </tr>
 </thead>
 <tbody>
-  {% for reg in registrations %}
-  <tr>
-    <td style="text-align:center">{{ forloop.counter }}</td>
-    <td>{{ reg.course.code }}</td>
-    <td>{{ reg.course.title }}</td>
-    <td style="text-align:center">{{ reg.course.unit }}</td>
-    <td></td>
-  </tr>
-  {% empty %}
-  <tr><td colspan="5" style="text-align:center;color:#999;padding:10px">No courses registered</td></tr>
-  {% endfor %}
-  <tr class="total-row">
-    <td colspan="3" style="text-align:right; padding-right:10px">Total Units:</td>
-    <td style="text-align:center; font-weight:bold">{{ total_units }}</td>
-    <td></td>
-  </tr>
+{% for reg in registrations %}
+<tr>
+  <td>{{ forloop.counter }}</td>
+  <td>{{ reg.course.code }}</td>
+  <td>{{ reg.course.title }}</td>
+  <td style="text-align:center;">{{ reg.course.unit }}</td>
+  <td></td>
+</tr>
+{% empty %}
+<tr><td colspan="5" style="text-align:center;color:#999;padding:10px;">No courses registered</td></tr>
+{% endfor %}
+<tr>
+  <td colspan="3" style="border:none; padding:0;"></td>
+  <td colspan="2" style="border:none; text-align:right; font-weight:bold; font-size:9.5pt; padding:6px 0 0 0;">
+    Total Units: {{ total_units }}
+  </td>
+</tr>
 </tbody>
 </table>
 
 <!-- DECLARATION -->
 <div class="decl-title">Declaration &amp; Approval</div>
-<div class="declaration">I certify that the courses listed above represent my registration for the stated semester.</div>
+<div class="decl-text">I certify that the courses listed above represent my registration for the stated semester.</div>
 
-<table style="margin-top:20px; width:100%">
+<table style="margin-top:10px;">
 <tr>
-  <td style="width:33%; text-align:center; padding:0 8px">
-    <div style="border-top:1px solid #000; padding-top:4px; font-size:8pt">
-      <div style="font-weight:bold">Student</div>
-      <div>Signature &amp; Date</div>
+  <td style="width:33%; text-align:center; padding:0 10px;">
+    <div style="border-top:1px solid #000; padding-top:4px;">
+      <div class="sig-name">Student</div>
+      <div class="sig-sub">Signature &amp; Date</div>
     </div>
   </td>
-  <td style="width:33%; text-align:center; padding:0 8px">
-    <div style="border-top:1px solid #000; padding-top:4px; font-size:8pt">
-      <div style="font-weight:bold">Head of Department</div>
-      <div>Signature &amp; Date</div>
+  <td style="width:33%; text-align:center; padding:0 10px;">
+    <div style="border-top:1px solid #000; padding-top:4px;">
+      <div class="sig-name">Head of Department</div>
+      <div class="sig-sub">Signature &amp; Date</div>
     </div>
   </td>
-  <td style="width:33%; text-align:center; padding:0 8px">
-    <div style="border-top:1px solid #000; padding-top:4px; font-size:8pt">
-      <div style="font-weight:bold">Registrar</div>
-      <div>Signature &amp; Date</div>
+  <td style="width:33%; text-align:center; padding:0 10px;">
+    <div style="border-top:1px solid #000; padding-top:4px;">
+      <div class="sig-name">Registrar</div>
+      <div class="sig-sub">Signature &amp; Date</div>
     </div>
   </td>
 </tr>
 </table>
 
-<table style="margin-top:16px; width:100%">
+<table style="margin-top:18px;">
 <tr>
-  <td style="width:60%"></td>
-  <td style="width:40%">
-    <div style="border:1px dashed #000; height:50px; text-align:center;
-                vertical-align:middle; font-size:8pt; color:#888; padding-top:16px">
-      Official Stamp
-    </div>
+  <td style="width:55%;"></td>
+  <td style="width:45%;">
+    <div class="stamp-box">Official Stamp</div>
   </td>
 </tr>
 </table>

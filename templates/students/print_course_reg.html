@@ -13,7 +13,7 @@ body{font-family:"DM Sans",sans-serif;background:#f4f6f3;padding:20px}
 .header .center h1{font-size:15px;font-weight:700;text-transform:uppercase}
 .header .center p{font-size:11px;color:#555;margin-top:2px}
 .header .center .affil{font-style:italic;font-size:11px}
-.header .center .univ{color:#c00;font-weight:700;font-size:12px}
+.header .center .univ{color:#c00;font-weight:700;font-size:12pt}
 hr{border:none;border-top:2px solid #0d5c2f;margin:10px 0}
 .form-title{font-family:"EB Garamond",serif;font-size:18px;font-weight:700;text-align:center;text-decoration:underline;text-transform:uppercase;margin:10px 0}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px}
@@ -44,7 +44,13 @@ td{border:1px solid #aaa;padding:7px 10px}
       <p class="univ">Federal University Dutsin-Ma, Katsina</p>
     </div>
     <div class="logos">
-      <img src="{% static 'images/university_logo.png' %}" onerror="this.style.display='none'" alt="FUDMA"/>
+    {% if student.photo %}
+    <img src="{{ student.photo.url }}" style="width:120px;height:130px;object-fit:cover;border:1px solid #000;"/>
+    {% else %}
+    <div style="border:1px solid #000;width:120px;height:130px;font-size:7.5pt;color:#555;text-align:center;padding-top:34px;">2x2<br/>Passport</div>
+    {% endif %}
+
+      <!-- <img src="{% static 'images/university_logo.png' %}" onerror="this.style.display='none'" alt="FUDMA"/> -->
     </div>
   </div>
   <hr/>
@@ -53,7 +59,7 @@ td{border:1px solid #aaa;padding:7px 10px}
   <div class="info-grid">
     <div class="info-row"><span class="lbl">Name:</span><span class="val">&nbsp;{{ student.user.get_full_name }}</span></div>
     <div class="info-row"><span class="lbl">Matric No:</span><span class="val">&nbsp;{{ student.reg_number }}</span></div>
-    <div class="info-row"><span class="lbl">Programme:</span><span class="val">&nbsp;{{ student.programme }}</span></div>
+    <div class="info-row"><span class="lbl">Programme:</span><span class="val">&nbsp;{{ student.programme.name }}</span></div>
     <div class="info-row"><span class="lbl">Level:</span><span class="val">&nbsp;{{ student.level }}</span></div>
     <div class="info-row"><span class="lbl">Session:</span><span class="val">&nbsp;{{ student.current_session }}</span></div>
     <div class="info-row"><span class="lbl">Semester:</span><span class="val">&nbsp;{{ semester }}</span></div>
@@ -68,7 +74,7 @@ td{border:1px solid #aaa;padding:7px 10px}
         <td>{{ reg.course.code }}</td>
         <td>{{ reg.course.title }}</td>
         <td style="text-align:center">{{ reg.course.unit }}</td>
-        <td style="text-align:center">{% if reg.is_carryover %}C/O{% else %}New{% endif %}</td>
+        <td style="text-align:center">{% if reg.is_carryover %}C/O{% else %}Core{% endif %}</td>
       </tr>
       {% empty %}
       <tr><td colspan="5" style="text-align:center;color:#999;padding:16px">No courses registered</td></tr>

@@ -19,4 +19,13 @@ urlpatterns = [
     path("course-structure/<int:outline_id>/delete/", views.delete_outline, name="delete_outline"),
     path("payment/<int:payment_id>/approve/", views.approve_payment, name="registrar_approve_payment"),
     path("payment/<int:payment_id>/receipt/", views.payment_receipt, name="registrar_payment_receipt"),
+    path("batch/", views.batch_operations, name="batch_operations"),
+    path("batch/fees/", views.batch_generate_fees, name="batch_generate_fees"),
+    path("batch/approve/", views.batch_approve_payments, name="batch_approve_payments"),
+    path("batch/register/", views.batch_register_courses, name="batch_register_courses"),
+    path("results/", views.result_sheet_list, name="result_sheet_list"),
+    path("results/<int:outline_id>/enter/", views.result_entry, name="result_entry"),
+    path("results/<int:outline_id>/pdf/", views.result_sheet_pdf, name="result_sheet_pdf"),
+    path("results/<int:outline_id>/upload/", views.bulk_upload_results, name="bulk_upload_results"),
+    path("results/<int:outline_id>/template/", views.download_result_template, name="download_result_template"),
 ]
