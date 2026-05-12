@@ -325,7 +325,7 @@ def batch_generate_fees(request):
         has_any = Payment.objects.filter(student=s, session=session, status__in=["pending","approved"]).exists()
         student_data.append({"student": s, "has_any": has_any})
     if request.method == "POST":
-        student_ids  = request.POST.getlist("student_ids")[:20]
+        student_ids  = request.POST.getlist("student_ids")[:40]
         payment_type = request.POST.get("payment_type", "session")
         amount       = 50000 if payment_type == "session" else 25000
         generated = skipped = 0
@@ -363,7 +363,7 @@ def batch_approve_payments(request):
     if pay_type:
         payments = payments.filter(payment_type=pay_type)
     if request.method == "POST":
-        payment_ids = request.POST.getlist("payment_ids")[:20]
+        payment_ids = request.POST.getlist("payment_ids")[:40]
         approved = 0
         for pid in payment_ids:
             try:
@@ -388,12 +388,24 @@ def batch_approve_payments(request):
 @login_required
 def batch_register_courses(request):
     from academics.models import CourseOutline, CourseRegistration
-    semester   = Semester.objects.filter(is_active=True).first()
-    programmes = Programme.objects.all()
-    outlines   = CourseOutline.objects.filter(is_active=True).select_related("programme","semester")
-    programme_id = request.GET.get("programme")
-    level        = request.GET.get("level")
-    outline_id   = request.GET.get("outline")
+
+    # Allow selecting any semester
+    selected_semester_id = request.GET.get("semester_id") or request.POST.get("semester_id")
+    if selected_semester_id:
+        semester = Semester.objects.filter(pk=selected_semester_id).first()
+    else:
+        semester = Semester.objects.filter(is_active=True).first()
+
+    all_semesters = Semester.objects.select_related("session").all().order_by("-session__name","name")
+    programmes    = Programme.objects.all()
+    outlines      = CourseOutline.objects.filter(is_active=True).select_related("programme","semester")
+    programme_id  = request.GET.get("programme")
+    level         = request.GET.get("level")
+    outline_id    = request.GET.get("outline")
+
+    # Filter outlines by selected semester
+    if semester:
+        outlines = outlines.filter(semester=semester)
     students = Student.objects.select_related("user","programme").all().order_by("reg_number")
     if programme_id:
         students = students.filter(programme_id=programme_id)
@@ -410,7 +422,7 @@ def batch_register_courses(request):
         count = CourseRegistration.objects.filter(student=s, semester=semester).count() if semester else 0
         student_data.append({"student": s, "registered_count": count, "already_registered": count > 0})
     if request.method == "POST":
-        student_ids = request.POST.getlist("student_ids")[:20]
+        student_ids = request.POST.getlist("student_ids")[:40]
         outline_pk  = request.POST.get("outline_id")
         registered = skipped = 0
         try:
@@ -433,8 +445,10 @@ def batch_register_courses(request):
         messages.success(request, f"Registered {len(courses)} course(s) for {registered} student(s).")
         return redirect("batch_register_courses")
     context = {"student_data": student_data, "outlines": outlines, "programmes": programmes,
-               "semester": semester, "selected_programme": programme_id,
-               "selected_level": level, "selected_outline": selected_outline, "outline_id": outline_id}
+               "semester": semester, "all_semesters": all_semesters,
+               "selected_programme": programme_id, "selected_level": level,
+               "selected_outline": selected_outline, "outline_id": outline_id,
+               "selected_semester_id": str(selected_semester_id) if selected_semester_id else ""}
     return render(request, "registrar/batch_register_courses.html", context)
 
 
@@ -1095,3 +1109,344 @@ def download_result_template(request, outline_id):
         writer.writerow(row)
 
     return response
+
+
+# ─────────────────────────────────────────────────────────
+# GRADUATION LIST
+# ─────────────────────────────────────────────────────────
+
+@login_required
+def graduation_list_view(request):
+    from academics.models import CourseRegistration
+    programmes = Programme.objects.all()
+    sessions   = Session.objects.all().order_by("-name")
+    semesters  = Semester.objects.all().order_by("name")
+
+    programme_id = request.GET.get("programme")
+    session_id   = request.GET.get("session")
+    semester_id  = request.GET.get("semester")
+    level_filter = request.GET.get("level", "24")  # 24=DipII, 25=DipI
+
+    selected_programme = None
+    selected_session   = Session.objects.get(pk=session_id) if session_id else Session.objects.filter(is_active=True).first()
+    selected_semester  = Semester.objects.get(pk=semester_id) if semester_id else Semester.objects.filter(is_active=True).first()
+    graduating_students = []
+
+    if programme_id:
+        try:
+            selected_programme = Programme.objects.get(pk=programme_id)
+            students = Student.objects.filter(
+                programme=selected_programme,
+                reg_number__contains=f"/{level_filter}/"
+            ).select_related("user","programme").order_by("reg_number")
+
+            for student in students:
+                # Check failed courses UP TO selected semester
+                if semester_id:
+                    failed = CourseRegistration.objects.filter(
+                        student=student, status="failed"
+                    ).count()
+                else:
+                    failed = CourseRegistration.objects.filter(
+                        student=student, status="failed"
+                    ).count()
+
+                # All passed courses up to selected semester
+                all_regs = CourseRegistration.objects.filter(
+                    student=student, status="passed"
+                ).select_related("course")
+
+                tce = sum(r.course.unit for r in all_regs if r.course)
+                tgp = sum(
+                    (5 if r.score and r.score>=70 else 4 if r.score and r.score>=60 else
+                     3 if r.score and r.score>=50 else 2 if r.score and r.score>=45 else
+                     1 if r.score and r.score>=40 else 0) * r.course.unit
+                    for r in all_regs if r.course and r.score is not None
+                )
+                cgpa = round(tgp/tce, 2) if tce > 0 else 0.0
+                if cgpa >= 4.50:   cls = "DISTINCTION"
+                elif cgpa >= 3.50: cls = "UPPER CREDIT"
+                elif cgpa >= 2.50: cls = "LOWER CREDIT"
+                elif cgpa >= 1.00: cls = "PASS"
+                else:              cls = "INCOMPLETE"
+                graduating_students.append({
+                    "student": student, "failed": failed, "tce": tce,
+                    "tgp": tgp, "cgpa": f"{cgpa:.2f}", "diploma_class": cls,
+                    "can_graduate": failed == 0 and tce > 0,
+                })
+            graduating_students.sort(key=lambda x: x["student"].reg_number)
+        except Programme.DoesNotExist:
+            pass
+
+    context = {
+        "programmes":          programmes,
+        "sessions":            sessions,
+        "semesters":           semesters,
+        "selected_programme":  selected_programme,
+        "selected_session":    selected_session,
+        "selected_semester":   selected_semester,
+        "selected_level":      level_filter,
+        "graduating_students": graduating_students,
+        "grad_count":          sum(1 for s in graduating_students if s["can_graduate"]),
+        "carryover_count":     sum(1 for s in graduating_students if not s["can_graduate"]),
+    }
+    return render(request, "registrar/graduation_list.html", context)
+
+
+@login_required
+def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None, level='24'):
+    import os
+    from io import BytesIO
+    from django.http import HttpResponse
+    from django.conf import settings
+    from reportlab.lib.pagesizes import landscape, A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas as rl_canvas
+    from academics.models import CourseRegistration as CR
+
+    programme = get_object_or_404(Programme, pk=programme_id)
+    session   = Session.objects.get(pk=session_id) if session_id else Session.objects.filter(is_active=True).first()
+    semester  = Semester.objects.get(pk=semester_id) if semester_id else Semester.objects.filter(is_active=True).first()
+    CMT_LOGO   = os.path.join(settings.BASE_DIR, "static", "images", "cmt_logo.png.png")
+    FUDMA_LOGO = os.path.join(settings.BASE_DIR, "static", "images", "fudma_logo.png_optimized_250.png")
+    GREEN = colors.HexColor("#1a5c38")
+    GOLD  = colors.HexColor("#c8881a")
+    LGRAY = colors.HexColor("#f0f4f0")
+    WHITE = colors.white
+    BLACK = colors.black
+
+    students = Student.objects.filter(
+        programme=programme, reg_number__contains=f"/{level}/"
+    ).select_related("user","programme").order_by("reg_number")
+
+    grad_list = []
+    for st in students:
+        if CR.objects.filter(student=st, status="failed").count() > 0:
+            continue
+        regs = CR.objects.filter(student=st, status="passed").select_related("course")
+        tce = sum(r.course.unit for r in regs if r.course)
+        tgp = sum((5 if r.score>=70 else 4 if r.score>=60 else 3 if r.score>=50
+                   else 2 if r.score>=45 else 1 if r.score>=40 else 0)*r.course.unit
+                  for r in regs if r.course and r.score is not None)
+        cgpa = round(tgp/tce,2) if tce>0 else 0.0
+        cls = ("DISTINCTION" if cgpa>=4.50 else "UPPER CREDIT" if cgpa>=3.50
+               else "LOWER CREDIT" if cgpa>=2.50 else "PASS")
+        parts = st.reg_number.split("/")
+        yr = parts[2] if len(parts)>=3 else "24"
+        try:    ya = "20{}/20{}".format(yr, int(yr)+1)
+        except: ya = "2024/2025"
+        grad_list.append({
+            "st": st,
+            "gender": "FEMALE" if (getattr(st,"gender","M") or "M")=="F" else "MALE",
+            "dob": st.date_of_birth.strftime("%d/%m/%Y") if getattr(st,"date_of_birth",None) else "",
+            "state": (getattr(st,"state_of_origin",None) or "KATSINA").upper()[:12],
+            "entry": (getattr(st,"entry_mode",None) or "O-LEVEL").upper(),
+            "ya": ya, "tce": tce,
+            "tgp": "{:.2f}".format(tgp), "cgpa": "{:.2f}".format(cgpa), "cls": cls,
+        })
+
+    W, H = landscape(A4)
+    buf  = BytesIO()
+    c    = rl_canvas.Canvas(buf, pagesize=landscape(A4))
+    cols = [
+        ("S/N",9), ("MATRIC NO",27), ("FULL NAME",37), ("GENDER",13),
+        ("DATE OF\nBIRTH",18), ("STATE OF\nORIGIN",18), ("CURRENT\nLEVEL",17),
+        ("ENTRY\nLEVEL",15), ("ENTRY\nMODE",13), ("YEAR\nADMITTED",17),
+        ("TCE",9), ("TGP",12), ("CGPA",11), ("CLASS OF\nDIPLOMA",23), ("REMARK",12),
+    ]
+    cols = [(lbl, w*mm) for lbl,w in cols]
+    TW   = sum(w for _,w in cols)
+    X0   = (W-TW)/2
+    HH   = 10*mm
+    RH   = 8*mm
+    sem_lbl = "FIRST SEMESTER" if semester and "first" in semester.name.lower() else "SECOND SEMESTER"
+
+    def frame(pg):
+        c.setStrokeColor(GREEN); c.setLineWidth(2.5)
+        c.rect(8*mm,8*mm,W-16*mm,H-16*mm)
+        c.setLineWidth(0.6); c.setStrokeColor(GOLD)
+        c.rect(10*mm,10*mm,W-20*mm,H-20*mm)
+        for path,x in [(CMT_LOGO,13*mm),(FUDMA_LOGO,W-40*mm)]:
+            try: c.drawImage(path,x,H-40*mm,27*mm,32*mm,preserveAspectRatio=True,mask="auto")
+            except: pass
+        c.setFillColor(GREEN); c.setFont("Helvetica-Bold",13)
+        c.drawCentredString(W/2,H-18*mm,"COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA")
+        c.setFillColor(BLACK); c.setFont("Helvetica",8.5)
+        c.drawCentredString(W/2,H-23*mm,"11, Batsari Road, Day Kofar Yandaka, Katsina")
+        c.setFont("Helvetica-Oblique",8.5); c.drawCentredString(W/2,H-28*mm,"Affiliated to")
+        c.setFont("Helvetica-Bold",10.5); c.drawCentredString(W/2,H-33*mm,"Federal University Dutsin-Ma Katsina")
+        c.setStrokeColor(GREEN); c.setLineWidth(1.8)
+        c.line(13*mm,H-36*mm,W-13*mm,H-36*mm)
+        c.setStrokeColor(GOLD); c.setLineWidth(0.5)
+        c.line(13*mm,H-37.5*mm,W-13*mm,H-37.5*mm)
+        c.setFillColor(BLACK); c.setFont("Helvetica-Bold",10)
+        c.drawCentredString(W/2,H-41*mm,programme.name.upper())
+        c.setFont("Helvetica-Bold",9)
+        c.drawCentredString(W/2,H-46*mm,"GRADUATION LIST {} ACADEMIC SESSION".format(session))
+        c.setFont("Helvetica",8.5); c.drawCentredString(W/2,H-50*mm,sem_lbl)
+        c.setFont("Helvetica-Bold",8.5)
+        c.drawCentredString(W/2,H-54*mm,"SUBMISSION TO THE CPCS ACADEMIC BOARD")
+        if pg>1:
+            c.setFont("Helvetica-Oblique",7.5)
+            c.drawCentredString(W/2,H-58*mm,"(Continued - Page {})".format(pg))
+
+    def col_hdr(y):
+        x=X0; c.setFillColor(GREEN); c.rect(X0,y-HH,TW,HH,fill=1,stroke=0)
+        for lbl,w in cols:
+            c.setFillColor(WHITE); c.setFont("Helvetica-Bold",5.8)
+            ls=lbl.split("\n")
+            if len(ls)==2:
+                c.drawCentredString(x+w/2,y-HH/2+1.5*mm,ls[0])
+                c.drawCentredString(x+w/2,y-HH/2-1.8*mm,ls[1])
+            else:
+                c.drawCentredString(x+w/2,y-HH/2-1*mm,ls[0])
+            c.setStrokeColor(WHITE); c.setLineWidth(0.3)
+            c.line(x,y-HH,x,y); x+=w
+        c.line(x,y-HH,x,y)
+        return y-HH
+
+    def data_row(idx,row,y):
+        st=row["st"]
+        c.setFillColor(LGRAY if idx%2==0 else WHITE)
+        c.rect(X0,y-RH,TW,RH,fill=1,stroke=0)
+        c.setStrokeColor(colors.HexColor("#cccccc")); c.setLineWidth(0.25)
+        c.line(X0,y-RH,X0+TW,y-RH)
+        name=st.user.get_full_name().upper()[:28]
+        vals=[str(idx+1),st.reg_number,name,row["gender"],row["dob"],
+              row["state"],"DIPLOMA II","DIPLOMA I",row["entry"],
+              row["ya"],str(row["tce"]),row["tgp"],row["cgpa"],row["cls"],"PASS"]
+        x=X0; c.setFillColor(BLACK)
+        for vi,(val,(_,w)) in enumerate(zip(vals,cols)):
+            if vi==13:
+                c.setFillColor(GREEN if "UPPER" in val or "DIST" in val else BLACK)
+                c.setFont("Helvetica-Bold",5.5)
+                c.drawCentredString(x+w/2,y-RH/2-1.5*mm,val)
+                c.setFillColor(BLACK)
+            elif vi in [0,10,11,12,14]:
+                c.setFont("Helvetica",5.8)
+                c.drawCentredString(x+w/2,y-RH/2-1.5*mm,val)
+            else:
+                c.setFont("Helvetica",5.5)
+                c.drawString(x+0.8*mm,y-RH/2-1.5*mm,val)
+            c.setStrokeColor(colors.HexColor("#cccccc")); c.setLineWidth(0.2)
+            c.line(x,y-RH,x,y); x+=w
+        c.line(x,y-RH,x,y)
+        return y-RH
+
+    def footer(y_below):
+        y=y_below-8*mm
+        c.setStrokeColor(GREEN); c.setLineWidth(0.6)
+        c.rect(13*mm,y-24*mm,55*mm,24*mm,stroke=1,fill=0)
+        c.setFont("Helvetica-Bold",7.5); c.setFillColor(GREEN)
+        c.drawString(16*mm,y-5*mm,"GRADING SCALE")
+        c.setFillColor(BLACK)
+        for ri,(pt,rm) in enumerate([("4.50-5.00","DISTINCTION"),("3.50-4.49","UPPER CREDIT"),
+                                     ("2.50-3.49","LOWER CREDIT"),("1.00-2.49","PASS")]):
+            ry=y-10*mm-ri*4*mm
+            c.setFont("Helvetica-Bold",7); c.drawString(16*mm,ry,pt)
+            c.setFont("Helvetica",7); c.drawString(38*mm,ry,rm)
+        sw=55*mm; sy=y-12*mm
+
+        # Row 1: Provost-CMT (after grading box) and Head of Department (right)
+        for sx,title in [(78*mm,"Provost - CMT"),
+                         (W-75*mm,"Head of Department")]:
+            c.setStrokeColor(BLACK); c.setLineWidth(0.8)
+            c.line(sx,sy,sx+sw,sy)
+            c.setFont("Helvetica",8); c.setFillColor(BLACK)
+            c.drawCentredString(sx+sw/2,sy-5*mm,title)
+
+        # Row 2: Director - CODL, FUDMA (center, below)
+        sy2 = sy - 18*mm
+        c.setStrokeColor(BLACK); c.setLineWidth(0.8)
+        c.line(W/2, sy2, W/2+sw, sy2)
+        c.setFont("Helvetica",8); c.setFillColor(BLACK)
+        c.drawCentredString(W/2+sw/2, sy2-5*mm, "Director - CODL, FUDMA")
+
+    TOP=H-57*mm; BOT=12*mm; FSPC=46*mm
+    pg=1; frame(pg); y=col_hdr(TOP); ty=TOP; ly=y
+
+    for i,row in enumerate(grad_list):
+        remaining=len(grad_list)-i
+        limit=BOT+FSPC if remaining<=int((TOP-BOT-FSPC)/RH) else BOT+5*mm
+        if y-RH<limit:
+            c.setStrokeColor(GREEN); c.setLineWidth(0.8)
+            c.rect(X0,y,TW,ty-HH-y)
+            c.showPage(); pg+=1; frame(pg); y=col_hdr(TOP); ty=TOP
+        y=data_row(i,row,y); ly=y
+
+    c.setStrokeColor(GREEN); c.setLineWidth(0.8)
+    c.rect(X0,ly,TW,ty-HH-ly)
+    footer(ly)
+    c.save(); buf.seek(0)
+    fname="Graduation_List_{}.pdf".format(programme.name.replace(" ","_"))
+    resp=HttpResponse(buf.getvalue(),content_type="application/pdf")
+    resp["Content-Disposition"]='attachment; filename="{}"'.format(fname)
+    return resp
+
+
+@login_required
+def registration_status(request):
+    """Show which students have/have not registered for a given semester."""
+    from academics.models import CourseRegistration
+
+    sessions   = Session.objects.all().order_by("-name")
+    semesters  = Semester.objects.select_related("session").all().order_by("-session__name", "name")
+    programmes = Programme.objects.all().order_by("name")
+
+    sel_prog  = request.GET.get("programme")
+    sel_sess  = request.GET.get("session")
+    sel_sem   = request.GET.get("semester")
+    sel_level = request.GET.get("level", "")
+
+    selected_programme = None
+    selected_semester  = None
+    registered         = []
+    not_registered     = []
+
+    if sel_sem and sel_prog:
+        try:
+            selected_semester  = Semester.objects.get(pk=sel_sem)
+            selected_programme = Programme.objects.get(pk=sel_prog)
+
+            students = Student.objects.filter(
+                programme=selected_programme
+            ).select_related("user", "programme").order_by("reg_number")
+
+            if sel_level:
+                students = students.filter(reg_number__contains=f"/{sel_level}/")
+
+            for student in students:
+                regs = CourseRegistration.objects.filter(
+                    student=student, semester=selected_semester
+                ).select_related("course")
+                if regs.exists():
+                    registered.append({
+                        "student": student,
+                        "courses": regs,
+                        "count":   regs.count(),
+                    })
+                else:
+                    not_registered.append(student)
+
+        except (Semester.DoesNotExist, Programme.DoesNotExist):
+            pass
+
+    context = {
+        "sessions":           sessions,
+        "semesters":          semesters,
+        "programmes":         programmes,
+        "selected_programme": selected_programme,
+        "selected_semester":  selected_semester,
+        "sel_prog":           sel_prog,
+        "sel_sem":            sel_sem,
+        "sel_sess":           sel_sess,
+        "sel_level":          sel_level,
+        "registered":         registered,
+        "not_registered":     not_registered,
+        "reg_count":          len(registered),
+        "not_reg_count":      len(not_registered),
+        "total":              len(registered) + len(not_registered),
+    }
+    return render(request, "registrar/registration_status.html", context)
+
