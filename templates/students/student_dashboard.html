@@ -97,7 +97,16 @@ nav{flex:1;padding:12px 0;overflow-y:auto}
 
 @media(max-width:1024px){.stats-grid{grid-template-columns:1fr 1fr}.section-grid{grid-template-columns:1fr}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.stats-grid{grid-template-columns:1fr 1fr}}
+
+.mobile-menu-btn { display: none; }
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: block !important; }
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s; z-index: 1000; }
+  .sidebar.active { transform: translateX(0); box-shadow: 2px 0 10px rgba(0,0,0,0.3); }
+  .main { margin-left: 0 !important; width: 100% !important; }
+}
 </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
 
@@ -127,6 +136,7 @@ nav{flex:1;padding:12px 0;overflow-y:auto}
     <a href="{% url 'my_courses' %}" class="nav-item"><span class="ico">📚</span> My Courses</a>
     <a href="{% url 'print_course_reg' %}" class="nav-item"><span class="ico">🖨</span> Print Course Form</a>
     <a href="{% url 'exam_card' %}" class="nav-item"><span class="ico">🎫</span> Exam Card</a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" class="nav-item"><span class="ico">🎫</span> Available Quizzes</a>
 
     <div class="nav-section">Finance</div>
     <a href="{% url 'generate_payment' %}" class="nav-item"><span class="ico">💳</span> Pay School Fees</a>
@@ -145,8 +155,17 @@ nav{flex:1;padding:12px 0;overflow-y:auto}
 <!-- ══ MAIN ══ -->
 <div class="main">
   <div class="topbar">
+    <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('active')" style="display:none;background:none;border:none;color:#1a5c38;font-size:28px;cursor:pointer;padding:8px;margin-right:12px">
+      <i class="bi bi-list"></i>
+    </button>
+
     <div class="topbar-title">Student Portal</div>
     <div class="topbar-right">
+      <a href="#" style="color:#1a5c38;font-size:22px;text-decoration:none;position:relative;margin-right:12px">
+        <i class="bi bi-bell"></i>
+        <span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:white;font-size:11px;font-weight:700;padding:2px 6px;border-radius:12px;min-width:18px;text-align:center">3</span>
+      </a>
+
       {% if session %}<span class="session-badge">📅 {{ session.name }}</span>{% endif %}
       {% if semester %}<span class="session-badge" style="background:#e0f0ff;color:#1e40af">📖 {{ semester.name }}</span>{% endif %}
     </div>

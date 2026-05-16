@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Graduation List</div>
+  <div class="page-sub">Generate graduation lists by programme, session and semester</div>
+</div>
+<style>
+.filter-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px}
+.filter-card h3{font-size:14px;font-weight:700;color:#1a5c38;margin-bottom:14px}
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
+.filter-group label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.filter-group select{width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px}
+.btn{padding:10px 20px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-green{background:#1a5c38;color:#fff}
+.btn-gold{background:#c8881a;color:#fff}
+.stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat{background:#fff;border-radius:10px;padding:16px 20px;border:1px solid #e5e7eb;text-align:center}
+.stat-num{font-size:32px;font-weight:700}
+.stat-green .stat-num{color:#1a5c38}
+.stat-red .stat-num{color:#dc2626}
+.stat-gold .stat-num{color:#c8881a}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;font-size:12px}
+th{background:#1a5c38;color:#fff;padding:9px 10px;text-align:left;font-size:11px}
+th.c{text-align:center}
+td{padding:8px 10px;border-bottom:1px solid #f3f4f6}
+td.c{text-align:center}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.b-dist{background:#fef3c7;color:#92400e}
+.b-upper{background:#d1fae5;color:#065f46}
+.b-lower{background:#dbeafe;color:#1e40af}
+.b-pass{background:#f3f4f6;color:#374151}
+.b-co{background:#fee2e2;color:#991b1b}
+.b-grad{background:#d1fae5;color:#065f46}
+</style>
+
+{% if messages %}{% for m in messages %}<div style="background:#d1fae5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:16px">{{ m }}</div>{% endfor %}{% endif %}
+
+<!-- Filters -->
+<div class="filter-card">
+  <h3>🔍 Filter Graduation List</h3>
+  <form method="get">
+  <div class="filter-grid">
+    <div class="filter-group">
+      <label>Programme</label>
+      <select name="programme">
+        <option value="">-- Select Programme --</option>
+        {% for p in programmes %}<option value="{{ p.pk }}" {% if selected_programme and selected_programme.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Level</label>
+      <select name="level">
+        <option value="24" {% if selected_level == "24" %}selected{% endif %}>Diploma II</option>
+        <option value="25" {% if selected_level == "25" %}selected{% endif %}>Diploma I</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Session</label>
+      <select name="session">
+        {% for s in sessions %}<option value="{{ s.pk }}" {% if selected_session and selected_session.pk == s.pk %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Semester</label>
+      <select name="semester">
+        {% for s in semesters %}<option value="{{ s.pk }}" {% if selected_semester and selected_semester.pk == s.pk %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>&nbsp;</label>
+      <button type="submit" class="btn btn-green" style="width:100%">Generate List</button>
+    </div>
+  </div>
+  </form>
+</div>
+
+{% if selected_programme %}
+<!-- Stats -->
+<div class="stat-bar">
+  <div class="stat stat-green"><div class="stat-num">{{ grad_count }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">✅ Graduating</div></div>
+  <div class="stat stat-red"><div class="stat-num">{{ carryover_count }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">⚠️ With Carryover</div></div>
+  <div class="stat stat-gold"><div class="stat-num">{{ graduating_students|length }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">Total Students</div></div>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <div style="font-size:13px;color:#6b7280">
+    {{ selected_programme.name }} &bull; {{ selected_session }} &bull; {{ selected_semester }}
+  </div>
+  {% if grad_count > 0 %}
+  <a href="{% url 'graduation_list_pdf_filtered' selected_programme.pk selected_session.pk selected_semester.pk selected_level %}" class="btn btn-gold" target="_blank">🖨 Print Graduation List PDF</a>
+  {% endif %}
+</div>
+
+<table>
+  <thead><tr>
+    <th>S/N</th><th>Matric No</th><th>Full Name</th>
+    <th class="c">TCE</th><th class="c">CGPA</th>
+    <th>Class of Diploma</th><th class="c">Status</th>
+  </tr></thead>
+  <tbody>
+  {% for item in graduating_students %}
+  <tr>
+    <td>{{ forloop.counter }}</td>
+    <td style="font-family:monospace;font-size:11px">{{ item.student.reg_number }}</td>
+    <td style="font-weight:600">{{ item.student.user.get_full_name }}</td>
+    <td class="c">{{ item.tce }}</td>
+    <td class="c" style="font-weight:700">{{ item.cgpa }}</td>
+    <td>
+      {% if item.can_graduate %}
+      <span class="badge {% if 'DISTINCTION' in item.diploma_class %}b-dist{% elif 'UPPER' in item.diploma_class %}b-upper{% elif 'LOWER' in item.diploma_class %}b-lower{% else %}b-pass{% endif %}">{{ item.diploma_class }}</span>
+      {% else %}
+      <span class="badge b-co">CARRYOVER ({{ item.failed }})</span>
+      {% endif %}
+    </td>
+    <td class="c">
+      {% if item.can_graduate %}<span class="badge b-grad">GRADUATING</span>
+      {% else %}<span class="badge b-co">NOT ELIGIBLE</span>{% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af">No students found</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div style="text-align:center;padding:60px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;color:#9ca3af">
+  <div style="font-size:48px;margin-bottom:12px">🎓</div>
+  <p style="font-size:15px">Select a programme to generate the graduation list</p>
+  <p style="font-size:13px;margin-top:8px;color:#6b7280">Filter by session and semester to get students graduating at a specific point</p>
+</div>
+{% endif %}
+{% endblock %}

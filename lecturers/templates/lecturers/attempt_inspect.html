@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block page_title %}Review attempt{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ attempt.student.user.last_name|upper }} {{ attempt.student.user.first_name }}</div>
+    <div class="page-sub">{{ attempt.student.reg_number }} · {{ quiz.title }} · {{ quiz.course.code }}</div>
+  </div>
+  <a href="{% url 'lecturers:quiz_attempts' quiz.pk %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none">← All attempts</a>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+  <div>
+    <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Final Score</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:48px;font-weight:700;color:#1a5c38;line-height:1">
+      {{ attempt.score }}<span style="font-size:22px;color:#9ca3af"> / {{ attempt.max_score }}</span>
+    </div>
+  </div>
+  <div style="text-align:right;font-size:13px;color:#374151">
+    <div><strong>{{ attempt.correct_count }}</strong> of {{ attempt.question_count }} correct</div>
+    <div style="color:#6b7280;font-size:12px;margin-top:4px">Submitted: {{ attempt.submitted_at|date:"d M Y, H:i" }}</div>
+    {% if attempt.auto_submitted %}<div style="margin-top:6px"><span style="background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600">⏰ Auto-submitted</span></div>{% endif %}
+  </div>
+</div>
+
+{% for item in items %}
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:12px">
+    <div style="font-weight:600;color:#111;font-size:14px;margin-bottom:12px">
+      <span style="background:{% if item.answer.is_correct %}#16a34a{% else %}#dc2626{% endif %};color:#fff;padding:2px 9px;border-radius:99px;font-size:11px;margin-right:8px">Q{{ forloop.counter }}</span>
+      {{ item.question.text }}
+      <span style="float:right;font-size:11px;color:#9ca3af;font-weight:400">{% if item.answer.is_correct %}✓ correct{% else %}✗ wrong{% endif %}</span>
+    </div>
+    {% for c in item.choices %}
+      <div style="padding:9px 14px;border-radius:8px;margin-bottom:5px;font-size:13px;border:1px solid #e5e7eb;
+        {% if c.is_correct %}background:#ecfdf5;border-color:#86efac;{% endif %}
+        {% if item.answer.selected_choice_id == c.id and not c.is_correct %}background:#fef2f2;border-color:#fca5a5;{% endif %}
+      ">
+        {{ c.text }}
+        {% if c.is_correct %}<span style="float:right;color:#065f46;font-size:11px;font-weight:600">✓ correct answer</span>{% endif %}
+        {% if item.answer.selected_choice_id == c.id %}<span style="float:right;margin-right:8px;color:#1f2937;font-size:11px;font-weight:600">← student picked</span>{% endif %}
+      </div>
+    {% endfor %}
+    {% if not item.answer.selected_choice_id %}
+      <div style="margin-top:6px;padding:8px;background:#f9fafb;color:#6b7280;border-radius:6px;font-size:12px;font-style:italic">Not answered</div>
+    {% endif %}
+  </div>
+{% endfor %}
+{% endblock %}

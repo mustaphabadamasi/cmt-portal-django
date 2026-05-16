@@ -5,6 +5,7 @@
   <h4 class="fw-bold">{{ student.user.get_full_name }}</h4>
   <div>
     <a href="{% url 'exam_card' student.pk %}" target="_blank" class="btn btn-success btn-sm">Exam Card PDF</a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" target="_blank" class="btn btn-success btn-sm">Available Quizzes PDF</a>
     <a href="{% url 'course_reg_form' student.pk %}" target="_blank" class="btn btn-info btn-sm">Course Reg PDF</a>
     <a href="{% url 'delete_student' student.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this student?')">Delete</a>
   </div>

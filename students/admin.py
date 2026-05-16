@@ -18,6 +18,7 @@ User = get_user_model()
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
 
+    fields = ("user","reg_number","programme","gender","date_of_birth","state_of_origin","entry_mode","year_admitted","status","photo")
     list_display  = ['reg_number', 'get_full_name', 'programme', 'current_session', 'status']
     list_filter   = ['status', 'programme', 'current_session']
     search_fields = ['reg_number', 'user__first_name', 'user__last_name', 'user__email']

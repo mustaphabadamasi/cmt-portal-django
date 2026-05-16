@@ -32,6 +32,7 @@
         <td><span class="badge {% if s.status == 'active' %}badge-active{% else %}badge-pending{% endif %}">{{ s.status }}</span></td>
         <td style="display:flex;gap:4px;flex-wrap:wrap">
           <a href="{% url 'exam_card' s.pk %}" target="_blank" class="btn btn-ghost btn-sm" title="Exam Card"><i class="bi bi-card-heading"></i></a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" target="_blank" class="btn btn-ghost btn-sm" title="Available Quizzes"><i class="bi bi-patch-question"></i></a>
           <a href="{% url 'course_reg_form' s.pk %}" target="_blank" class="btn btn-ghost btn-sm" title="Course Reg Form"><i class="bi bi-journal-check"></i></a>
           <a href="{% url 'registrar_photo' %}?reg={{ s.reg_number }}" class="btn btn-ghost btn-sm" title="Add/Update Photo"><i class="bi bi-camera"></i></a>
           <a href="{% url 'registrar_fees' %}" class="btn btn-ghost btn-sm" title="Manage Fees"><i class="bi bi-cash"></i></a>

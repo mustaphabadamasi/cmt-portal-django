@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block page_title %}Quiz Result{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ quiz.title }} — Result</div>
+    <div class="page-sub">{{ quiz.course.code }} · {{ quiz.semester }}</div>
+  </div>
+  <a href="{% url 'lecturers:student_quiz_list' %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 18px;border-radius:8px;font-size:13px;text-decoration:none">← All quizzes</a>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;text-align:center;max-width:640px">
+  {% if show_score %}
+    <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Your Score</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:72px;font-weight:700;color:#1a5c38;line-height:1">
+      {{ attempt.score }}<span style="font-size:32px;color:#9ca3af"> / {{ attempt.max_score }}</span>
+    </div>
+    <div style="margin-top:16px;color:#374151;font-size:14px">
+      You answered {{ attempt.correct_count }} of {{ attempt.question_count }} question{{ attempt.question_count|pluralize }} correctly.
+    </div>
+    {% if attempt.auto_submitted %}
+      <div style="margin-top:14px;padding:8px 14px;background:#fef3c7;color:#92400e;border-radius:8px;display:inline-block;font-size:12px">⏰ This attempt was auto-submitted when time ran out.</div>
+    {% endif %}
+  {% else %}
+    <div style="font-size:56px;margin-bottom:14px">✅</div>
+    <div style="font-size:18px;font-weight:600;color:#111;margin-bottom:6px">Submitted successfully</div>
+    <div style="font-size:14px;color:#6b7280">Your result will be released on <strong>{{ quiz.available_until|date:"d M Y, H:i" }}</strong>, once this quiz closes for everyone.</div>
+  {% endif %}
+  <div style="margin-top:24px;padding-top:18px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af">
+    Submitted: {{ attempt.submitted_at|date:"d M Y, H:i" }}
+  </div>
+</div>
+{% endblock %}

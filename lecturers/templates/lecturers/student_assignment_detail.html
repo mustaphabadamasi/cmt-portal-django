@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block page_title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:900px;margin:0 auto">
+  <a href="{% url 'lecturers:student_assignment_list' %}" style="color:#1a5c38;text-decoration:none;font-size:13px">← Back to My Assignments</a>
+
+  {% if messages %}{% for m in messages %}<div style="background:{% if 'error' in m.tags %}#fef2f2;color:#b91c1c{% else %}#f0fdf4;color:#065f46{% endif %};padding:10px 14px;border-radius:8px;margin:16px 0">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
+    <div style="font-size:13px;color:#6b7280">{{ assignment.course.code }} - {{ assignment.course.title }}</div>
+    <h1 style="color:#0f2d1c;margin:4px 0 16px">{{ assignment.title }}</h1>
+    <div style="white-space:pre-wrap;padding:16px;background:#f9fafb;border-radius:8px;line-height:1.6">{{ assignment.description }}</div>
+  </div>
+
+  <!-- Individual Submission -->
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
+    <h2 style="color:#1e3a8a;margin:0 0 12px;font-size:18px">📝 Individual Part (10 marks)</h2>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px">Deadline: {{ assignment.individual_deadline|date:"M d, Y H:i" }}{% if now > assignment.individual_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+
+    {% if ind_sub %}
+      <div style="padding:14px;background:#f0fdf4;border-radius:8px">
+        <div style="font-weight:600;color:#065f46">✓ Submitted on {{ ind_sub.submitted_at|date:"M d, Y H:i" }}{% if ind_sub.is_late %} <span style="color:#dc2626">(LATE)</span>{% endif %}</div>
+        {% if ind_sub.score is not None %}<div style="margin-top:8px"><strong>Score: {{ ind_sub.score }}/10</strong></div>{% endif %}
+        {% if ind_sub.feedback %}<div style="margin-top:8px;padding:10px;background:white;border-radius:6px"><strong>Feedback:</strong> {{ ind_sub.feedback }}</div>{% endif %}
+      </div>
+    {% else %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="submission_type" value="individual">
+        <textarea name="content_text" rows="6" placeholder="Type your answer here (or upload a file below)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px"></textarea>
+        <input type="file" name="content_file" style="margin-bottom:14px">
+        <button type="submit" style="background:#1e3a8a;color:white;padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Submit Individual Part</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- Group Submission -->
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
+    <h2 style="color:#065f46;margin:0 0 12px;font-size:18px">👥 Group Part (10 marks)</h2>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px">Deadline: {{ assignment.group_deadline|date:"M d, Y H:i" }}{% if now > assignment.group_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+
+    {% if not my_group %}
+      <div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e">⚠ You haven't been assigned to a group yet. Contact your lecturer.</div>
+    {% else %}
+      <div style="padding:10px 14px;background:#f9fafb;border-radius:8px;margin-bottom:14px">
+        <strong>Your Group:</strong> {{ my_group.name }}
+        {% if is_leader %}<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:11px;margin-left:6px">👑 YOU ARE LEADER</span>{% endif %}
+        <div style="font-size:12px;color:#6b7280;margin-top:6px">Members: {% for m in my_group.members.all %}{{ m.reg_number }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+      </div>
+
+      {% if grp_sub %}
+        <div style="padding:14px;background:#f0fdf4;border-radius:8px">
+          <div style="font-weight:600;color:#065f46">✓ Group submitted by {{ grp_sub.submitted_by.user.get_full_name }} on {{ grp_sub.submitted_at|date:"M d, Y H:i" }}{% if grp_sub.is_late %} <span style="color:#dc2626">(LATE)</span>{% endif %}</div>
+          {% if grp_sub.score is not None %}<div style="margin-top:8px"><strong>Score: {{ grp_sub.score }}/10</strong></div>{% endif %}
+          {% if grp_sub.feedback %}<div style="margin-top:8px;padding:10px;background:white;border-radius:6px"><strong>Feedback:</strong> {{ grp_sub.feedback }}</div>{% endif %}
+        </div>
+      {% elif is_leader %}
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="submission_type" value="group">
+          <textarea name="content_text" rows="6" placeholder="Type the group's answer (or upload a file below)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px"></textarea>
+          <input type="file" name="content_file" style="margin-bottom:14px">
+          <button type="submit" style="background:#065f46;color:white;padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Submit Group Part (as Leader)</button>
+        </form>
+      {% else %}
+        <div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e">⚠ Only the group leader ({{ my_group.leader.reg_number|default:"not assigned" }}) can submit the group part.</div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

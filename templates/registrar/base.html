@@ -56,6 +56,7 @@ nav{flex:1;padding:10px 0;overflow-y:auto}
     <a href="{% url 'academic_config' %}" class="nav-item {% if 'academic' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">📅</span> Academic Config</a>
     <a href="{% url 'course_structure' %}" class="nav-item {% if 'course_structure' in request.resolver_match.url_name or 'outline' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">📚</span> Course Outlines</a>
 
+    <a href="{% url 'lecturers:list' %}" class="nav-item {% if request.resolver_match.namespace == 'lecturers' %}active{% endif %}"><span class="ico">🎓</span> Lecturers</a>
     <div class="nav-section">Finance</div>
     <a href="{% url 'registrar_fees' %}" class="nav-item {% if 'fees' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">💳</span> Fee Approvals</a>
 

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{{ lecturer.full_name }}</h2>
+    <div>
+      <a href="{% url 'lecturers:list' %}" class="btn btn-outline-secondary">← Back</a>
+      <a href="{% url 'lecturers:update' lecturer.pk %}" class="btn btn-outline-primary">Edit profile</a>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          {% if lecturer.photo %}<img src="{{ lecturer.photo.url }}" class="img-fluid rounded mb-3">{% endif %}
+          <dl class="row mb-2">
+            <dt class="col-5">Staff ID</dt><dd class="col-7">{{ lecturer.staff_id }}</dd>
+            <dt class="col-5">Title</dt><dd class="col-7">{{ lecturer.title|default:"—" }}</dd>
+            <dt class="col-5">Gender</dt><dd class="col-7">{{ lecturer.get_gender_display|default:"—" }}</dd>
+            <dt class="col-5">Department</dt><dd class="col-7">{{ lecturer.department|default:"—" }}</dd>
+            <dt class="col-5">Phone</dt><dd class="col-7">{{ lecturer.phone|default:"—" }}</dd>
+            <dt class="col-5">Email</dt><dd class="col-7">{{ lecturer.user.email|default:"—" }}</dd>
+            <dt class="col-5">Username</dt><dd class="col-7">{{ lecturer.user.username }}</dd>
+            <dt class="col-5">Status</dt><dd class="col-7">{{ lecturer.get_status_display }}</dd>
+          </dl>
+          <form method="post" action="{% url 'lecturers:reset_password' lecturer.pk %}"
+                onsubmit="return confirm('Reset password to staff ID?');">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-warning w-100">Reset password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header"><strong>Course Assignments</strong></div>
+        <div class="card-body">
+          <form method="post" action="{% url 'lecturers:assign' lecturer.pk %}" class="mb-4">
+            {% csrf_token %}
+            <div class="row g-2">
+              <div class="col-md-5">
+                <label class="form-label">Course</label>{{ assign_form.course }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Semester</label>{{ assign_form.semester }}
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Assign</button>
+              </div>
+            </div>
+            <div class="mt-2">
+              <label class="form-label">Notes (optional)</label>{{ assign_form.notes }}
+            </div>
+          </form>
+
+          <table class="table table-sm">
+            <thead><tr><th>Course</th><th>Semester</th><th>Active</th><th>Assigned</th><th></th></tr></thead>
+            <tbody>
+              {% for a in assignments %}
+                <tr>
+                  <td>{{ a.course.code }} — {{ a.course.title }}</td>
+                  <td>{{ a.semester }}</td>
+                  <td>{% if a.is_active %}Yes{% else %}No{% endif %}</td>
+                  <td>{{ a.assigned_at|date:"Y-m-d" }}</td>
+                  <td>
+                    <form method="post" action="{% url 'lecturers:toggle_assignment' a.pk %}" class="d-inline">
+                      {% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Toggle</button>
+                    </form>
+                    <form method="post" action="{% url 'lecturers:delete_assignment' a.pk %}" class="d-inline"
+                          onsubmit="return confirm('Remove this assignment?');">
+                      {% csrf_token %}<button class="btn btn-sm btn-outline-danger">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">No courses assigned yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

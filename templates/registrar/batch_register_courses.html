@@ -5,7 +5,7 @@
     <a href="{% url 'batch_operations' %}" style="color:#6b7280;text-decoration:none;font-size:20px">←</a>
     <div>
       <div class="page-title">Batch Course Registration</div>
-      <div class="page-sub">Register courses for up to 20 students at once using a course outline</div>
+      <div class="page-sub">Register courses for up to 40 students — select any session/semester</div>
     </div>
   </div>
 </div>
@@ -35,6 +35,17 @@ td{padding:9px 14px;border-bottom:1px solid #f3f4f6}
 
 <form method="get" class="filter-bar">
   <div>
+    <label>Session / Semester</label>
+    <select name="semester_id" onchange="this.form.submit()">
+      <option value="">-- Select Semester --</option>
+      {% for s in all_semesters %}
+      <option value="{{ s.pk }}" {% if selected_semester_id == s.pk|stringformat:"s" %}selected{% endif %}>
+        {{ s.session.name }} — {{ s.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
     <label>Programme</label>
     <select name="programme" onchange="this.form.submit()">
       <option value="">All Programmes</option>
@@ -45,8 +56,8 @@ td{padding:9px 14px;border-bottom:1px solid #f3f4f6}
     <label>Level</label>
     <select name="level" onchange="this.form.submit()">
       <option value="">All Levels</option>
-      <option value="24" {% if selected_level == "24" %}selected{% endif %}>Diploma II (/24/)</option>
-      <option value="25" {% if selected_level == "25" %}selected{% endif %}>Diploma I (/25/)</option>
+      <option value="24" {% if selected_level == "24" %}selected{% endif %}>Diploma II</option>
+      <option value="25" {% if selected_level == "25" %}selected{% endif %}>Diploma I</option>
     </select>
   </div>
   <div>
@@ -70,13 +81,14 @@ td{padding:9px 14px;border-bottom:1px solid #f3f4f6}
 <form method="post">
 {% csrf_token %}
 <input type="hidden" name="outline_id" value="{{ outline_id|default:'' }}"/>
+<input type="hidden" name="semester_id" value="{{ selected_semester_id }}"/>
 <div class="action-bar">
   <span class="sel-count" id="selCount">0 selected</span>
   <button type="button" class="btn btn-gray" onclick="selectAll()">Select All</button>
   <button type="button" class="btn btn-gray" onclick="clearAll()">Clear</button>
   <button type="submit" class="btn btn-green" onclick="return confirmSubmit()">📚 Register Courses</button>
 </div>
-<div class="warn">⚠️ This will REPLACE existing registrations for the selected students this semester. Max 20 students per batch.</div>
+<div class="warn">⚠️ This will REPLACE existing registrations for the selected students this semester. Max 40 students per batch.</div>
 
 <table>
   <thead><tr>
@@ -115,7 +127,7 @@ function clearAll(){document.querySelectorAll(".row-check").forEach(c=>c.checked
 function confirmSubmit(){
   const n=document.querySelectorAll(".row-check:checked").length;
   if(n===0){alert("Please select at least one student.");return false;}
-  if(n>20){alert("Maximum 20 students per batch.");return false;}
+  if(n>20){alert("Maximum 40 students per batch.");return false;}
   if(!document.querySelector("input[name=outline_id]").value){alert("Please select a course outline first.");return false;}
   return confirm("Register courses for "+n+" student(s)? This will replace existing registrations.");
 }

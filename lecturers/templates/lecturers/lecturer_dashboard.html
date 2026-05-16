@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Welcome, {{ lecturer.title }} {{ lecturer.user.first_name }}</div>
+    <div class="page-sub">{{ lecturer.staff_id }} · {{ lecturer.department|default:"Academic Staff" }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px">
+  <div class="stat-card green">
+    <div class="stat-icon green"><i class="bi bi-book-half"></i></div>
+    <div class="stat-value">{{ active_courses_count }}</div>
+    <div class="stat-label">Active Courses</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-icon blue"><i class="bi bi-patch-question"></i></div>
+    <div class="stat-value"><a href="{% url 'lecturers:quiz_list' %}" style="color:inherit;text-decoration:none">{{ quiz_count }}</a></div>
+    <div class="stat-label"><a href="{% url 'lecturers:quiz_list' %}" style="color:inherit;text-decoration:none">Quizzes</a></div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-icon amber"><i class="bi bi-journal-text"></i></div>
+    <div class="stat-value">—</div>
+    <div class="stat-label">Assignments (coming)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="bi bi-chat-square-text"></i></div>
+    <div class="stat-value">—</div>
+    <div class="stat-label">Forum Posts (coming)</div>
+  </div>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0">My Active Courses</h3>
+    <a href="{% url 'lecturers:my_courses' %}" style="font-size:12px;color:#1a5c38;text-decoration:none;font-weight:600">View all →</a>
+  </div>
+  {% if by_semester %}
+    {% for semester, items in by_semester.items %}
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;font-weight:700;margin-bottom:8px">{{ semester }}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px">
+          {% for a in items %}
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+              <div style="font-weight:700;color:#111;font-size:14px">{{ a.course.code }}</div>
+              <div style="color:#374151;font-size:13px;margin-top:2px">{{ a.course.title }}</div>
+              <div style="color:#6b7280;font-size:11px;margin-top:6px">{{ a.course.programme }} · {{ a.course.unit }} unit{{ a.course.unit|pluralize }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center;padding:36px 16px;color:#9ca3af">
+      <i class="bi bi-book" style="font-size:42px;display:block;margin-bottom:8px"></i>
+      No courses assigned yet. Contact the Registrar or Academic Secretary to be assigned.
+    </div>
+  {% endif %}
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px">
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 14px">What's Coming</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+    <div style="padding:14px;border:1px solid #e5e7eb;border-radius:10px;opacity:.65">
+      <div style="font-size:22px;margin-bottom:6px">📋</div>
+      <div style="font-weight:600;font-size:13px">Set Assignments</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:3px">Individual & group assignments, 10 marks each.</div>
+    </div>
+    <div style="padding:14px;border:1px solid #e5e7eb;border-radius:10px;opacity:.65">
+      <div style="font-size:22px;margin-bottom:6px">💬</div>
+      <div style="font-weight:600;font-size:13px">Course Forum</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:3px">Per-course discussion board with your students.</div>
+    </div>
+    <div style="padding:14px;border:1px solid #e5e7eb;border-radius:10px;opacity:.65">
+      <div style="font-size:22px;margin-bottom:6px">🎥</div>
+      <div style="font-weight:600;font-size:13px">Live Classes</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:3px">Schedule online sessions with meeting links + attendance.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

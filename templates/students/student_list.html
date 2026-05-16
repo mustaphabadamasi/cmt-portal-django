@@ -24,7 +24,8 @@
           <td>{% if s.photo %}<img src="{{ s.photo.url }}" width="36" height="36" class="rounded-circle" style="object-fit:cover">{% else %}<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width:36px;height:36px;font-size:14px">{{ s.user.first_name|first }}</div>{% endif %}</td>
           <td>{{ s.reg_number }}</td><td>{{ s.user.get_full_name }}</td><td>{{ s.programme }}</td><td>{{ s.current_session|default:"-" }}</td>
           <td><span class="badge {% if s.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">{{ s.status }}</span></td>
-          <td><a href="{% url 'student_detail' s.pk %}" class="btn btn-sm btn-outline-primary">View</a> <a href="{% url 'exam_card' s.pk %}" class="btn btn-sm btn-outline-success" target="_blank">Exam Card</a> <a href="{% url 'course_reg_form' s.pk %}" class="btn btn-sm btn-outline-info" target="_blank">Course Reg</a></td>
+          <td><a href="{% url 'student_detail' s.pk %}" class="btn btn-sm btn-outline-primary">View</a> <a href="{% url 'exam_card' s.pk %}" class="btn btn-sm btn-outline-success" target="_blank">Exam Card</a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" class="btn btn-sm btn-outline-success" target="_blank">Available Quizzes</a> <a href="{% url 'course_reg_form' s.pk %}" class="btn btn-sm btn-outline-info" target="_blank">Course Reg</a></td>
         </tr>
         {% empty %}<tr><td colspan="7" class="text-center py-4 text-muted">No students found.</td></tr>{% endfor %}
       </tbody>

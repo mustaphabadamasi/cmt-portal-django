@@ -28,4 +28,8 @@ urlpatterns = [
     path("results/<int:outline_id>/pdf/", views.result_sheet_pdf, name="result_sheet_pdf"),
     path("results/<int:outline_id>/upload/", views.bulk_upload_results, name="bulk_upload_results"),
     path("results/<int:outline_id>/template/", views.download_result_template, name="download_result_template"),
+    path("graduation/", views.graduation_list_view, name="graduation_list"),
+    path("registration-status/", views.registration_status, name="registration_status"),
+    path("graduation/<int:programme_id>/pdf/", views.graduation_list_pdf, name="graduation_list_pdf"),
+    path("graduation/<int:programme_id>/<int:session_id>/<int:semester_id>/<str:level>/pdf/", views.graduation_list_pdf, name="graduation_list_pdf_filtered"),
 ]

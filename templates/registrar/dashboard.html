@@ -38,6 +38,9 @@
   <a href="{% url 'registrar_students' %}" class="ql">
     <div class="ql-icon">👥</div><div class="ql-title">Student Records</div><div class="ql-sub">View and manage all students</div>
   </a>
+  <a href="{% url 'lecturers:list' %}" class="ql">
+    <div class="ql-icon">🎓</div><div class="ql-title">Lecturer Management</div><div class="ql-sub">Add lecturers & assign courses</div>
+  </a>
   <a href="{% url 'academic_config' %}" class="ql">
     <div class="ql-icon">📅</div><div class="ql-title">Academic Config</div><div class="ql-sub">Sessions, semesters & registration</div>
   </a>
@@ -52,6 +55,14 @@
   </a>
   <a href="{% url 'registrar_photo' %}" class="ql">
     <div class="ql-icon">📷</div><div class="ql-title">Photo Capture</div><div class="ql-sub">{{ missing_photos }} students missing photos</div>
+  </a>
+  <a href="{% url 'registration_status' %}" class="ql">
+    <div class="ql-icon">📋</div><div class="ql-title">Registration Status</div>
+    <div class="ql-sub">Track registered vs unregistered</div>
+  </a>
+  <a href="{% url 'graduation_list' %}" class="ql">
+    <div class="ql-icon">🎓</div><div class="ql-title">Graduation List</div>
+    <div class="ql-sub">Generate list for CPCS/FUDMA</div>
   </a>
   <a href="{% url 'result_sheet_list' %}" class="ql">
     <div class="ql-icon">📊</div><div class="ql-title">Result Sheets</div>

@@ -43,6 +43,9 @@
           <a href="{% url 'exam_card' s.pk %}" target="_blank" class="btn btn-primary btn-sm">
             <i class="bi bi-printer"></i> Exam Card
           </a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" target="_blank" class="btn btn-primary btn-sm">
+            <i class="bi bi-patch-question"></i> Available Quizzes
+          </a>
         </td>
         <td style="text-align:center">
           <a href="{% url 'course_reg_form' s.pk %}" target="_blank" class="btn btn-ghost btn-sm">

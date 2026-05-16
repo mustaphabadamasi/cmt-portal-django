@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block page_title %}{{ quiz.title }} — Attempts{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ quiz.title }} — Attempts</div>
+    <div class="page-sub">{{ quiz.course.code }} · {{ quiz.semester }}</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{% url 'lecturers:course_results' quiz.course_id quiz.semester_id %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:600">📊 Course Results</a>
+    <a href="{% url 'lecturers:quiz_detail' quiz.pk %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none">← Quiz</a>
+  </div>
+</div>
+
+<style>
+  .statgrid{display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;margin-bottom:18px}
+  .scard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px}
+  .scard .lbl{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  .scard .val{font-size:24px;font-weight:700;color:#1a5c38;font-family:'Space Grotesk',sans-serif}
+  table.attempts{width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:12px;border-collapse:collapse;overflow:hidden}
+  table.attempts th{background:#f9fafb;padding:11px 14px;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #e5e7eb}
+  table.attempts td{padding:12px 14px;font-size:13px;border-bottom:1px solid #f3f4f6;color:#111}
+  table.attempts tr:hover td{background:#fafafa}
+  .score-pill{background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-weight:700;font-size:12px;display:inline-block}
+  .score-pill.low{background:#fee2e2;color:#991b1b}
+  .pill-auto{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+  .pill-prog{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+</style>
+
+<div class="statgrid">
+  <div class="scard"><div class="lbl">Submitted</div><div class="val">{{ submitted_count }}</div></div>
+  <div class="scard"><div class="lbl">In Progress</div><div class="val">{{ in_progress_count }}</div></div>
+  <div class="scard"><div class="lbl">Average</div><div class="val">{{ avg_score }}</div></div>
+  <div class="scard"><div class="lbl">Highest</div><div class="val">{{ hi }}</div></div>
+  <div class="scard"><div class="lbl">Lowest</div><div class="val">{{ lo }}</div></div>
+</div>
+
+<table class="attempts">
+  <thead>
+    <tr>
+      <th>#</th><th>Student</th><th>Reg No.</th>
+      <th>Score</th><th>Submitted</th><th></th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in attempts %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ a.student.user.last_name|upper }} {{ a.student.user.first_name }}</td>
+        <td>{{ a.student.reg_number }}</td>
+        <td>
+          {% if a.is_submitted %}
+            {% with pct=a.score %}
+              <span class="score-pill {% if pct < a.max_score|add:'-1'|floatformat:'-2' %}{% endif %}">{{ a.score }} / {{ a.max_score }}</span>
+            {% endwith %}
+          {% else %}<span style="color:#9ca3af">—</span>{% endif %}
+        </td>
+        <td>{% if a.submitted_at %}{{ a.submitted_at|date:"d M, H:i" }}{% else %}<span style="color:#9ca3af">—</span>{% endif %}</td>
+        <td>
+          {% if not a.is_submitted %}<span class="pill-prog">IN PROGRESS</span>{% endif %}
+          {% if a.auto_submitted %}<span class="pill-auto">⏰ AUTO</span>{% endif %}
+        </td>
+        <td><a href="{% url 'lecturers:attempt_inspect' a.pk %}" style="color:#1a5c38;font-weight:600;text-decoration:none">View →</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af">No attempts yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

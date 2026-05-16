@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block page_title %}My Courses{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">My Courses</div>
+    <div class="page-sub">All courses ever assigned to you — {{ assignments|length }} total</div>
+  </div>
+</div>
+
+<style>
+  .courses-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;font-size:13px}
+  .courses-table th{background:#1a5c38;color:#fff;padding:10px 14px;text-align:left;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .courses-table td{padding:11px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+  .courses-table tr:hover td{background:#f9fafb}
+  .badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600}
+  .badge-active{background:#d1fae5;color:#065f46}
+  .badge-inactive{background:#e5e7eb;color:#374151}
+</style>
+
+<table class="courses-table">
+  <thead>
+    <tr><th>#</th><th>Course Code</th><th>Title</th><th>Programme</th><th>Unit</th><th>Semester</th><th>Status</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for a in assignments %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td style="font-family:monospace;font-weight:600">{{ a.course.code }}</td>
+        <td>{{ a.course.title }}</td>
+        <td>{{ a.course.programme }}</td>
+        <td>{{ a.course.unit }}</td>
+        <td>{{ a.semester }}</td>
+        <td>{% if a.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}</td>
+        <td style="color:#9ca3af;font-size:11px">Quiz · Assignment · Forum <em>(coming)</em></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:32px">No course assignments yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page_title %}My Quizzes{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">My Quizzes</div>
+    <div class="page-sub">{{ quizzes|length }} quiz{{ quizzes|length|pluralize:"zes" }} across your assigned courses.</div>
+  </div>
+  <a href="{% url 'lecturers:quiz_create' %}" style="background:#1a5c38;color:#fff;text-decoration:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600">+ New Quiz</a>
+</div>
+
+<style>
+  .qz-tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;font-size:13px}
+  .qz-tbl th{background:#1a5c38;color:#fff;padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+  .qz-tbl td{padding:11px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+  .qz-tbl tr:hover td{background:#f9fafb}
+  .stat-pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.3px}
+  .stat-draft   {background:#e5e7eb;color:#374151}
+  .stat-upcoming{background:#dbeafe;color:#1e40af}
+  .stat-open    {background:#d1fae5;color:#065f46}
+  .stat-closed  {background:#fee2e2;color:#991b1b}
+</style>
+
+<table class="qz-tbl">
+  <thead>
+    <tr><th>#</th><th>Title</th><th>Course</th><th>Semester</th><th>Qs</th><th>Window</th><th>Status</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for q in quizzes %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td style="font-weight:600">{{ q.title }}</td>
+        <td>{{ q.course.code }}</td>
+        <td>{{ q.semester }}</td>
+        <td>{{ q.question_count }}</td>
+        <td style="font-size:11px;color:#6b7280">{{ q.available_from|date:"d M, H:i" }} → {{ q.available_until|date:"d M, H:i" }}</td>
+        <td><span class="stat-pill stat-{{ q.status }}">{{ q.status|upper }}</span></td>
+        <td><a href="{% url 'lecturers:quiz_detail' q.pk %}" style="color:#1a5c38;font-weight:600;text-decoration:none">Open →</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:40px"><i class="bi bi-patch-question" style="font-size:36px;display:block;margin-bottom:8px"></i>No quizzes yet. Click "+ New Quiz" to create one.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

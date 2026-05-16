@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page_title %}Grade Submission{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:800px;margin:0 auto">
+  <a href="{% url 'lecturers:assignment_submissions' assignment.pk %}" style="color:#1a5c38;text-decoration:none;font-size:13px">← Back to Submissions</a>
+  <h1 style="color:#1a5c38;margin:12px 0 24px">Grade {% if is_group %}Group{% else %}Individual{% endif %} Submission</h1>
+
+  {% if messages %}{% for m in messages %}<div style="background:#fef2f2;color:#b91c1c;padding:10px 14px;border-radius:8px;margin-bottom:16px">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:20px">
+    <h3 style="margin:0 0 12px">Submission Details</h3>
+    {% if is_group %}
+      <p><strong>Group:</strong> {{ submission.group.name }}</p>
+      <p><strong>Submitted by:</strong> {{ submission.submitted_by.user.get_full_name }} ({{ submission.submitted_by.reg_number }})</p>
+    {% else %}
+      <p><strong>Student:</strong> {{ submission.student.user.get_full_name }} ({{ submission.student.reg_number }})</p>
+    {% endif %}
+    <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"M d, Y H:i" }}{% if submission.is_late %} <span style="background:#fef2f2;color:#b91c1c;padding:2px 8px;border-radius:8px;font-size:11px">LATE</span>{% endif %}</p>
+
+    {% if submission.content_text %}
+    <div style="margin-top:16px">
+      <strong>Text Submission:</strong>
+      <div style="padding:14px;background:#f9fafb;border-radius:8px;margin-top:6px;white-space:pre-wrap">{{ submission.content_text }}</div>
+    </div>
+    {% endif %}
+
+    {% if submission.content_file %}
+    <div style="margin-top:16px">
+      <strong>File:</strong> <a href="{{ submission.content_file.url }}" target="_blank" style="color:#2563eb">{{ submission.content_file.name|cut:"assignments/" }}</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <form method="post" style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb">
+    {% csrf_token %}
+    <h3 style="margin:0 0 16px">Grade</h3>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Score (out of {% if is_group %}{{ assignment.max_group_mark }}{% else %}{{ assignment.max_individual_mark }}{% endif %})</label>
+      <input type="number" name="score" step="0.5" min="0" max="{% if is_group %}{{ assignment.max_group_mark }}{% else %}{{ assignment.max_individual_mark }}{% endif %}" value="{{ submission.score|default:'' }}" required style="width:150px;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px">
+    </div>
+
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Feedback (optional)</label>
+      <textarea name="feedback" rows="4" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">{{ submission.feedback }}</textarea>
+    </div>
+
+    <button type="submit" style="background:#1a5c38;color:white;padding:12px 28px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Save Grade</button>
+  </form>
+</div>
+{% endblock %}

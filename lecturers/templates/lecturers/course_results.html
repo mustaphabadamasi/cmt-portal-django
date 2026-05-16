@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block page_title %}{{ course.code }} Results{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ course.code }} — Class Results</div>
+    <div class="page-sub">{{ course.title }} · {{ semester }} · {{ rows|length }} registered student{{ rows|length|pluralize }}</div>
+  </div>
+</div>
+
+<style>
+  table.results{width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:12px;border-collapse:collapse;overflow:hidden;font-size:13px}
+  table.results th{background:#1a5c38;color:#fff;padding:11px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+  table.results th.num{text-align:center}
+  table.results td{padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#111}
+  table.results td.num{text-align:center;font-variant-numeric:tabular-nums}
+  table.results tr:hover td{background:#fafafa}
+  table.results td.tot{font-weight:700;color:#1a5c38;background:#f9fafb}
+  table.results td.miss{color:#9ca3af}
+</style>
+
+{% if quizzes %}
+<div style="overflow-x:auto">
+<table class="results">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Reg No.</th>
+      <th>Student</th>
+      {% for q in quizzes %}<th class="num" title="{{ q.title }}">{{ q.title|truncatechars:18 }}<br><span style="font-weight:400;opacity:.7">/{{ q.max_score }}</span></th>{% endfor %}
+      <th class="num">Quiz Total<br><span style="font-weight:400;opacity:.7">/{{ max_total }}</span></th>
+      <th class="num">Assignments<br><span style="font-weight:400;opacity:.7">(Phase 1C)</span></th>
+      <th class="num">CA</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="num">{{ forloop.counter }}</td>
+        <td>{{ r.student.reg_number }}</td>
+        <td>{{ r.student.user.last_name|upper }} {{ r.student.user.first_name }}</td>
+        {% for cell in r.cells %}
+          <td class="num {% if not cell.attempt %}miss{% endif %}">
+            {% if cell.attempt %}{{ cell.score }}{% else %}—{% endif %}
+          </td>
+        {% endfor %}
+        <td class="num tot">{{ r.total }}</td>
+        <td class="num miss">—</td>
+        <td class="num tot">{{ r.total }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div style="font-size:12px;color:#6b7280;margin-top:14px;line-height:1.5">
+  <strong>CA</strong> currently equals the sum of all quiz scores. Once Phase 1C ships, the Assignments column will populate and CA will reflect both. Dash (—) means the student didn't take that quiz.
+</div>
+{% else %}
+<div style="background:#fff;border:1px dashed #e5e7eb;border-radius:12px;padding:48px;text-align:center;color:#9ca3af">
+  <i class="bi bi-bar-chart" style="font-size:48px;display:block;margin-bottom:10px"></i>
+  No published quizzes for this course yet. Publish a quiz to start seeing results here.
+</div>
+{% endif %}
+{% endblock %}

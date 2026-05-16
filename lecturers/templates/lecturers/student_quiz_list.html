@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block page_title %}Available Quizzes{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Available Quizzes</div>
+    <div class="page-sub">Quizzes for your registered courses · {{ items|length }} total</div>
+  </div>
+</div>
+
+<style>
+  .qrow{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .qrow .info{flex:1;min-width:260px}
+  .qtitle{font-weight:700;color:#111;font-size:15px;margin-bottom:4px}
+  .meta{font-size:12px;color:#6b7280}
+  .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.3px}
+  .b-open{background:#d1fae5;color:#065f46}
+  .b-submitted{background:#dbeafe;color:#1e40af}
+  .b-closed{background:#fee2e2;color:#991b1b}
+  .b-upcoming{background:#fef3c7;color:#92400e}
+  .b-progress{background:#fde68a;color:#92400e}
+  .btn{padding:9px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn-start{background:#1a5c38;color:#fff}
+  .btn-view{background:#fff;color:#1a5c38;border:1px solid #bbf7d0}
+  .btn-cont{background:#c8881a;color:#fff}
+</style>
+
+{% for item in items %}
+  <div class="qrow">
+    <div class="info">
+      <div class="qtitle">{{ item.quiz.title }}</div>
+      <div class="meta">
+        {{ item.quiz.course.code }} — {{ item.quiz.course.title }} · {{ item.quiz.semester }}
+      </div>
+      <div class="meta" style="margin-top:3px">
+        {% if item.quiz.time_limit_minutes %}⏱ {{ item.quiz.time_limit_minutes }} min{% else %}⏱ No time limit{% endif %} ·
+        {% if item.quiz.questions_to_attempt %}{{ item.quiz.questions_to_attempt }} random questions{% else %}{{ item.quiz.question_count }} question{{ item.quiz.question_count|pluralize }}{% endif %} ·
+        {{ item.quiz.max_score }} marks
+      </div>
+      <div class="meta" style="margin-top:3px">
+        Open: {{ item.quiz.available_from|date:"d M, H:i" }} → {{ item.quiz.available_until|date:"d M, H:i" }}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      {% if item.attempt and item.attempt.is_submitted %}
+        <span class="badge b-submitted">SUBMITTED</span>
+        <a href="{% url 'lecturers:quiz_attempt_result' item.attempt.pk %}" class="btn btn-view">View Result</a>
+      {% elif item.attempt %}
+        <span class="badge b-progress">IN PROGRESS</span>
+        <a href="{% url 'lecturers:quiz_take' item.attempt.pk %}" class="btn btn-cont">Continue</a>
+      {% elif item.quiz.status == 'open' %}
+        <span class="badge b-open">OPEN</span>
+        <form method="post" action="{% url 'lecturers:quiz_start' item.quiz.pk %}" style="margin:0">
+          {% csrf_token %}
+          <button class="btn btn-start" type="submit">Start Quiz</button>
+        </form>
+      {% elif item.quiz.status == 'upcoming' %}
+        <span class="badge b-upcoming">OPENS {{ item.quiz.available_from|date:"d M, H:i" }}</span>
+      {% else %}
+        <span class="badge b-closed">CLOSED</span>
+      {% endif %}
+    </div>
+  </div>
+{% empty %}
+  <div style="text-align:center;color:#9ca3af;padding:48px;background:#fff;border:1px dashed #e5e7eb;border-radius:12px">
+    <i class="bi bi-patch-question" style="font-size:48px;display:block;margin-bottom:10px"></i>
+    No quizzes available right now.
+  </div>
+{% endfor %}
+{% endblock %}

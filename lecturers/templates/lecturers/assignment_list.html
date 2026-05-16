@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block page_title %}Assignments{% endblock %}
+{% block content %}
+<div style="padding:24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h1 style="font-size:24px;color:#1a5c38;margin:0">📝 Assignments</h1>
+    {% if user.role == 'lecturer' %}
+    <a href="{% url 'lecturers:assignment_create' %}" style="background:#1a5c38;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600">+ Create Assignment</a>
+    {% endif %}
+  </div>
+
+  {% if assignments %}
+  <div style="display:grid;gap:16px">
+    {% for a in assignments %}
+    <a href="{% url 'lecturers:assignment_detail' a.pk %}" style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;text-decoration:none;color:inherit;display:block;transition:all .2s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:4px">{{ a.course.code }} - {{ a.course.title }}</div>
+          <div style="font-size:18px;font-weight:700;color:#0f2d1c;margin-bottom:6px">{{ a.title }}</div>
+          <div style="font-size:12px;color:#6b7280">
+            Individual: {{ a.individual_deadline|date:"M d, Y H:i" }} | Group: {{ a.group_deadline|date:"M d, Y H:i" }}
+          </div>
+        </div>
+        <div>
+          {% if a.is_published %}
+          <span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">PUBLISHED</span>
+          {% else %}
+          <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">DRAFT</span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;color:#6b7280">
+    <div style="font-size:60px;margin-bottom:12px">📋</div>
+    <p>No assignments yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

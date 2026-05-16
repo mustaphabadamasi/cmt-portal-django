@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     'registrar',
     'fees',
     'documents',
+    'lecturers',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

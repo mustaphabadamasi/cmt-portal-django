@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page_title %}My Assignments{% endblock %}
+{% block content %}
+<div style="padding:24px">
+  <h1 style="color:#1a5c38;margin-bottom:24px">📝 My Assignments</h1>
+
+  {% if assignment_data %}
+  <div style="display:grid;gap:16px">
+    {% for d in assignment_data %}
+    <a href="{% url 'lecturers:student_assignment_detail' d.assignment.pk %}" style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;text-decoration:none;color:inherit;display:block">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;color:#6b7280">{{ d.assignment.course.code }}</div>
+          <div style="font-size:17px;font-weight:700;color:#0f2d1c">{{ d.assignment.title }}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div style="padding:10px;background:#eff6ff;border-radius:8px">
+          <div style="font-size:11px;color:#1e40af;font-weight:700">INDIVIDUAL (10 mks)</div>
+          {% if d.individual_submitted %}
+            {% if d.individual_score is not None %}<div style="font-size:14px;color:#065f46;margin-top:4px">✓ Graded: <strong>{{ d.individual_score }}/10</strong></div>
+            {% else %}<div style="font-size:13px;color:#6b7280;margin-top:4px">✓ Submitted - awaiting grade</div>{% endif %}
+          {% else %}<div style="font-size:13px;color:#dc2626;margin-top:4px">⏰ Not submitted</div>{% endif %}
+        </div>
+        <div style="padding:10px;background:#f0fdf4;border-radius:8px">
+          <div style="font-size:11px;color:#065f46;font-weight:700">GROUP (10 mks){% if d.is_leader %} - YOU ARE LEADER{% endif %}</div>
+          {% if d.my_group %}
+            {% if d.group_submitted %}
+              {% if d.group_score is not None %}<div style="font-size:14px;color:#065f46;margin-top:4px">✓ Graded: <strong>{{ d.group_score }}/10</strong></div>
+              {% else %}<div style="font-size:13px;color:#6b7280;margin-top:4px">✓ Submitted - awaiting grade</div>{% endif %}
+            {% else %}<div style="font-size:13px;color:#dc2626;margin-top:4px">⏰ {{ d.my_group.name }} - not submitted</div>{% endif %}
+          {% else %}<div style="font-size:13px;color:#6b7280;margin-top:4px">Not yet assigned to a group</div>{% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;color:#6b7280">
+    <div style="font-size:60px;margin-bottom:12px">📋</div>
+    <p>No assignments available yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

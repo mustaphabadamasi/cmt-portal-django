@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block page_title %}{{ quiz.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ quiz.title }}</div>
+    <div class="page-sub">{{ quiz.course.code }} · {{ questions_data|length }} question{{ questions_data|length|pluralize }} · {{ attempt.max_score }} marks</div>
+  </div>
+  {% if has_time_limit %}
+    <div id="timer" style="background:#1a5c38;color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;font-size:16px;font-family:monospace;text-align:center;min-width:130px">--:--</div>
+  {% endif %}
+</div>
+
+{% if quiz.description %}
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:16px;color:#1e40af;font-size:13px">
+    <strong>Instructions:</strong> {{ quiz.description|linebreaksbr }}
+  </div>
+{% endif %}
+
+<form method="post" id="quizForm">
+  {% csrf_token %}
+  {% for item in questions_data %}
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:14px">
+      <div style="font-weight:600;color:#111;font-size:14px;margin-bottom:12px">
+        <span style="background:#1a5c38;color:#fff;padding:2px 8px;border-radius:99px;font-size:11px;margin-right:8px">Q{{ forloop.counter }}</span>
+        {{ item.question.text }}
+      </div>
+      {% for choice in item.choices %}
+        <label style="display:block;padding:11px 14px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:13px;transition:background .12s" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
+          <input type="radio" name="q_{{ item.question.id }}" value="{{ choice.id }}" style="margin-right:10px;accent-color:#1a5c38" {% if item.answer.selected_choice_id == choice.id %}checked{% endif %}>
+          {{ choice.text }}
+        </label>
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+  <div style="background:#fff;border-top:3px solid #1a5c38;padding:18px;text-align:center;border-radius:0 0 12px 12px;margin-top:16px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb">
+    <button type="submit" style="background:#1a5c38;color:#fff;border:none;padding:13px 36px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Submit Quiz</button>
+    <div style="margin-top:8px;font-size:12px;color:#6b7280">Once submitted, you cannot retake this quiz.</div>
+  </div>
+</form>
+
+<script>
+  let submitting = false;
+  window.addEventListener('beforeunload', e => { if (!submitting) { e.preventDefault(); e.returnValue = ''; } });
+  document.getElementById('quizForm').addEventListener('submit', () => submitting = true);
+  {% if has_time_limit %}
+  let remaining = {{ remaining_seconds }};
+  const timer = document.getElementById('timer');
+  function tick(){
+    if (remaining <= 0){ timer.textContent = "Time up!"; submitting = true; document.getElementById('quizForm').submit(); return; }
+    const m = Math.floor(remaining/60), s = remaining%60;
+    timer.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    if (remaining < 60) timer.style.background = '#dc2626';
+    else if (remaining < 300) timer.style.background = '#c8881a';
+    remaining--;
+  }
+  tick(); setInterval(tick, 1000);
+  {% endif %}
+</script>
+{% endblock %}

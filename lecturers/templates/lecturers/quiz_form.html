@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block page_title %}{% if mode == 'create' %}New Quiz{% else %}Edit Quiz{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{% if mode == 'create' %}New Quiz{% else %}Edit: {{ quiz.title }}{% endif %}</div>
+    <div class="page-sub">Quiz settings · You can add questions after creation.</div>
+  </div>
+  <a href="{% url 'lecturers:quiz_list' %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 18px;border-radius:8px;font-size:13px;text-decoration:none">← Back</a>
+</div>
+
+<style>
+  .qf{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px;max-width:780px}
+  .qf .g{margin-bottom:14px}
+  .qf label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .qf input, .qf select, .qf textarea{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;font-family:inherit}
+  .qf .h{font-size:11px;color:#9ca3af;margin-top:3px}
+  .qf .e{font-size:12px;color:#991b1b;margin-top:3px}
+  .qf .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+</style>
+
+<form method="post" class="qf">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="row">
+    <div class="g"><label>Course</label>{{ form.course }}{% if form.course.errors %}<div class="e">{{ form.course.errors|join:", " }}</div>{% endif %}</div>
+    <div class="g"><label>Semester</label>{{ form.semester }}{% if form.semester.errors %}<div class="e">{{ form.semester.errors|join:", " }}</div>{% endif %}</div>
+  </div>
+  <div class="g"><label>Title</label>{{ form.title }}{% if form.title.errors %}<div class="e">{{ form.title.errors|join:", " }}</div>{% endif %}</div>
+  <div class="g"><label>Description / Instructions</label>{{ form.description }}{% if form.description.help_text %}<div class="h">{{ form.description.help_text }}</div>{% endif %}</div>
+  <div class="row">
+    <div class="g"><label>Max Score</label>{{ form.max_score }}<div class="h">{{ form.max_score.help_text }}</div></div>
+    <div class="g"><label>Questions to Attempt</label>{{ form.questions_to_attempt }}<div class="h">{{ form.questions_to_attempt.help_text }}</div></div>
+    <div class="g"><label>Time Limit (minutes)</label>{{ form.time_limit_minutes }}<div class="h">{{ form.time_limit_minutes.help_text }}</div></div>
+  </div>
+  <div class="row">
+    <div class="g"><label>Available From</label>{{ form.available_from }}{% if form.available_from.errors %}<div class="e">{{ form.available_from.errors|join:", " }}</div>{% endif %}</div>
+    <div class="g"><label>Available Until</label>{{ form.available_until }}{% if form.available_until.errors %}<div class="e">{{ form.available_until.errors|join:", " }}</div>{% endif %}</div>
+  </div>
+
+  <button type="submit" style="background:#1a5c38;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
+    {% if mode == 'create' %}Create Quiz & Add Questions{% else %}Save Changes{% endif %}
+  </button>
+  <a href="{% url 'lecturers:quiz_list' %}" style="margin-left:8px;color:#6b7280;text-decoration:none">Cancel</a>
+</form>
+{% endblock %}

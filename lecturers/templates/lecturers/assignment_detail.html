@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block page_title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div style="padding:24px">
+  <a href="{% url 'lecturers:assignment_list' %}" style="color:#1a5c38;text-decoration:none;font-size:13px">← Back to Assignments</a>
+
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+      <div>
+        <div style="font-size:13px;color:#6b7280">{{ assignment.course.code }} - {{ assignment.course.title }}</div>
+        <h1 style="color:#0f2d1c;margin:4px 0">{{ assignment.title }}</h1>
+        <div style="font-size:12px;color:#6b7280">{{ assignment.semester.name }}</div>
+      </div>
+      {% if assignment.is_published %}
+      <span style="background:#d1fae5;color:#065f46;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:600">PUBLISHED</span>
+      {% else %}
+      <span style="background:#fef3c7;color:#92400e;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:600">DRAFT</span>
+      {% endif %}
+    </div>
+
+    <div style="white-space:pre-wrap;color:#374151;line-height:1.6;padding:16px;background:#f9fafb;border-radius:8px;margin-bottom:20px">{{ assignment.description }}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+      <div style="padding:14px;background:#eff6ff;border-radius:8px">
+        <div style="font-size:11px;color:#1e40af;font-weight:700;letter-spacing:.05em">INDIVIDUAL PART (10 marks)</div>
+        <div style="font-size:14px;color:#1e3a8a;margin-top:4px">Deadline: {{ assignment.individual_deadline|date:"M d, Y H:i" }}</div>
+        <div style="font-size:13px;color:#1e40af;margin-top:8px">{{ individual_count }} submission{{ individual_count|pluralize }}</div>
+      </div>
+      <div style="padding:14px;background:#f0fdf4;border-radius:8px">
+        <div style="font-size:11px;color:#065f46;font-weight:700;letter-spacing:.05em">GROUP PART (10 marks)</div>
+        <div style="font-size:14px;color:#064e3b;margin-top:4px">Deadline: {{ assignment.group_deadline|date:"M d, Y H:i" }}</div>
+        <div style="font-size:13px;color:#065f46;margin-top:8px">{{ group_count }}/{{ total_groups }} group{{ total_groups|pluralize }} submitted</div>
+      </div>
+    </div>
+
+    {% if can_edit %}
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{% url 'lecturers:assignment_groups' assignment.pk %}" style="background:#1a5c38;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">👥 Manage Groups</a>
+      <a href="{% url 'lecturers:assignment_submissions' assignment.pk %}" style="background:#2563eb;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">📥 View Submissions</a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if groups %}
+  <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
+    <h2 style="color:#0f2d1c;margin:0 0 16px;font-size:18px">Groups</h2>
+    <div style="display:grid;gap:12px">
+      {% for g in groups %}
+      <div style="padding:14px;border:1px solid #e5e7eb;border-radius:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>{{ g.name }}</strong>
+          <span style="font-size:12px;color:#6b7280">{{ g.members.count }} member{{ g.members.count|pluralize }}</span>
+        </div>
+        {% if g.leader %}<div style="font-size:12px;color:#1a5c38;margin-top:6px">👑 Leader: {{ g.leader.user.get_full_name }} ({{ g.leader.reg_number }})</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block page_title %}Submissions{% endblock %}
+{% block content %}
+<div style="padding:24px">
+  <a href="{% url 'lecturers:assignment_detail' assignment.pk %}" style="color:#1a5c38;text-decoration:none;font-size:13px">← Back to Assignment</a>
+  <h1 style="color:#1a5c38;margin:12px 0 24px">Submissions - {{ assignment.title }}</h1>
+
+  <!-- Individual Submissions -->
+  <div style="background:white;padding:20px;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:20px">
+    <h2 style="margin:0 0 16px;font-size:16px;color:#1e3a8a">📝 Individual Submissions ({{ individual_subs.count }})</h2>
+    {% if individual_subs %}
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:#f3f4f6;text-align:left">
+          <th style="padding:10px;font-size:12px;color:#6b7280">Student</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Reg No</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Submitted</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Score</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in individual_subs %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:10px">{{ s.student.user.get_full_name }}</td>
+          <td style="padding:10px;font-size:13px;color:#6b7280">{{ s.student.reg_number }}</td>
+          <td style="padding:10px;font-size:13px">{{ s.submitted_at|date:"M d, H:i" }}{% if s.is_late %} <span style="background:#fef2f2;color:#b91c1c;padding:2px 6px;border-radius:8px;font-size:10px">LATE</span>{% endif %}</td>
+          <td style="padding:10px">{% if s.score is not None %}<strong>{{ s.score }}/{{ assignment.max_individual_mark }}</strong>{% else %}<span style="color:#6b7280">Not graded</span>{% endif %}</td>
+          <td style="padding:10px"><a href="{% url 'lecturers:grade_individual' s.pk %}" style="color:#2563eb;text-decoration:none;font-size:13px">{% if s.score is not None %}Edit Grade{% else %}Grade →{% endif %}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p style="color:#6b7280">No individual submissions yet.</p>{% endif %}
+  </div>
+
+  <!-- Group Submissions -->
+  <div style="background:white;padding:20px;border-radius:12px;border:1px solid #e5e7eb">
+    <h2 style="margin:0 0 16px;font-size:16px;color:#065f46">👥 Group Submissions ({{ group_subs.count }})</h2>
+    {% if group_subs %}
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:#f3f4f6;text-align:left">
+          <th style="padding:10px;font-size:12px;color:#6b7280">Group</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Submitted By</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Submitted</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Score</th>
+          <th style="padding:10px;font-size:12px;color:#6b7280">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in group_subs %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:10px"><strong>{{ s.group.name }}</strong></td>
+          <td style="padding:10px;font-size:13px">{{ s.submitted_by.user.get_full_name }}</td>
+          <td style="padding:10px;font-size:13px">{{ s.submitted_at|date:"M d, H:i" }}{% if s.is_late %} <span style="background:#fef2f2;color:#b91c1c;padding:2px 6px;border-radius:8px;font-size:10px">LATE</span>{% endif %}</td>
+          <td style="padding:10px">{% if s.score is not None %}<strong>{{ s.score }}/{{ assignment.max_group_mark }}</strong>{% else %}<span style="color:#6b7280">Not graded</span>{% endif %}</td>
+          <td style="padding:10px"><a href="{% url 'lecturers:grade_group' s.pk %}" style="color:#2563eb;text-decoration:none;font-size:13px">{% if s.score is not None %}Edit Grade{% else %}Grade →{% endif %}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p style="color:#6b7280">No group submissions yet.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

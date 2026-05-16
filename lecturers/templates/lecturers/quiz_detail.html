@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block page_title %}{{ quiz.title }}{% endblock %}
+{% block content %}
+<style>
+  .qd-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:14px}
+  .qd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+  .qtitle{font-weight:700;color:#111;font-size:15px}
+  .qmeta{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+  .choice{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;margin-bottom:5px;border:1px solid #e5e7eb}
+  .choice.correct{background:#f0fdf4;border-color:#86efac}
+  .choice .ctxt{flex:1;font-size:13px;color:#111}
+  .choice button{padding:4px 10px;font-size:11px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+  .btn-correct{background:#1a5c38;color:#fff}
+  .btn-correct-on{background:#86efac;color:#065f46;cursor:default}
+  .btn-rmv{background:#fee2e2;color:#991b1b}
+  .inl{display:flex;gap:6px;margin-top:8px}
+  .inl input{flex:1;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit}
+  .inl button{padding:7px 14px;background:#1a5c38;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
+  .add-q{background:#f9fafb;border:1px dashed #d1d5db;border-radius:12px;padding:16px}
+  .add-q textarea, .add-q input{width:100%;padding:8px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.4px;margin-left:6px;vertical-align:middle}
+  .badge-draft   {background:#e5e7eb;color:#374151}
+  .badge-upcoming{background:#dbeafe;color:#1e40af}
+  .badge-open    {background:#d1fae5;color:#065f46}
+  .badge-closed  {background:#fee2e2;color:#991b1b}
+  .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .sgrid label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:2px}
+  .sgrid > div > div{font-size:13px;color:#111;font-weight:500}
+</style>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ quiz.title }} <span class="badge badge-{{ quiz.status }}">{{ quiz.status|upper }}</span></div>
+    <div class="page-sub">{{ quiz.course.code }} — {{ quiz.course.title }} · {{ quiz.semester }}</div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <a href="{% url 'lecturers:quiz_list' %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none">← All</a>
+    <a href="{% url 'lecturers:quiz_attempts' quiz.pk %}" style="background:#1a5c38;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:600;margin-right:6px">📊 View Attempts</a>
+        <a href="{% url 'lecturers:quiz_import' quiz.pk %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:500">Import CSV</a>
+    <a href="{% url 'lecturers:quiz_update' quiz.pk %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:500">Edit settings</a>
+    <form method="post" action="{% url 'lecturers:quiz_publish' quiz.pk %}" style="display:inline">
+      {% csrf_token %}
+      <button style="background:{% if quiz.is_published %}#c8881a{% else %}#1a5c38{% endif %};color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
+        {% if quiz.is_published %}Unpublish{% else %}Publish{% endif %}
+      </button>
+    </form>
+    <form method="post" action="{% url 'lecturers:quiz_delete' quiz.pk %}" style="display:inline" onsubmit="return confirm('Delete this quiz and all its questions? Cannot be undone.');">
+      {% csrf_token %}
+      <button style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="qd-card">
+  <div class="qmeta" style="margin-bottom:10px">Quiz Settings</div>
+  <div class="sgrid">
+    <div><label>Max Score</label><div>{{ quiz.max_score }} marks</div></div>
+    <div><label>Time Limit</label><div>{% if quiz.time_limit_minutes %}{{ quiz.time_limit_minutes }} min{% else %}No limit{% endif %}</div></div>
+    <div><label>Available From</label><div>{{ quiz.available_from|date:"d M Y, H:i" }}</div></div>
+    <div><label>Available Until</label><div>{{ quiz.available_until|date:"d M Y, H:i" }}</div></div>
+    <div><label>To Attempt</label><div>{% if quiz.questions_to_attempt %}{{ quiz.questions_to_attempt }} of {{ quiz.question_count }} random{% else %}All ({{ quiz.question_count }}){% endif %}</div></div>
+    <div><label>Questions</label><div>{{ quiz.question_count }} ({{ quiz.total_points }} pts)</div></div>
+  </div>
+  {% if quiz.description %}
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;display:block;margin-bottom:4px">Instructions</label>
+      <div style="font-size:13px;color:#374151">{{ quiz.description|linebreaksbr }}</div>
+    </div>
+  {% endif %}
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:18px;margin:24px 0 12px">Questions</h3>
+
+{% for q in questions %}
+  <div class="qd-card">
+    <div class="qd-head">
+      <div>
+        <div class="qtitle">{{ forloop.counter }}. {{ q.text }}</div>
+        <div class="qmeta">{{ q.points }} pt{{ q.points|pluralize }} · {{ q.choices.count }} choice{{ q.choices.count|pluralize }} · {% if q.is_ready %}<span style="color:#065f46;font-weight:700">Ready</span>{% else %}<span style="color:#92400e;font-weight:700">Needs attention</span>{% endif %}</div>
+      </div>
+      <form method="post" action="{% url 'lecturers:question_delete' q.pk %}" onsubmit="return confirm('Delete this question?');">
+        {% csrf_token %}
+        <button class="btn-rmv" style="padding:5px 12px;font-size:11px;border-radius:6px;border:none;cursor:pointer">Remove</button>
+      </form>
+    </div>
+
+    <div style="margin:10px 0 14px">
+      {% for c in q.choices.all %}
+        <div class="choice {% if c.is_correct %}correct{% endif %}">
+          <div class="ctxt">{{ c.text }}</div>
+          {% if c.is_correct %}
+            <span class="btn-correct-on">✓ Correct</span>
+          {% else %}
+            <form method="post" action="{% url 'lecturers:choice_mark_correct' c.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button class="btn-correct">Mark correct</button>
+            </form>
+          {% endif %}
+          <form method="post" action="{% url 'lecturers:choice_delete' c.pk %}" style="display:inline" onsubmit="return confirm('Remove this choice?');">
+            {% csrf_token %}
+            <button class="btn-rmv">×</button>
+          </form>
+        </div>
+      {% empty %}
+        <div style="color:#9ca3af;font-size:13px;padding:8px 0">No choices yet — add at least 2 below.</div>
+      {% endfor %}
+    </div>
+
+    <form method="post" action="{% url 'lecturers:choice_create' q.pk %}" class="inl">
+      {% csrf_token %}
+      <input name="text" placeholder="Add a choice..." required>
+      <button>+ Add</button>
+    </form>
+  </div>
+{% empty %}
+  <div style="padding:36px;text-align:center;color:#9ca3af;background:#fff;border:1px dashed #e5e7eb;border-radius:12px">
+    No questions yet. Add your first one below.
+  </div>
+{% endfor %}
+
+<div class="add-q">
+  <div style="font-weight:600;color:#1a5c38;margin-bottom:10px;font-size:14px">+ Add Question</div>
+  <form method="post" action="{% url 'lecturers:question_create' quiz.pk %}">
+    {% csrf_token %}
+    <textarea name="text" rows="2" placeholder="Question text..." required></textarea>
+    <div style="display:flex;gap:10px;align-items:center">
+      <label style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Points:</label>
+      <input type="number" name="points" value="1" min="1" style="width:80px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px">
+      <button type="submit" style="margin-left:auto;background:#1a5c38;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Add Question</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

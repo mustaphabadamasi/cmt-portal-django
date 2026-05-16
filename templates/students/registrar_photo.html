@@ -88,6 +88,7 @@
 
   <div style="display:flex;gap:10px;margin-top:4px">
     <a href="{% url 'exam_card' student.pk %}" target="_blank" class="btn btn-ghost btn-sm"><i class="bi bi-card-heading"></i> Print Exam Card</a>
+        <a href="{% url 'lecturers:student_quiz_list' %}" target="_blank" class="btn btn-ghost btn-sm"><i class="bi bi-patch-question"></i> Print Available Quizzes</a>
     <a href="{% url 'course_reg_form' student.pk %}" target="_blank" class="btn btn-ghost btn-sm"><i class="bi bi-journal-check"></i> Course Reg Form</a>
   </div>
 

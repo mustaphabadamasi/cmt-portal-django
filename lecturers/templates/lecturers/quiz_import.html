@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block page_title %}Import Questions{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Import Questions: {{ quiz.title }}</div>
+    <div class="page-sub">{{ quiz.course.code }} · {{ quiz.semester }} · current bank: {{ quiz.question_count }} question{{ quiz.question_count|pluralize }}</div>
+  </div>
+  <a href="{% url 'lecturers:quiz_detail' quiz.pk %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 18px;border-radius:8px;font-size:13px;text-decoration:none">← Back to quiz</a>
+</div>
+
+<style>
+  .imp-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px;max-width:780px;margin-bottom:14px}
+  .imp-card h3{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0 0 10px}
+  .imp-card code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;color:#1f2937}
+  .imp-card pre{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;color:#374151;overflow-x:auto;font-family:Menlo,Consolas,monospace;line-height:1.55}
+  .imp-card .file-input{width:100%;padding:14px;border:2px dashed #d1d5db;border-radius:8px;background:#fafafa;font-family:inherit}
+  .imp-card .file-input:hover{border-color:#1a5c38;background:#f0fdf4}
+</style>
+
+<div class="imp-card">
+  <h3>CSV Format</h3>
+  <p style="font-size:13px;color:#6b7280;margin:0 0 10px">Each row creates one question with its choices. <strong>Minimum 3 columns</strong>: question, correct answer, then 1 or more wrong options. Header row (if any) is auto-detected and skipped.</p>
+<pre>question,correct,wrong1,wrong2,wrong3
+"What is research?","Systematic inquiry","Random search","Wild guess","Library tour"
+"Capital of Nigeria?","Abuja","Lagos","Kano","Port Harcourt"
+"2 + 2 = ?","4","3","5","22"</pre>
+  <ul style="font-size:12px;color:#6b7280;margin:10px 0 0;padding-left:18px;line-height:1.7">
+    <li>Wrap any cell containing a comma in <code>"double quotes"</code>.</li>
+    <li>Each question gets <strong>1 point</strong>. Set the total weighting via the quiz's <em>Max Score</em> and <em>Questions to Attempt</em> settings.</li>
+    <li>Imported questions are <strong>appended</strong> to the existing bank — they don't replace.</li>
+    <li>Choices are shuffled per student at attempt time (coming in 1B.2).</li>
+  </ul>
+</div>
+
+<div class="imp-card">
+  <h3>Upload CSV</h3>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="csv_file" accept=".csv,text/csv" required class="file-input">
+    <div style="margin-top:14px">
+      <button type="submit" style="background:#1a5c38;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Import Questions</button>
+      <a href="{% url 'lecturers:quiz_detail' quiz.pk %}" style="margin-left:8px;color:#6b7280;text-decoration:none">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

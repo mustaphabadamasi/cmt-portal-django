@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Course Registration Status</div>
+  <div class="page-sub">Track which students have and haven't registered for a semester</div>
+</div>
+<style>
+.filter-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px}
+.filter-card h3{font-size:14px;font-weight:700;color:#1a5c38;margin-bottom:14px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}
+.fg label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;text-transform:uppercase}
+.fg select{width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px}
+.btn{padding:9px 18px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-green{background:#1a5c38;color:#fff}
+.stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat{background:#fff;border-radius:10px;padding:16px 20px;border:1px solid #e5e7eb;text-align:center}
+.stat-num{font-size:30px;font-weight:700}
+.green .stat-num{color:#1a5c38} .red .stat-num{color:#dc2626} .gold .stat-num{color:#c8881a}
+.section{background:#fff;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:20px;overflow:hidden}
+.section-hdr{padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.section-hdr.green{background:#f0fdf4;border-bottom:2px solid #1a5c38}
+.section-hdr.red{background:#fff5f5;border-bottom:2px solid #dc2626}
+.section-title{font-weight:700;font-size:14px}
+.section-count{font-size:12px;font-weight:600;padding:3px 10px;border-radius:10px}
+.count-green{background:#d1fae5;color:#065f46}
+.count-red{background:#fee2e2;color:#991b1b}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f9fafb;padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb}
+td{padding:8px 12px;border-bottom:1px solid #f3f4f6}
+tr:hover td{background:#f9fafb}
+.reg-num{font-family:monospace;font-size:11px;color:#6b7280}
+.course-tag{display:inline-block;background:#d1fae5;color:#065f46;padding:1px 7px;border-radius:6px;font-size:10px;font-weight:600;margin:1px}
+.no-reg{text-align:center;padding:24px;color:#9ca3af;font-size:13px}
+</style>
+
+<div class="filter-card">
+  <h3>🔍 Filter by Programme, Session & Semester</h3>
+  <form method="get">
+  <div class="fg">
+    <div>
+      <label>Programme</label>
+      <select name="programme">
+        <option value="">-- Select --</option>
+        {% for p in programmes %}<option value="{{ p.pk }}" {% if sel_prog == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Level</label>
+      <select name="level">
+        <option value="">All</option>
+        <option value="24" {% if sel_level == "24" %}selected{% endif %}>Diploma II</option>
+        <option value="25" {% if sel_level == "25" %}selected{% endif %}>Diploma I</option>
+      </select>
+    </div>
+    <div>
+      <label>Session</label>
+      <select name="session">
+        <option value="">-- Select --</option>
+        {% for s in sessions %}<option value="{{ s.pk }}" {% if sel_sess == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Semester</label>
+      <select name="semester">
+        <option value="">-- Select --</option>
+        {% for s in semesters %}<option value="{{ s.pk }}" {% if sel_sem == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.session.name }} — {{ s.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button type="submit" class="btn btn-green" style="width:100%">🔍 Show Status</button>
+    </div>
+  </div>
+  </form>
+</div>
+
+{% if selected_programme and selected_semester %}
+
+<!-- Stats -->
+<div class="stat-bar">
+  <div class="stat green"><div class="stat-num">{{ reg_count }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">✅ Registered</div></div>
+  <div class="stat red"><div class="stat-num">{{ not_reg_count }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">❌ Not Registered</div></div>
+  <div class="stat gold"><div class="stat-num">{{ total }}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">📋 Total Students</div></div>
+</div>
+
+<div style="font-size:13px;color:#6b7280;margin-bottom:14px;padding:10px 14px;background:#fff;border-radius:8px;border:1px solid #e5e7eb">
+  <strong>{{ selected_programme.name }}</strong> &bull; <strong>{{ selected_semester.session.name }}</strong> &bull; <strong>{{ selected_semester.name }}</strong>
+  {% if sel_level %}&bull; <strong>{% if sel_level == "24" %}Diploma II{% else %}Diploma I{% endif %}</strong>{% endif %}
+</div>
+
+<!-- Registered Students -->
+<div class="section">
+  <div class="section-hdr green">
+    <span class="section-title" style="color:#1a5c38">✅ Registered Students</span>
+    <span class="section-count count-green">{{ reg_count }} student{{ reg_count|pluralize }}</span>
+  </div>
+  {% if registered %}
+  <table>
+    <thead><tr>
+      <th>S/N</th><th>Matric No</th><th>Full Name</th><th>Courses Registered</th><th>Count</th>
+    </tr></thead>
+    <tbody>
+    {% for item in registered %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td class="reg-num">{{ item.student.reg_number }}</td>
+      <td style="font-weight:600">{{ item.student.user.get_full_name }}</td>
+      <td>{% for r in item.courses %}<span class="course-tag">{{ r.course.code }}</span>{% endfor %}</td>
+      <td style="text-align:center;font-weight:700;color:#1a5c38">{{ item.count }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="no-reg">No students have registered yet for this semester</div>
+  {% endif %}
+</div>
+
+<!-- Not Registered Students -->
+<div class="section">
+  <div class="section-hdr red">
+    <span class="section-title" style="color:#dc2626">❌ Not Yet Registered</span>
+    <span class="section-count count-red">{{ not_reg_count }} student{{ not_reg_count|pluralize }}</span>
+  </div>
+  {% if not_registered %}
+  <table>
+    <thead><tr>
+      <th>S/N</th><th>Matric No</th><th>Full Name</th><th>Programme</th>
+    </tr></thead>
+    <tbody>
+    {% for student in not_registered %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td class="reg-num">{{ student.reg_number }}</td>
+      <td style="font-weight:600">{{ student.user.get_full_name }}</td>
+      <td style="font-size:11px;color:#6b7280">{{ student.programme.name }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="no-reg" style="color:#065f46">🎉 All students in this programme have registered!</div>
+  {% endif %}
+</div>
+
+{% else %}
+<div style="text-align:center;padding:60px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;color:#9ca3af">
+  <div style="font-size:48px;margin-bottom:12px">📋</div>
+  <p style="font-size:15px">Select a programme and semester to view registration status</p>
+</div>
+{% endif %}
+{% endblock %}

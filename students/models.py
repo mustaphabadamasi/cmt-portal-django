@@ -22,6 +22,14 @@ class Student(models.Model):
     current_session  = models.ForeignKey(Session, on_delete=models.SET_NULL, null=True)
     current_semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True)
     photo            = models.ImageField(upload_to=photo_upload_path, blank=True, null=True)
+
+    GENDER_CHOICES = [("M", "MALE"), ("F", "FEMALE")]
+    gender          = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, default="M")
+    date_of_birth   = models.DateField(null=True, blank=True)
+    state_of_origin = models.CharField(max_length=50, blank=True, default="KATSINA")
+    entry_mode      = models.CharField(max_length=20, blank=True, default="O-LEVEL")
+    year_admitted   = models.CharField(max_length=9, blank=True, default="")
+
     status           = models.CharField(max_length=15, choices=STATUS_CHOICES, default='active')
     date_enrolled    = models.DateField(auto_now_add=True)
 

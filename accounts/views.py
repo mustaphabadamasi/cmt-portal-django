@@ -28,21 +28,20 @@ def dashboard(request):
     user = request.user
     if hasattr(user, 'must_change_password') and user.must_change_password:
         return redirect('change_password')
-    
+
     role = getattr(user, 'role', 'admin')
-    
+
     if role == 'student':
         return redirect('student_dashboard')
-    elif role in ['admin', 'academic_officer']:
-        return redirect('admin:index')
+    elif role == 'lecturer':
+        return redirect('lecturers:dashboard')
     elif role == 'registrar':
         return redirect('registrar_dashboard')
     elif role == 'bursar':
-        # Redirect to a valid URL for bursar. 
-        # If no specific bursar dashboard exists, redirect to admin or student list
-        return redirect('admin:index') 
+        return redirect('admin:index')
+    elif role in ['admin', 'academic_officer']:
+        return redirect('admin:index')
     return redirect('admin:index')
-
 
 @login_required
 def change_password(request):
