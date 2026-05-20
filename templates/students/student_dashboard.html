@@ -334,6 +334,12 @@ nav{flex:1;padding:12px 0;overflow-y:auto}
             <li><a href="{% url 'exam_card' %}" class="action-btn">
               <span class="ico">🎫</span>
               <div><div class="label">Print Exam Card</div><div class="sub">Download your examination card</div></div>
+            <li><a href="{% url 'results:student_results' %}" class="action-btn">
+                <div><div class="label">My Results</div><div class="sub">View grades and GPA</div></div>
+              </a></li>
+            <li><a href="{% url 'download_transcript' %}" class="action-btn">
+                <div><div class="label">Download Transcript</div><div class="sub">PDF with grades and CGPA</div></div>
+              </a></li>
               <span class="arrow">›</span>
             </a></li>
           </ul>

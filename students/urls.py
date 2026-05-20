@@ -11,6 +11,7 @@ urlpatterns = [
     path("admin/<int:pk>/delete/", views.delete_student, name="delete_student"),
     path("admin/migrate/", views.migrate_students, name="migrate_students"),
     path("admin/semester-result/", views.semester_result, name="semester_result"),
+    path("transcript/", views.download_transcript, name="download_transcript"),
     path("dashboard/", views.student_dashboard, name="student_dashboard"),
     path("profile/", views.student_profile, name="student_profile"),
     path("photo/upload/", views.upload_photo, name="upload_photo"),

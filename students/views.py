@@ -601,3 +601,105 @@ def course_reg_form(request, student_id):
 def student_profile(request):
     student = get_object_or_404(Student, user=request.user)
     return render(request, "students/profile.html", {"student": student})
+
+
+@login_required
+def download_transcript(request):
+    """Generate student transcript PDF with real grades."""
+    import os, base64
+    from django.conf import settings
+    from results.models import CourseResult
+    from documents.views import render_pdf
+
+    try:
+        student = request.user.student
+    except Exception:
+        from django.contrib import messages
+        messages.error(request, "Student profile not found.")
+        return redirect("student_dashboard")
+
+    def img_to_b64(path):
+        try:
+            ext = os.path.splitext(path)[1].lower().replace('.', '')
+            if ext == 'jpg': ext = 'jpeg'
+            with open(path, 'rb') as f:
+                data = base64.b64encode(f.read()).decode('utf-8')
+            return f"data:image/{ext};base64,{data}"
+        except Exception:
+            return None
+
+    base = str(settings.BASE_DIR)
+    cmt_logo = fud_logo = photo_uri = None
+    for d in ['staticfiles/images', 'static/images']:
+        dp = os.path.join(base, d)
+        if not os.path.exists(dp): continue
+        for f in os.listdir(dp):
+            fl = f.lower()
+            if 'cmt' in fl or ('logo' in fl and 'fud' not in fl):
+                cmt_logo = img_to_b64(os.path.join(dp, f))
+            if 'fud' in fl or 'fudma' in fl:
+                fud_logo = img_to_b64(os.path.join(dp, f))
+    if student.photo:
+        try:
+            photo_uri = img_to_b64(student.photo.path)
+        except Exception:
+            pass
+
+    # All approved results for CGPA
+    all_results = CourseResult.objects.filter(
+        student=student, status='approved'
+    ).select_related('course')
+    cgpa_points = sum(float(r.grade_point or 0) * r.course.unit for r in all_results)
+    cgpa_units  = sum(r.course.unit for r in all_results)
+    cgpa = round(cgpa_points / cgpa_units, 2) if cgpa_units else 0
+
+    if   cgpa >= 4.5: degree_class = "First Class"
+    elif cgpa >= 3.5: degree_class = "Second Class Upper"
+    elif cgpa >= 2.5: degree_class = "Second Class Lower"
+    elif cgpa >= 1.5: degree_class = "Third Class"
+    elif cgpa >  0:   degree_class = "Pass"
+    else:             degree_class = "—"
+
+    from students.models import CourseRegistration
+    registrations = CourseRegistration.objects.filter(
+        student=student
+    ).select_related('semester', 'semester__session').order_by(
+        'semester__session__name', 'semester__name'
+    )
+
+    reg_data = []
+    for reg in registrations:
+        courses = reg.courses.all().order_by('code')
+        results = CourseResult.objects.filter(
+            student=student, semester=reg.semester, status='approved'
+        ).select_related('course')
+        results_dict = {r.course_id: r for r in results}
+        total_units  = sum(c.unit for c in courses)
+        graded_units = sum(c.unit for c in courses if c.id in results_dict)
+        total_points = sum(
+            float(results_dict[c.id].grade_point or 0) * c.unit
+            for c in courses if c.id in results_dict
+        )
+        gpa = round(total_points / graded_units, 2) if graded_units else 0
+        reg_data.append({
+            'semester':     reg.semester,
+            'session':      reg.semester.session,
+            'courses':      courses,
+            'results_dict': results_dict,
+            'total_units':  total_units,
+            'total_points': round(total_points, 2),
+            'gpa':          gpa,
+        })
+
+    context = {
+        'student':      student,
+        'reg_data':     reg_data,
+        'cgpa':         cgpa,
+        'cgpa_units':   cgpa_units,
+        'degree_class': degree_class,
+        'cmt_logo':     cmt_logo,
+        'fud_logo':     fud_logo,
+        'photo_uri':    photo_uri,
+    }
+    safe_reg = student.reg_number.replace('/', '_')
+    return render_pdf('students/transcript_pdf.html', context, f'Transcript_{safe_reg}.pdf')

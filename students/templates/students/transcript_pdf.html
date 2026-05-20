@@ -1,3 +1,4 @@
+{% load result_tags %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -101,49 +102,57 @@
 <table class="ctbl">
   <thead>
     <tr>
-      <th style="width:22pt">S/N</th>
-      <th style="width:48pt">Course Code</th>
-      <th>Course Title</th>
-      <th style="width:38pt">Credits</th>
-      <th style="width:42pt">Category</th>
-      <th style="width:34pt">Grade</th>
-      <th style="width:28pt">GP</th>
-      <th style="width:28pt">PE</th>
+      <th style="width:55pt">Code</th>
+      <th style="text-align:left">Course Title</th>
+      <th style="width:22pt">Units</th>
+      <th style="width:28pt">CA<br>/40</th>
+      <th style="width:28pt">Exam<br>/60</th>
+      <th style="width:28pt">Total<br>/100</th>
+      <th style="width:22pt">Grade</th>
+      <th style="width:20pt">GP</th>
+      <th style="width:45pt">Remark</th>
     </tr>
   </thead>
   <tbody>
-    {% for course in item.courses %}
+    {% for c in item.courses %}
+    {% with r=item.results_dict|get_item:c.id %}
     <tr>
-      <td style="text-align:center">{{ forloop.counter }}</td>
-      <td style="text-align:center">{{ course.code }}</td>
-      <td>{{ course.title }}</td>
-      <td style="text-align:center">{{ course.unit }}</td>
-      <td style="text-align:center">Core</td>
-      <td style="text-align:center">—</td>
-      <td style="text-align:center">—</td>
-      <td style="text-align:center">—</td>
+      <td style="text-align:center">{{ c.code }}</td>
+      <td>{{ c.title }}</td>
+      <td style="text-align:center">{{ c.unit }}</td>
+      <td style="text-align:center">{{ r.ca_score|default:"-" }}</td>
+      <td style="text-align:center">{{ r.exam_score|default:"-" }}</td>
+      <td style="text-align:center;font-weight:bold">{{ r.total_score|default:"-" }}</td>
+      <td style="text-align:center;font-weight:bold">{{ r.grade|default:"-" }}</td>
+      <td style="text-align:center">{{ r.grade_point|default:"-" }}</td>
+      <td style="text-align:center;font-size:8pt">
+        {% if r.grade == "A" %}Excellent
+        {% elif r.grade == "B" %}Good
+        {% elif r.grade == "C" %}Credit
+        {% elif r.grade == "D" or r.grade == "E" %}Pass
+        {% elif r.grade == "F" %}Fail
+        {% else %}Pending{% endif %}
+      </td>
     </tr>
+    {% endwith %}
     {% endfor %}
   </tbody>
   <tfoot>
     <tr class="tot">
-      <td colspan="3" style="text-align:right;padding-right:5pt">Totals:</td>
-      <td style="text-align:center">{{ item.total_credits }}</td>
-      <td style="text-align:center">{{ item.total_credits }}</td>
-      <td style="text-align:center">—</td>
-      <td style="text-align:center">—</td>
-      <td style="text-align:center">—</td>
+      <td colspan="2" style="text-align:right">Semester Totals:</td>
+      <td style="text-align:center">{{ item.total_units }}</td>
+      <td colspan="4"></td>
+      <td style="text-align:center">{{ item.total_points }}</td>
+      <td></td>
     </tr>
   </tfoot>
 </table>
-
-<table style="width:100%;border-collapse:collapse;font-size:8.5pt;margin:2px 0 5px">
+<table style="width:100%;font-size:8.5pt;margin-top:3px" cellpadding="0" cellspacing="0">
   <tr>
-    <td style="padding:1px 4px"><strong>TCR:</strong> {{ item.total_credits }}</td>
-    <td style="padding:1px 4px"><strong>TCE:</strong> {{ item.total_credits }}</td>
-    <td style="padding:1px 4px"><strong>GPA:</strong> —</td>
-    <td style="padding:1px 4px"><strong>TPE:</strong> —</td>
-    <td style="padding:1px 4px"><strong>CGPA:</strong> —</td>
+    <td style="padding:1px 4px"><strong>TCR:</strong> {{ item.total_units }}</td>
+    <td style="padding:1px 4px"><strong>TCP:</strong> {{ item.total_points }}</td>
+    <td style="padding:1px 4px"><strong>GPA:</strong> {{ item.gpa }}</td>
+    <td style="padding:1px 4px"><strong>CGPA:</strong> {{ cgpa }}</td>
   </tr>
 </table>
 {% endfor %}
