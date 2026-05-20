@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block page_title %}Delete{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:500px;margin:0 auto">
+  <div style="background:white;border-radius:12px;border:2px solid #dc2626;padding:32px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+    <h2 style="color:#dc2626;margin:0 0 8px">Delete this {{ item_type }}?</h2>
+    <p style="color:#6b7280;margin:0 0 24px;font-size:14px">
+      {% if item_type == 'post' %}
+        "{{ item.title }}" and all its replies will be permanently deleted.
+      {% else %}
+        This reply will be permanently deleted.
+      {% endif %}
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" style="background:#dc2626;color:white;padding:12px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer">
+          Yes, Delete
+        </button>
+      </form>
+      <a href="{{ back_url }}" style="padding:12px 20px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151">
+        Cancel
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

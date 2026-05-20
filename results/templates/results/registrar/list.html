@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block page_title %}Result Approvals{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1100px;margin:0 auto">
+  <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0 0 4px">📊 Result Approvals</h1>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 20px">Review and approve lecturer-submitted results</p>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:12px;border-radius:8px;margin-bottom:14px;background:{% if 'error' in m.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    <a href="?status=draft" style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:14px;text-decoration:none;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:#6b7280">{{ counts.draft }}</div><div style="font-size:12px;color:#9ca3af">Draft</div></a>
+    <a href="?status=submitted" style="background:white;border-radius:10px;border:2px solid {% if status_filter == 'submitted' %}#1d4ed8{% else %}#e5e7eb{% endif %};padding:14px;text-decoration:none;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:#1d4ed8">{{ counts.submitted }}</div><div style="font-size:12px;color:#9ca3af">Awaiting Approval</div></a>
+    <a href="?status=approved" style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:14px;text-decoration:none;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:#166534">{{ counts.approved }}</div><div style="font-size:12px;color:#9ca3af">Approved</div></a>
+    <a href="?status=rejected" style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:14px;text-decoration:none;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:#dc2626">{{ counts.rejected }}</div><div style="font-size:12px;color:#9ca3af">Rejected</div></a>
+  </div>
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f9fafb">
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Course</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Semester</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Lecturer</th>
+        <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Students</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Submitted</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Status</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Action</th>
+      </tr></thead>
+      <tbody>
+        {% for batch in batches %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:12px;font-weight:700;color:#1a5c38">{{ batch.course.code }}<br><span style="font-weight:400;font-size:11px;color:#6b7280">{{ batch.course.title|truncatechars:30 }}</span></td>
+          <td style="padding:12px;font-size:12px;color:#6b7280">{{ batch.semester }}</td>
+          <td style="padding:12px">{{ batch.lecturer.get_full_name }}</td>
+          <td style="padding:12px;text-align:center;font-weight:600">{{ batch.student_count }}</td>
+          <td style="padding:12px;font-size:12px;color:#6b7280">{{ batch.submitted_at|date:"d M Y"|default:"-" }}</td>
+          <td style="padding:12px">
+            {% if batch.status == 'submitted' %}<span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">⏳ Pending</span>
+            {% elif batch.status == 'approved' %}<span style="background:#f0fdf4;color:#166534;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">✅ Approved</span>
+            {% elif batch.status == 'rejected' %}<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">❌ Rejected</span>
+            {% else %}<span style="background:#f3f4f6;color:#6b7280;padding:3px 8px;border-radius:10px;font-size:11px">Draft</span>{% endif %}
+          </td>
+          <td style="padding:12px">
+            <a href="{% url 'results:batch_detail' batch.id %}"
+               style="color:#1a5c38;font-weight:600;text-decoration:none;font-size:13px">Review →</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="padding:40px;text-align:center;color:#9ca3af">No results found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

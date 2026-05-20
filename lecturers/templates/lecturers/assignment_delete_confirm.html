@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_title %}Delete Assignment{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:600px;margin:0 auto">
+  <div style="background:white;padding:32px;border-radius:12px;border:2px solid #dc2626">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px">⚠</div>
+      <h1 style="color:#dc2626;margin:10px 0">Delete Assignment?</h1>
+    </div>
+    
+    <div style="padding:16px;background:#fef2f2;border-radius:8px;margin-bottom:20px">
+      <p style="margin:0;color:#7f1d1d"><strong>You are about to delete:</strong></p>
+      <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#7f1d1d">{{ assignment.title }}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#991b1b">{{ assignment.course.code }} - {{ assignment.course.title }}</p>
+    </div>
+
+    <div style="padding:14px;background:#fef3c7;border-radius:8px;margin-bottom:20px">
+      <p style="margin:0;font-size:13px;color:#92400e"><strong>This will permanently delete:</strong></p>
+      <ul style="margin:8px 0 0;padding-left:20px;font-size:13px;color:#92400e">
+        <li>The assignment and both questions</li>
+        <li>All {{ assignment.groups.count }} group{{ assignment.groups.count|pluralize }}</li>
+        <li>All {{ assignment.individual_submissions.count }} individual submission{{ assignment.individual_submissions.count|pluralize }}</li>
+        <li>All group submissions and grades</li>
+      </ul>
+      <p style="margin:8px 0 0;font-size:13px;color:#92400e"><strong>This cannot be undone.</strong></p>
+    </div>
+
+    <form method="post" style="display:flex;gap:10px;justify-content:center">
+      {% csrf_token %}
+      <button type="submit" style="background:#dc2626;color:white;padding:12px 28px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Yes, Delete Permanently</button>
+      <a href="{% url 'lecturers:assignment_detail' assignment.pk %}" style="padding:12px 28px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

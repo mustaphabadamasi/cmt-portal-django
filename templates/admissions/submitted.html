@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Application Submitted</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f4f6f3;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.card{background:white;border-radius:16px;padding:40px;max-width:560px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)}.app-num{background:#f0fdf4;border:2px solid #1a5c38;border-radius:12px;padding:16px;margin:20px 0;font-size:26px;font-weight:800;color:#1a5c38;letter-spacing:2px}.steps{text-align:left;background:#fffbeb;border-radius:10px;padding:16px;font-size:13px;color:#92400e;margin:16px 0;line-height:2.2}a.btn{display:inline-block;background:#1a5c38;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:16px}</style></head>
+<body><div class="card">
+  <div style="font-size:64px">&#127881;</div>
+  <h1 style="color:#1a5c38;margin:12px 0 8px;font-size:22px">Application Submitted!</h1>
+  <p style="color:#6b7280;font-size:14px">Save this number to track your status and log in after admission.</p>
+  <div class="app-num">{{ app.application_number }}</div>
+  <div class="steps"><strong>What happens next:</strong><br>
+    1. Registrar confirms your application fee payment<br>
+    2. You receive admission - check status below<br>
+    3. Login with <strong>{{ app.application_number }}</strong> as username and password<br>
+    4. Generate school fee invoice, pay, submit reference<br>
+    5. Registrar approves - <strong>Matric number assigned!</strong><br>
+    6. Register courses and print course form
+  </div>
+  <a class="btn" href="{% url 'admissions:check_status' %}">Check My Status</a>
+</div></body></html>

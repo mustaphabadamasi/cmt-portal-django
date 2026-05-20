@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+@page{size:A4;margin:1.5cm 2cm}
+body{font-family:Arial,sans-serif;font-size:10pt;color:#000}
+.header{text-align:center;margin-bottom:12px}
+.college{font-size:13pt;font-weight:bold}
+.sub{font-size:9pt;margin-top:2px}
+.thick{border:0;border-top:2px solid #000;margin:8px 0}
+.title{text-align:center;font-size:12pt;font-weight:bold;text-decoration:underline;margin:10px 0}
+table.info{width:100%;border-collapse:collapse;font-size:10pt;margin:12px 0}
+table.info td{padding:4px 6px}
+table.fees{width:100%;border-collapse:collapse;font-size:10pt;margin:12px 0}
+table.fees th{background:#f0f0f0;border:1px solid #888;padding:7px 8px}
+table.fees td{border:1px solid #888;padding:7px 8px}
+.total-row td{font-weight:bold;font-size:11pt}
+.pay-box{background:#f9f9f9;border:1px solid #ccc;border-radius:6px;padding:12px;margin-top:14px;font-size:9.5pt}
+.stamp-box{border:2px dashed #ccc;text-align:center;padding:20px;margin-top:20px;color:#aaa;font-size:9pt}
+</style></head>
+<body>
+
+<div class="header">
+  <div class="college">COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA</div>
+  <div class="sub">NLN COMPLEX, 185 Dutsin-Ma Road, Katsina | TEL: 08028176640</div>
+  <div class="sub">Affiliated to Federal University Dutsin-Ma, Katsina</div>
+</div>
+<hr class="thick">
+<div class="title">SCHOOL FEE INVOICE — {{ app.session.name }}</div>
+<hr class="thick">
+
+<table class="info">
+  <tr><td style="width:140px;color:#555">Invoice Number</td><td><strong>{{ invoice.invoice_number }}</strong></td><td style="width:140px;color:#555">Date</td><td>{{ invoice.created_at|date:"d M Y" }}</td></tr>
+  <tr><td style="color:#555">Student Name</td><td><strong>{{ app.get_full_name|upper }}</strong></td><td style="color:#555">App Number</td><td>{{ app.application_number }}</td></tr>
+  <tr><td style="color:#555">Programme</td><td>{{ app.programme.name }}</td><td style="color:#555">Session</td><td>{{ app.session.name }}</td></tr>
+</table>
+
+<table class="fees">
+  <thead>
+    <tr><th style="text-align:left">Description</th><th style="width:120px;text-align:right">Amount (₦)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Tuition Fee</td><td style="text-align:right">20,000.00</td></tr>
+    <tr><td>Development Levy</td><td style="text-align:right">3,000.00</td></tr>
+    <tr><td>Library Fee</td><td style="text-align:right">1,000.00</td></tr>
+    <tr><td>Sports Fee</td><td style="text-align:right">1,000.00</td></tr>
+    <tr class="total-row"><td>TOTAL</td><td style="text-align:right">{{ invoice.amount|floatformat:2 }}</td></tr>
+  </tbody>
+</table>
+
+<div class="pay-box">
+  <strong>Payment Instructions:</strong><br>
+  Pay <strong>₦{{ invoice.amount|floatformat:2 }}</strong> to:<br>
+  Account Name: <strong>CMT KATSINA</strong> &nbsp;|&nbsp;
+  Account Number: <strong>1234567890</strong> &nbsp;|&nbsp;
+  Bank: <strong>GTBank</strong><br>
+  <em>After payment, log into the portal to submit your payment reference for verification.</em>
+</div>
+
+<div class="stamp-box">
+  Official Stamp &amp; Signature<br>(Bursary Department)
+</div>
+</body></html>

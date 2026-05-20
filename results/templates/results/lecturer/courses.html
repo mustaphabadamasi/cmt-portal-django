@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load result_tags %}
+{% block page_title %}Result Entry{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1000px;margin:0 auto">
+  <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0 0 4px">📊 Result Entry</h1>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 20px">{{ semester }} — Enter CA and Exam scores for your courses</p>
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f9fafb">
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Course</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Title</th>
+        <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Students</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Status</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Action</th>
+      </tr></thead>
+      <tbody>
+        {% for course in courses %}
+        {% with batch=batch_status|get_item:course.id %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:12px;font-weight:700;color:#1a5c38">{{ course.code }}</td>
+          <td style="padding:12px">{{ course.title }}</td>
+          <td style="padding:12px;text-align:center">
+            <strong style="font-size:16px">{{ student_counts|get_item:course.id }}</strong>
+            <div style="font-size:11px;color:#9ca3af">students</div>
+          </td>
+          <td style="padding:12px">
+            {% if not batch %}
+              <span style="background:#f3f4f6;color:#6b7280;padding:3px 10px;border-radius:10px;font-size:11px">Not Started</span>
+            {% elif batch.status == 'draft' %}
+              <span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:10px;font-size:11px">Draft ({{ batch.entered_count }}/{{ batch.student_count }})</span>
+            {% elif batch.status == 'submitted' %}
+              <span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:10px;font-size:11px">⏳ Awaiting Approval</span>
+            {% elif batch.status == 'approved' %}
+              <span style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:10px;font-size:11px">✅ Approved</span>
+            {% elif batch.status == 'rejected' %}
+              <span style="background:#fef2f2;color:#dc2626;padding:3px 10px;border-radius:10px;font-size:11px">❌ Rejected</span>
+            {% endif %}
+          </td>
+          <td style="padding:12px">
+            {% if not batch or batch.status in 'draft,rejected' %}
+            <a href="{% url 'results:enter_results' course.id %}"
+               style="background:#1a5c38;color:white;padding:7px 16px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600">
+              {% if batch.status == 'rejected' %}Fix & Resubmit{% else %}Enter Results{% endif %}
+            </a>
+            {% elif batch.status == 'submitted' %}
+            <a href="{% url 'results:enter_results' course.id %}"
+               style="background:#f3f4f6;color:#374151;padding:7px 16px;border-radius:8px;text-decoration:none;font-size:12px">View</a>
+            {% else %}
+            <span style="color:#6b7280;font-size:12px">Published ✓</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr><td colspan="5" style="padding:40px;text-align:center;color:#9ca3af">No courses assigned this semester</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

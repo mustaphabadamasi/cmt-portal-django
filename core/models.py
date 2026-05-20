@@ -4,6 +4,7 @@ from django.conf import settings
  
  
 class Session(models.Model):
+    accepts_applications = models.BooleanField(default=False)
     name        = models.CharField(max_length=20, unique=True)  # e.g. 2025/2026
     is_active   = models.BooleanField(default=False)
     start_date  = models.DateField(null=True, blank=True)

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block page_title %}{{ lc.title }} — Live{% endblock %}
+{% block content %}
+<div style="padding:16px;max-width:1100px;margin:0 auto">
+
+  <!-- Class info bar -->
+  <div style="background:white;border-radius:10px;border:2px solid #ef4444;padding:14px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="background:#ef4444;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">🔴 LIVE</span>
+        <span style="font-size:12px;color:#6b7280">{{ lc.course.code }}</span>
+      </div>
+      <div style="font-size:17px;font-weight:700;color:#111827">{{ lc.title }}</div>
+      <div style="font-size:12px;color:#6b7280">👤 {{ lc.lecturer.user.get_full_name }}</div>
+    </div>
+    <a href="{% url 'live_classes:student_leave' lc.pk %}"
+       style="background:#f3f4f6;color:#374151;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #d1d5db">
+      Leave Class
+    </a>
+  </div>
+
+  <!-- Jitsi Meeting -->
+  <div style="background:#000;border-radius:12px;overflow:hidden">
+    <div id="jitsi-container" style="width:100%;height:620px"></div>
+  </div>
+
+  <div style="text-align:center;padding:10px;font-size:12px;color:#9ca3af;margin-top:8px">
+    Your attendance has been recorded. Use camera/mic controls in the meeting bar above.
+  </div>
+</div>
+
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+  const api = new JitsiMeetExternalAPI('meet.jit.si', {
+    roomName:   '{{ lc.jitsi_room_name }}',
+    width:      '100%',
+    height:     620,
+    parentNode: document.querySelector('#jitsi-container'),
+    userInfo: {
+      displayName: '{{ display_name }}',
+      email:       '{{ request.user.email }}'
+    },
+    configOverwrite: {
+        startWithAudioMuted:    true,
+        startWithVideoMuted:    false,
+        enableWelcomePage:      false,
+        prejoinPageEnabled:     false,
+        disableDeepLinking:     true,
+        lobby:                  { enabled: false },
+        enableLobbyChat:        false,
+        requireDisplayName:     false,
+        disableInviteFunctions: true,
+    },
+    interfaceConfigOverwrite: {
+      TOOLBAR_BUTTONS: [
+        'microphone','camera','chat','raisehand',
+        'participants-pane','videoquality','fullscreen','hangup'
+      ],
+      SHOW_JITSI_WATERMARK:      false,
+      SHOW_BRAND_WATERMARK:      false,
+      DEFAULT_REMOTE_DISPLAY_NAME: 'Participant',
+    }
+  });
+
+  // Auto-redirect when lecturer ends class
+  api.addEventListener('videoConferenceLeft', function() {
+    window.location.href = "{% url 'live_classes:student_leave' lc.pk %}";
+  });
+</script>
+{% endblock %}

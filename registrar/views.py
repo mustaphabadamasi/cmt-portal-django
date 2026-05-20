@@ -271,9 +271,12 @@ def add_student(request):
             messages.error(request, f"Student with reg number {reg_number} already exists.")
             return redirect("registrar_students")
 
-        username = reg_number.replace("/","").upper()
+        # Use full reg_number (with slashes) as username
+        username = reg_number
         if User.objects.filter(username=username).exists():
-            username += "X"
+            from django.contrib import messages as _msg
+            _msg.error(request, f"Username {username} already exists.")
+            return redirect("registrar_students")
 
         programme = get_object_or_404(Programme, pk=programme_id)
         session   = Session.objects.filter(is_active=True).first()

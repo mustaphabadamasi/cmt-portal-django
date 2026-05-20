@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block page_title %}{{ lc.title }}{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1100px;margin:0 auto">
+  <a href="{% url 'live_classes:lecturer_list' %}" style="color:#6b7280;font-size:13px;text-decoration:none">← Back to Live Classes</a>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div style="padding:12px 16px;border-radius:8px;margin:12px 0;background:{% if 'error' in msg.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Header -->
+  <div style="background:white;border-radius:12px;border:1px solid {% if lc.status == 'live' %}#ef4444{% else %}#e5e7eb{% endif %};padding:24px;margin:16px 0">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          {% if lc.status == 'live' %}
+            <span style="background:#ef4444;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">🔴 LIVE NOW</span>
+          {% elif lc.status == 'scheduled' %}
+            <span style="background:#dbeafe;color:#1d4ed8;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">📅 Scheduled</span>
+          {% elif lc.status == 'ended' %}
+            <span style="background:#f3f4f6;color:#6b7280;padding:4px 12px;border-radius:20px;font-size:12px">✓ Ended</span>
+          {% endif %}
+          <span style="background:#f0fdf4;color:#166534;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600">{{ lc.course.code }}</span>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 6px">{{ lc.title }}</h1>
+        {% if lc.description %}<p style="color:#6b7280;margin:0 0 8px;font-size:14px">{{ lc.description }}</p>{% endif %}
+        <div style="font-size:13px;color:#6b7280">
+          🕐 {{ lc.scheduled_start|date:"D, d M Y — g:i A" }} → {{ lc.scheduled_end|date:"g:i A" }}
+          &nbsp;|&nbsp; 👥 {{ lc.attendance_count }} attended
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% if lc.status == 'scheduled' %}
+          <form method="post" action="{% url 'live_classes:lecturer_start' lc.pk %}">
+            {% csrf_token %}
+            <button type="submit" style="background:#ef4444;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+              🔴 Start Class Now
+            </button>
+          </form>
+          <form method="post" action="{% url 'live_classes:lecturer_cancel' lc.pk %}">
+            {% csrf_token %}
+            <button type="submit" style="background:#f3f4f6;color:#374151;padding:10px 16px;border:1px solid #d1d5db;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">Cancel</button>
+          </form>
+        {% elif lc.status == 'live' %}
+          <form method="post" action="{% url 'live_classes:lecturer_end' lc.pk %}">
+            {% csrf_token %}
+            <button type="submit" style="background:#6b7280;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">⏹ End Class</button>
+          </form>
+        {% endif %}
+        {% if lc.status != 'live' %}
+          <a href="{% url 'live_classes:lecturer_delete' lc.pk %}" style="background:#fef2f2;color:#dc2626;padding:10px 16px;border:1px solid #fecaca;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">🗑 Delete</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Jitsi section (only when LIVE) -->
+  {% if lc.status == 'live' %}
+  <div style="background:white;border-radius:12px;border:2px solid #ef4444;overflow:hidden;margin-bottom:20px">
+    <div style="background:#ef4444;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:14px">🔴 Live Session — {{ lc.course.code }}: {{ lc.title }}</span>
+      <a href="{{ lc.jitsi_url }}" target="_blank"
+         style="background:white;color:#ef4444;padding:7px 16px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">
+        🚀 Open in New Tab (Recommended)
+      </a>
+    </div>
+
+    <!-- Step-by-step guide for lecturer -->
+    <div style="padding:20px;background:#fffbeb;border-bottom:1px solid #fde68a">
+      <div style="font-weight:700;color:#92400e;margin-bottom:10px;font-size:14px">📋 To join as Moderator (Lecturer):</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <div style="background:white;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#78350f;flex:1;min-width:180px">
+          <strong>Step 1:</strong> Click "Open in New Tab" above
+        </div>
+        <div style="background:white;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#78350f;flex:1;min-width:180px">
+          <strong>Step 2:</strong> Click the blue "Log-in" button in Jitsi
+        </div>
+        <div style="background:white;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#78350f;flex:1;min-width:180px">
+          <strong>Step 3:</strong> Sign in with Google/GitHub — you become <strong>Moderator</strong> automatically
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#92400e">
+        💡 After logging in once, Jitsi remembers you. Future classes will start automatically.
+      </div>
+    </div>
+
+    <!-- Embedded Jitsi (students can join here too) -->
+    <div id="jitsi-container" style="width:100%;height:560px"></div>
+  </div>
+
+  <script src="https://meet.jit.si/external_api.js"></script>
+  <script>
+    var api = new JitsiMeetExternalAPI('meet.jit.si', {
+      roomName:   '{{ lc.jitsi_room_name }}',
+      width:      '100%',
+      height:     560,
+      parentNode: document.querySelector('#jitsi-container'),
+      userInfo: {
+        displayName: '{{ request.user.get_full_name }} (Lecturer)',
+        email:       '{{ request.user.email }}'
+      },
+      configOverwrite: {
+        startWithAudioMuted:  false,
+        startWithVideoMuted:  false,
+        enableWelcomePage:    false,
+        prejoinPageEnabled:   false,
+        disableDeepLinking:   true,
+        requireDisplayName:   false,
+      },
+      interfaceConfigOverwrite: {
+        TOOLBAR_BUTTONS: ['microphone','camera','desktop','chat','raisehand','participants-pane','videoquality','fullscreen','hangup'],
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_BRAND_WATERMARK: false,
+      }
+    });
+  </script>
+  {% endif %}
+
+  <!-- Attendance Table -->
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:24px">
+    <h2 style="font-size:16px;font-weight:700;color:#1a5c38;margin:0 0 16px">👥 Attendance ({{ lc.attendance_count }})</h2>
+    {% if attendance %}
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">#</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Reg No.</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Name</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Joined</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attendance %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:10px 12px;color:#6b7280">{{ forloop.counter }}</td>
+            <td style="padding:10px 12px;font-weight:600">{{ a.student.reg_number }}</td>
+            <td style="padding:10px 12px">{{ a.student.user.get_full_name }}</td>
+            <td style="padding:10px 12px;color:#6b7280">{{ a.joined_at|date:"g:i A" }}</td>
+            <td style="padding:10px 12px;color:#6b7280">{% if a.duration_minutes %}{{ a.duration_minutes }} min{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="text-align:center;padding:32px;color:#9ca3af;font-size:14px">No students have joined yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

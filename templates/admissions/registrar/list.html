@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block page_title %}Applications{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1100px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div><h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0">Admission Applications</h1></div>
+    <div style="display:flex;gap:8px">
+      <a href="{% url 'admissions:registrar_school_fees' %}" style="background:#1d4ed8;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">School Fee Payments</a>
+      <a href="{% url 'admissions:apply' %}" target="_blank" style="background:#1a5c38;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">View Public Form</a>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px;font-size:12px">
+    <a href="?" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#374151">{{ counts.all }}</div><div style="color:#6b7280">All</div></a>
+    <a href="?status=app_fee_submitted" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#92400e">{{ counts.app_fee_submitted }}</div><div style="color:#6b7280">Fee Submitted</div></a>
+    <a href="?status=admitted" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#166534">{{ counts.admitted }}</div><div style="color:#6b7280">Admitted</div></a>
+    <a href="?status=school_fee_submitted" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#c2410c">{{ counts.school_fee_submitted }}</div><div style="color:#6b7280">School Fee</div></a>
+    <a href="?status=school_fee_approved" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#1a5c38">{{ counts.school_fee_approved }}</div><div style="color:#6b7280">Enrolled</div></a>
+    <a href="?status=rejected" style="background:white;border-radius:8px;border:1px solid #e5e7eb;padding:12px 8px;text-decoration:none;text-align:center"><div style="font-size:20px;font-weight:700;color:#dc2626">{{ counts.rejected }}</div><div style="color:#6b7280">Rejected</div></a>
+  </div>
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f9fafb">
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">App No.</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Name</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Programme</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Status</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Matric</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Date</th>
+        <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Action</th>
+      </tr></thead>
+      <tbody>
+        {% for app in apps %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:12px;font-weight:600;color:#1a5c38">{{ app.application_number }}</td>
+          <td style="padding:12px">{{ app.get_full_name }}</td>
+          <td style="padding:12px;color:#6b7280">{{ app.programme.code }}</td>
+          <td style="padding:12px">
+            {% if app.status == "school_fee_approved" %}<span style="background:#f0fdf4;color:#166534;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">Enrolled</span>
+            {% elif app.status == "school_fee_submitted" %}<span style="background:#fef3c7;color:#c2410c;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">School Fee</span>
+            {% elif app.status == "admitted" %}<span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">Admitted</span>
+            {% elif app.status == "app_fee_confirmed" %}<span style="background:#f0fdf4;color:#166534;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">Fee Confirmed</span>
+            {% elif app.status == "app_fee_submitted" %}<span style="background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">Fee Submitted</span>
+            {% elif app.status == "rejected" %}<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">Rejected</span>
+            {% else %}<span style="background:#f3f4f6;color:#6b7280;padding:3px 8px;border-radius:10px;font-size:11px">Pending</span>{% endif %}
+          </td>
+          <td style="padding:12px;font-weight:600;color:#1a5c38">{{ app.matric_number|default:"-" }}</td>
+          <td style="padding:12px;color:#6b7280">{{ app.created_at|date:"d M Y" }}</td>
+          <td style="padding:12px"><a href="{% url 'admissions:registrar_detail' app.pk %}" style="color:#1a5c38;font-weight:600;text-decoration:none">View</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="padding:40px;text-align:center;color:#9ca3af">No applications yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -141,7 +141,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
 
-
 /* Mobile menu toggle */
 @media (max-width: 768px) {
     .mobile-menu-btn {
@@ -197,7 +196,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         }
     </script>
 
-
     <style>
         /* Mobile responsive fixes */
         @media (max-width: 768px) {
@@ -236,12 +234,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <a href="{% url 'register_courses' %}" class="nav-item {% if request.resolver_match.url_name == 'register_courses' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-journal-check"></i></div>Course Registration</a>
   <a href="{% url 'my_courses' %}" class="nav-item {% if request.resolver_match.url_name == 'my_courses' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-book-half"></i></div>My Courses</a>
   <a href="{% url 'lecturers:student_quiz_list' %}" class="nav-item {% if request.resolver_match.url_name == 'student_quiz_list' or request.resolver_match.url_name == 'quiz_take' or request.resolver_match.url_name == 'quiz_attempt_result' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-patch-question"></i></div>Available Quizzes</a>
-        <a href="{% url 'students:semester_result' %}" class="nav-item {% if request.resolver_match.url_name == 'semester_result' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-award"></i></div>My Approved Result</a>
+  <a href="{% url 'lecturers:student_assignment_list' %}" class="nav-item {% if 'student_assignment' in request.resolver_match.url_name|default:'' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-clipboard-check"></i></div>My Assignments</a>
+  <a href="{% url 'live_classes:student_list' %}" class="nav-item {% if request.resolver_match.namespace == 'live_classes' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-video"></i></div>Live Classes</a>
+  <a href="{% url 'forum:forum_home' %}" class="nav-item {% if request.resolver_match.namespace == 'forum' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-chat-square-text"></i></div>Course Forum</a>
+        <a href="{% url 'results:student_results' %}" class="nav-item {% if request.resolver_match.url_name == 'results:student_results' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-award"></i></div>My Approved Result</a>
   <div class="nav-section">Finance</div>
   <a href="{% url 'make_payment' %}" class="nav-item {% if request.resolver_match.url_name == 'make_payment' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>Pay Fees</a>
   <a href="{% url 'my_payments' %}" class="nav-item {% if request.resolver_match.url_name == 'my_payments' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-receipt-cutoff"></i></div>My Payments</a>
       <div style="margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.1)">
-        <a href="{% url 'accounts:logout' %}" style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.7);text-decoration:none;padding:10px;border-radius:var(--radius2);transition:all .15s;font-size:13px;font-weight:500" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        <a href="{% url 'logout' %}" style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.7);text-decoration:none;padding:10px;border-radius:var(--radius2);transition:all .15s;font-size:13px;font-weight:500" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
           <i class="bi bi-box-arrow-right" style="font-size:16px"></i>
           <span>Log Out</span>
         </a>
@@ -250,6 +251,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   {% elif user.role == 'registrar' %}
   <div class="nav-section">Registrar Office</div>
   <a href="{% url 'registrar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_dashboard' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-speedometer2"></i></div>Dashboard</a>
+  <a href="{% url 'admissions:registrar_list' %}" class="nav-item {% if request.resolver_match.namespace == 'admissions' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-person-plus-fill"></i></div>Admissions</a>
+  <a href="{% url 'admissions:registrar_school_fees' %}" class="nav-item {% if 'school_fee' in request.resolver_match.url_name|default:'' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>School Fee Payments</a>
   <a href="{% url 'registrar_students' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_students' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-people-fill"></i></div>Student Records</a>
   <a href="{% url 'registrar_fees' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_fees' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>Fee Payments</a>
   <a href="{% url 'registrar_photo' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_photo' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-fill"></i></div>Photo Capture</a>
@@ -268,12 +271,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <a href="{% url 'lecturers:my_courses' %}" class="nav-item {% if request.resolver_match.url_name == 'my_courses' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-book-half"></i></div>My Courses</a>
 
   <a href="{% url 'lecturers:quiz_list' %}" class="nav-item {% if 'quiz' in request.resolver_match.url_name|default:'' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-patch-question"></i></div>My Quizzes</a>
-  <div class="nav-section">Coming Soon</div>
-  <a href="#" class="nav-item" style="opacity:.4;cursor:not-allowed" onclick="return false"><div class="nav-icon"><i class="bi bi-journal-text"></i></div>My Assignments <span style="margin-left:auto;background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:700">SOON</span></a>
-  <a href="#" class="nav-item" style="opacity:.4;cursor:not-allowed" onclick="return false"><div class="nav-icon"><i class="bi bi-chat-square-text"></i></div>Course Forum <span style="margin-left:auto;background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:700">SOON</span></a>
-  <a href="#" class="nav-item" style="opacity:.4;cursor:not-allowed" onclick="return false"><div class="nav-icon"><i class="bi bi-camera-video"></i></div>Live Classes <span style="margin-left:auto;background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:700">SOON</span></a>
-
-
+<a href="{% url 'results:lecturer_courses' %}" class="nav-item {% if request.resolver_match.namespace == 'results' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-bar-chart-fill"></i></div>Result Entry</a>
+        <a href="{% url 'lecturers:assignment_list' %}" class="nav-item {% if request.resolver_match.url_name == 'assignment_list' or request.resolver_match.url_name == 'assignment_detail' or request.resolver_match.url_name == 'assignment_create' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-clipboard-check"></i></div>Assignments</a>
+            <a href="{% url 'live_classes:lecturer_list' %}" class="nav-item {% if request.resolver_match.namespace == 'live_classes' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-camera-video"></i></div>Live Classes</a>
+        <a href="{% url 'forum:forum_home' %}" class="nav-item {% if request.resolver_match.namespace == 'forum' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-chat-square-text"></i></div>Course Forum</a>
 
   {% else %}
   <div class="nav-section">Overview</div>
@@ -310,15 +311,52 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('active')" style="display:none;background:none;border:none;color:var(--green);font-size:28px;cursor:pointer;padding:8px;margin-right:auto">
             <i class="bi bi-list"></i>
         </button>
-        <div style="position:relative;margin-left:auto;margin-right:20px">
-            <a href="#" style="color:var(--green);font-size:22px;text-decoration:none;position:relative">
-                <i class="bi bi-bell"></i>
-                <span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:white;font-size:11px;font-weight:700;padding:3px 6px;border-radius:12px;min-width:18px;text-align:center">3</span>
-            </a>
+
+        <!-- Bell button -->
+        <div style="position:relative;margin-left:auto;margin-right:16px;display:inline-block">
+          <button id="notif-btn" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:24px;padding:6px;position:relative;display:block;line-height:1">
+            <i class="bi bi-bell"></i>
+            {% if unread_count > 0 %}
+            <span style="position:absolute;top:0;right:0;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:15px;text-align:center;pointer-events:none">{{ unread_count }}</span>
+            {% endif %}
+          </button>
         </div>
 
-      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
-      <div class="topbar-breadcrumb">College of Management & Technology, Katsina</div>
+        <!-- Notification dropdown (hidden by default, fixed position) -->
+        <div id="notif-dropdown" style="display:none;position:fixed;top:62px;right:16px;width:340px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);border:1px solid #e5e7eb;z-index:999999;overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;font-size:14px;color:#111827">🔔 Notifications</span>
+            {% if unread_count > 0 %}
+            <a href="{% url 'notifications:mark_all_read' %}" style="font-size:12px;color:#1a5c38;text-decoration:none;font-weight:600">Mark all read</a>
+            {% endif %}
+          </div>
+          <div style="overflow-y:auto;max-height:380px">
+            {% for notif in recent_notifications %}
+            <a href="{% url 'notifications:mark_read' notif.pk %}{% if notif.link %}?next={{ notif.link }}{% endif %}"
+               style="display:flex;align-items:flex-start;padding:11px 14px;border-bottom:1px solid #f9fafb;text-decoration:none;background:{% if not notif.is_read %}#f0fdf4{% else %}#fff{% endif %};gap:10px">
+              <span style="font-size:18px;min-width:22px;margin-top:1px">{{ notif.icon }}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12.5px;font-weight:{% if not notif.is_read %}700{% else %}500{% endif %};color:#111827;line-height:1.3">{{ notif.title }}</div>
+                {% if notif.message %}
+                <div style="font-size:11.5px;color:#6b7280;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ notif.message }}</div>
+                {% endif %}
+                <div style="font-size:11px;color:#9ca3af;margin-top:2px">{{ notif.created_at|timesince }} ago</div>
+              </div>
+              {% if not notif.is_read %}
+              <div style="width:8px;height:8px;background:#1a5c38;border-radius:50%;margin-top:4px;flex-shrink:0"></div>
+              {% endif %}
+            </a>
+            {% empty %}
+            <div style="text-align:center;padding:40px 16px;color:#9ca3af">
+              <div style="font-size:32px;margin-bottom:8px">🔔</div>
+              <div style="font-size:13px">No notifications yet</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+        <div class="topbar-breadcrumb">College of Management &amp; Technology, Katsina</div>
     </div>
     <div class="topbar-right">
       <a href="{% url 'logout' %}" class="topbar-btn" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
@@ -335,6 +373,47 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 </div>
 </div>
+
+
+<script>
+// Auto-close mobile sidebar when nav link is tapped
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.querySelectorAll('a.nav-item, .nav-item a, a[href]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            // Only close on mobile
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    });
+});
+</script>
+
+
+
+<script>
+// Notification bell
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('notif-btn');
+    var dd  = document.getElementById('notif-dropdown');
+    if (!btn || !dd) return;
+    var isOpen = false;
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        isOpen = !isOpen;
+        dd.style.display = isOpen ? 'block' : 'none';
+    });
+    document.addEventListener('click', function(e) {
+        if (isOpen && !dd.contains(e.target) && e.target !== btn) {
+            dd.style.display = 'none';
+            isOpen = false;
+        }
+    });
+});
+</script>
 
 </body>
 </html>

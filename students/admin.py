@@ -86,7 +86,7 @@ class StudentAdmin(admin.ModelAdmin):
             reader   = csv.DictReader(io.StringIO(decoded))
 
             # validate headers
-            required = {'first_name','last_name','email','username','password','reg_number','programme'}
+            required = {'first_name','last_name','email','reg_number','programme'}
             missing  = required - set(reader.fieldnames or [])
             if missing:
                 messages.error(request, f'Missing columns: {", ".join(missing)}')
@@ -100,8 +100,9 @@ class StudentAdmin(admin.ModelAdmin):
                 fname = row.get('first_name','').strip()
                 lname = row.get('last_name','').strip()
                 email = row.get('email','').strip()
-                uname = row.get('username','').strip()
-                pwd   = row.get('password','').strip()
+                # Auto-generate username and password from reg_number (case-sensitive)
+                uname = reg  # Use full matric number as username
+                pwd   = reg  # Use full matric number as password
                 prog  = row.get('programme','').strip()
                 sess  = row.get('session','').strip()
                 sem   = row.get('semester','').strip()
@@ -110,7 +111,7 @@ class StudentAdmin(admin.ModelAdmin):
                 if not reg or not uname:
                     rows.append({'reg_number': reg or f'Row {i}', 'name': f'{fname} {lname}',
                                  'programme': prog, 'status': 'Error',
-                                 'status_class': 'err', 'note': 'Missing reg_number or username'})
+                                 'status_class': 'err', 'note': 'Missing reg_number or first_name or last_name'})
                     errors += 1
                     continue
 

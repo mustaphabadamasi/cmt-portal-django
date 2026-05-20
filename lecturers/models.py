@@ -235,7 +235,9 @@ class Assignment(models.Model):
     course = models.ForeignKey('academics.Course', on_delete=models.CASCADE, related_name='assignments')
     semester = models.ForeignKey('core.Semester', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    description = models.TextField(help_text='Assignment instructions for both individual and group parts')
+    description = models.TextField(blank=True, help_text='General instructions/context (optional)')
+    individual_question = models.TextField(default='', help_text='Specific question for individual part (10 marks)')
+    group_question = models.TextField(default='', help_text='Specific question for group part (10 marks)')
     
     individual_deadline = models.DateTimeField()
     group_deadline = models.DateTimeField()

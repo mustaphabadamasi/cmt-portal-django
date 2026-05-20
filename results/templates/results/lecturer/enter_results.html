@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load result_tags %}
+{% block page_title %}{{ course.code }} Results{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1000px;margin:0 auto">
+  <a href="{% url 'results:lecturer_courses' %}" style="color:#6b7280;font-size:13px;text-decoration:none">← Result Entry</a>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:12px;border-radius:8px;margin:10px 0;background:{% if 'error' in m.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin:16px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-size:20px;font-weight:700;color:#1a5c38;margin:0">{{ course.code }} — {{ course.title }}</h1>
+        <p style="color:#6b7280;font-size:13px;margin:4px 0 0">{{ semester }} | CA max: 40 | Exam max: 60 | Total: 100</p>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px 16px;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:#1a5c38">{{ students|length }}</div>
+        <div style="font-size:11px;color:#6b7280">Students</div>
+      </div>
+    </div>
+  </div>
+
+  {% if batch.status == 'submitted' or batch.status == 'approved' %}
+  <div style="background:#dbeafe;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#1d4ed8;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <span>
+      {% if batch.status == 'submitted' %}⏳ Results submitted and awaiting Registrar approval. You cannot edit at this stage.
+      {% else %}✅ Results approved and published to students.{% endif %}
+    </span>
+    <a href="{% url 'results:scoresheet' course.id %}"
+       style="background:#1a5c38;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:12px;white-space:nowrap">
+      📄 Download Score Sheet PDF
+    </a>
+  </div>
+  {% endif %}
+
+  <form method="post" id="result-form">
+    {% csrf_token %}
+    <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">#</th>
+            <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Reg No.</th>
+            <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Name</th>
+            <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">CA<br><small style="font-weight:400">/40</small></th>
+            <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Exam<br><small style="font-weight:400">/60</small></th>
+            <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Total<br><small style="font-weight:400">/100</small></th>
+            <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          {% with result=existing|get_item:student.id %}
+          <tr style="border-bottom:1px solid #f3f4f6" id="row-{{ student.id }}">
+            <td style="padding:10px 12px;color:#9ca3af">{{ forloop.counter }}</td>
+            <td style="padding:10px 12px;font-weight:600;color:#1a5c38">{{ student.reg_number }}</td>
+            <td style="padding:10px 12px">{{ student.user.get_full_name }}</td>
+            <td style="padding:10px 12px;text-align:center">
+              {% if batch.status == 'submitted' or batch.status == 'approved' %}
+                <span style="font-weight:600">{{ result.ca_score|default:"-" }}</span>
+              {% else %}
+                <input type="number" name="ca_{{ student.id }}"
+                  value="{{ result.ca_score|default:'' }}"
+                  min="0" max="40" step="0.5"
+                  style="width:70px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-size:13px"
+                  onchange="calcTotal({{ student.id }})"
+                  class="ca-input">
+              {% endif %}
+            </td>
+            <td style="padding:10px 12px;text-align:center">
+              {% if batch.status == 'submitted' or batch.status == 'approved' %}
+                <span style="font-weight:600">{{ result.exam_score|default:"-" }}</span>
+              {% else %}
+                <input type="number" name="exam_{{ student.id }}"
+                  value="{{ result.exam_score|default:'' }}"
+                  min="0" max="60" step="0.5"
+                  style="width:70px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-size:13px"
+                  onchange="calcTotal({{ student.id }})"
+                  class="exam-input">
+              {% endif %}
+            </td>
+            <td style="padding:10px 12px;text-align:center;font-weight:700" id="total-{{ student.id }}">
+              {{ result.total_score|default:"-" }}
+            </td>
+            <td style="padding:10px 12px;text-align:center">
+              <span id="grade-{{ student.id }}" style="font-weight:700;font-size:14px;
+                color:{% if result.grade == 'A' %}#166534{% elif result.grade == 'F' %}#dc2626{% elif result.grade %}#92400e{% else %}#9ca3af{% endif %}">
+                {{ result.grade|default:"-" }}
+              </span>
+            </td>
+          </tr>
+          {% endwith %}
+          {% empty %}
+          <tr><td colspan="7" style="padding:40px;text-align:center;color:#9ca3af">No students registered for this course</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if batch.status not in 'submitted,approved' %}
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="submit" name="action" value="save"
+        style="background:#6b7280;color:white;padding:12px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+        💾 Save Draft
+      </button>
+      <button type="button" onclick="showSubmitWarning()"
+        style="background:#1a5c38;color:white;padding:12px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+        📤 Submit to Registrar
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- Warning Modal -->
+    <div id="submit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center">
+      <div style="background:white;border-radius:16px;padding:32px;max-width:480px;width:90%;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:56px">⚠️</div>
+          <h2 style="font-size:20px;font-weight:800;color:#92400e;margin:8px 0">Final Submission Warning</h2>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:#78350f;line-height:1.7">
+          <strong>Please cross-check all scores before submitting!</strong><br><br>
+          ✅ CA scores are correct (max 40)<br>
+          ✅ Exam scores are correct (max 60)<br>
+          ✅ All students have been marked<br><br>
+          <strong style="color:#dc2626">⛔ Once submitted, you CANNOT change any score.</strong><br>
+          Only the Registrar can send results back for correction.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="hideSubmitWarning()"
+            style="flex:1;padding:12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;font-weight:600;cursor:pointer;color:#374151">
+            ← Go Back & Check
+          </button>
+          <button onclick="confirmSubmit()"
+            style="flex:1;padding:12px;border:none;border-radius:8px;background:#1a5c38;color:white;font-size:14px;font-weight:700;cursor:pointer">
+            I Confirm — Submit ✓
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+function getGrade(total) {
+    if (total >= 70) return {g:'A', c:'#166534'};
+    if (total >= 60) return {g:'B', c:'#1d4ed8'};
+    if (total >= 50) return {g:'C', c:'#92400e'};
+    if (total >= 45) return {g:'D', c:'#c2410c'};
+    if (total >= 40) return {g:'E', c:'#d97706'};
+    return {g:'F', c:'#dc2626'};
+}
+function calcTotal(sid) {
+    var ca   = parseFloat(document.querySelector('[name="ca_'+sid+'"]').value) || 0;
+    var exam = parseFloat(document.querySelector('[name="exam_'+sid+'"]').value) || 0;
+    var total = ca + exam;
+    var td = document.getElementById('total-'+sid);
+    var gd = document.getElementById('grade-'+sid);
+    if (ca > 0 || exam > 0) {
+        var info = getGrade(total);
+        td.textContent = total.toFixed(1);
+        gd.textContent = info.g;
+        gd.style.color = info.c;
+    }
+}
+
+function showSubmitWarning() {
+    var modal = document.getElementById('submit-modal');
+    modal.style.display = 'flex';
+}
+
+function hideSubmitWarning() {
+    document.getElementById('submit-modal').style.display = 'none';
+}
+
+function confirmSubmit() {
+    hideSubmitWarning();
+    // Set hidden input and submit
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'action';
+    input.value = 'submit';
+    document.getElementById('result-form').appendChild(input);
+    document.getElementById('result-form').submit();
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('submit-modal').addEventListener('click', function(e) {
+        if (e.target === this) hideSubmitWarning();
+    });
+});
+</script>
+{% endblock %}

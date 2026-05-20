@@ -10,7 +10,7 @@
     {% csrf_token %}
     
     <div style="margin-bottom:16px">
-      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Course</label>
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Course *</label>
       <select name="course" required style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
         <option value="">Select course...</option>
         {% for c in courses %}<option value="{{ c.id }}">{{ c.code }} - {{ c.title }}</option>{% endfor %}
@@ -18,29 +18,41 @@
     </div>
 
     <div style="margin-bottom:16px">
-      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Semester</label>
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Semester *</label>
       <select name="semester" required style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
         {% for s in semesters %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
       </select>
     </div>
 
     <div style="margin-bottom:16px">
-      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Title</label>
-      <input type="text" name="title" required placeholder="e.g. Research on Public Policy" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Assignment Title *</label>
+      <input type="text" name="title" required placeholder="e.g. Second Semester Assignment 1" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
     </div>
 
     <div style="margin-bottom:16px">
-      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Instructions (for both individual & group parts)</label>
-      <textarea name="description" required rows="6" placeholder="Describe what students need to do..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit"></textarea>
+      <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">General Instructions (Optional)</label>
+      <textarea name="description" rows="3" placeholder="Any general context or instructions that apply to both parts..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit"></textarea>
+    </div>
+
+    <!-- Individual Question -->
+    <div style="margin-bottom:16px;padding:16px;background:#eff6ff;border-radius:8px;border-left:4px solid #1e3a8a">
+      <label style="display:block;font-weight:700;margin-bottom:8px;font-size:14px;color:#1e3a8a">📝 Individual Question (10 marks) *</label>
+      <textarea name="individual_question" required rows="5" placeholder="Type the question/task each student must complete individually..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit"></textarea>
+    </div>
+
+    <!-- Group Question -->
+    <div style="margin-bottom:16px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #065f46">
+      <label style="display:block;font-weight:700;margin-bottom:8px;font-size:14px;color:#065f46">👥 Group Question (10 marks) *</label>
+      <textarea name="group_question" required rows="5" placeholder="Type the question/task each group must work on together..." style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit"></textarea>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div>
-        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Individual Deadline (10 marks)</label>
+        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Individual Deadline *</label>
         <input type="datetime-local" name="individual_deadline" required style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
       </div>
       <div>
-        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Group Deadline (10 marks)</label>
+        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#374151">Group Deadline *</label>
         <input type="datetime-local" name="group_deadline" required style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px">
       </div>
     </div>
@@ -55,6 +67,7 @@
     <div style="display:flex;gap:12px">
       <button type="submit" style="background:#1a5c38;color:white;padding:12px 28px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Create Assignment</button>
       <a href="{% url 'lecturers:assignment_list' %}" style="padding:12px 28px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151">Cancel</a>
+      <a href="{% url 'live_classes:lecturer_list' %}" style="display:block;padding:8px 16px;color:#374151;text-decoration:none;border-radius:6px;font-size:14px">📹 Live Classes</a>
     </div>
   </form>
 </div>

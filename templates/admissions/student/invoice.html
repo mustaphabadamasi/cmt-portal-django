@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block page_title %}School Fee Invoice{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:800px;margin:0 auto">
+  <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0 0 4px">School Fee Invoice</h1>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 20px">{{ app.get_full_name }} | {{ app.application_number }}</p>
+  {% if messages %}{% for m in messages %}<div style="padding:12px;border-radius:8px;margin-bottom:16px;background:{% if 'error' in m.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
+  <div style="background:white;border-radius:12px;border:2px solid #1a5c38;padding:24px;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <div><div style="font-size:18px;font-weight:700;color:#1a5c38">{{ invoice.invoice_number }}</div><div style="font-size:13px;color:#6b7280">Generated: {{ invoice.created_at|date:"d M Y" }}</div></div>
+      <div>{% if invoice.status == "generated" %}<span style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">Awaiting Payment</span>
+      {% elif invoice.status == "submitted" %}<span style="background:#dbeafe;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">Payment Submitted</span>
+      {% elif invoice.status == "approved" %}<span style="background:#f0fdf4;color:#166534;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">Approved</span>{% endif %}</div>
+    </div>
+    <table style="width:100%;font-size:13px;margin-bottom:20px">
+      <tr><td style="color:#6b7280;padding:4px 0;width:140px">Student Name</td><td style="font-weight:600">{{ app.get_full_name|upper }}</td></tr>
+      <tr><td style="color:#6b7280;padding:4px 0">Application No.</td><td style="font-weight:600">{{ app.application_number }}</td></tr>
+      <tr><td style="color:#6b7280;padding:4px 0">Programme</td><td style="font-weight:600">{{ app.programme.name }}</td></tr>
+      <tr><td style="color:#6b7280;padding:4px 0">Session</td><td style="font-weight:600">{{ app.session.name }}</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f0fdf4"><th style="padding:10px 12px;text-align:left;border-bottom:2px solid #1a5c38">Description</th><th style="padding:10px 12px;text-align:right;border-bottom:2px solid #1a5c38">Amount</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">Tuition Fee</td><td style="padding:10px 12px;text-align:right">20,000.00</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">Development Levy</td><td style="padding:10px 12px;text-align:right">3,000.00</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">Library Fee</td><td style="padding:10px 12px;text-align:right">1,000.00</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">Sports Fee</td><td style="padding:10px 12px;text-align:right">1,000.00</td></tr>
+        <tr style="background:#f9fafb;font-weight:700"><td style="padding:12px;border-top:2px solid #1a5c38">TOTAL</td><td style="padding:12px;text-align:right;color:#1a5c38;font-size:16px;border-top:2px solid #1a5c38">{{ invoice.amount|floatformat:2 }}</td></tr>
+      </tbody>
+    </table>
+    <div style="background:#fffbeb;border-radius:8px;padding:14px;margin-top:16px;font-size:13px;color:#92400e"><strong>Pay to:</strong> CMT KATSINA | Acct: <strong>0046542729</strong> | Bank: <strong>Stanbic IBTC Bank</strong></div>
+  </div>
+  <div style="margin-bottom:20px"><a href="{% url 'admissions:invoice_pdf' %}" style="background:#1a5c38;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">Download Invoice PDF</a></div>
+  {% if invoice.status == "generated" %}
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:24px">
+    <h3 style="font-size:15px;font-weight:700;color:#1a5c38;margin:0 0 16px">Submit Payment Details</h3>
+    <form method="post">{% csrf_token %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Payment Reference *</label>
+          <input name="payment_reference" required placeholder="Bank reference/teller number" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box"></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Bank *</label>
+          <select name="payment_bank" required style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box">
+            <option value="">Select bank...</option>{% for b in banks %}<option>{{ b }}</option>{% endfor %}</select></div>
+      </div>
+      <div style="margin-bottom:18px"><label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Payment Date *</label>
+        <input type="date" name="payment_date" required style="width:200px;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px"></div>
+      <button type="submit" style="background:#1a5c38;color:white;padding:12px 28px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">Submit Payment Details</button>
+    </form>
+  </div>
+  {% elif invoice.status == "submitted" %}
+  <div style="background:#dbeafe;border-radius:10px;padding:16px;font-size:14px;color:#1d4ed8">Payment submitted: <strong>{{ invoice.payment_reference }}</strong> | {{ invoice.payment_bank }} | {{ invoice.payment_date }}<br><strong>Awaiting Registrar approval.</strong></div>
+  {% elif invoice.status == "approved" %}
+  <div style="background:#f0fdf4;border-radius:10px;padding:16px;font-size:14px;color:#166534">Payment approved! Your matric number: <strong style="font-size:18px">{{ app.matric_number }}</strong><br>New login credentials: <strong>{{ app.matric_number }}</strong></div>
+  {% endif %}
+</div>
+{% endblock %}

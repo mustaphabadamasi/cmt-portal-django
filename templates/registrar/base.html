@@ -50,7 +50,14 @@ nav{flex:1;padding:10px 0;overflow-y:auto}
   <nav>
     <div class="nav-section">Main</div>
     <a href="{% url 'registrar_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'registrar_dashboard' %}active{% endif %}"><span class="ico">🏠</span> Dashboard</a>
-    <a href="{% url 'registrar_students' %}" class="nav-item {% if 'student' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">👥</span> Student Records</a>
+    <a href="{% url 'admissions:registrar_list' %}" class="nav-item {% if request.resolver_match.namespace == 'admissions' %}active{% endif %}">
+              <div class="nav-icon"><i class="bi bi-person-plus-fill"></i></div>Admissions
+            </a>
+            <a href="{% url 'admissions:registrar_school_fees' %}" class="nav-item">
+              <div class="nav-icon"><i class="bi bi-cash-coin"></i></div>School Fees
+            </a>
+            <a href="{% url 'registrar_students' %}" class="nav-item {% if 'student' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">👥</span> Student Records</a>
+            <a href="{% url 'results:registrar_results' %}" class="nav-item"><div class="nav-icon"><i class="bi bi-check2-square"></i></div>Result Approvals</a>
 
     <div class="nav-section">Academic</div>
     <a href="{% url 'academic_config' %}" class="nav-item {% if 'academic' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">📅</span> Academic Config</a>

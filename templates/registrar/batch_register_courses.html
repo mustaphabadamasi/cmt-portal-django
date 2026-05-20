@@ -127,8 +127,8 @@ function clearAll(){document.querySelectorAll(".row-check").forEach(c=>c.checked
 function confirmSubmit(){
   const n=document.querySelectorAll(".row-check:checked").length;
   if(n===0){alert("Please select at least one student.");return false;}
-  if(n>20){alert("Maximum 40 students per batch.");return false;}
-  if(!document.querySelector("input[name=outline_id]").value){alert("Please select a course outline first.");return false;}
+  if(n>40){alert("Maximum 40 students per batch.");return false;}
+  if(!document.querySelector("[name=outline_id]").value){alert("Please select a course outline first.");return false;}
   return confirm("Register courses for "+n+" student(s)? This will replace existing registrations.");
 }
 </script>

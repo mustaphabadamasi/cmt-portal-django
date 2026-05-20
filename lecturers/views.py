@@ -686,7 +686,13 @@ def assignment_create(request):
     if not lecturer:
         return HttpResponseForbidden('Lecturer profile not found')
     
-    courses = Course.objects.filter(lecturers=lecturer) if hasattr(Course, 'lecturers') else Course.objects.all()
+    # Only courses assigned to this lecturer (active)
+    from lecturers.models import LecturerCourse
+    assigned_course_ids = LecturerCourse.objects.filter(
+        lecturer=lecturer,
+        is_active=True
+    ).values_list('course_id', flat=True)
+    courses = Course.objects.filter(id__in=assigned_course_ids).order_by('code')
     semesters = Semester.objects.all().order_by('-id')
     
     if request.method == 'POST':
@@ -698,14 +704,19 @@ def assignment_create(request):
         grp_deadline = request.POST.get('group_deadline')
         is_published = request.POST.get('is_published') == 'on'
         
-        if not all([course_id, semester_id, title, description, ind_deadline, grp_deadline]):
-            messages.error(request, 'All fields are required')
+        individual_question = request.POST.get('individual_question', '').strip()
+        group_question = request.POST.get('group_question', '').strip()
+        
+        if not all([course_id, semester_id, title, individual_question, group_question, ind_deadline, grp_deadline]):
+            messages.error(request, 'All required fields must be filled')
         else:
             assignment = Assignment.objects.create(
                 course_id=course_id,
                 semester_id=semester_id,
                 title=title,
                 description=description,
+                individual_question=individual_question,
+                group_question=group_question,
                 individual_deadline=ind_deadline,
                 group_deadline=grp_deadline,
                 created_by=lecturer,
@@ -755,11 +766,23 @@ def assignment_groups(request, pk):
     from students.models import Student
     from students.models import CourseRegistration
     
-    # Get students registered for this course in this semester
+    # Get ONLY students registered for this specific course in this semester
+    from students.models import CourseRegistration
+    # CourseRegistration uses M2M 'courses', not 'course'
+    registered_student_ids = CourseRegistration.objects.filter(
+        courses=assignment.course,
+        semester=assignment.semester
+    ).values_list('student_id', flat=True).distinct()
+    
+    # Exclude students already in ANY group for this assignment
+    already_grouped_ids = list(AssignmentGroup.objects.filter(
+        assignment=assignment
+    ).values_list('members__id', flat=True))
+    already_grouped_ids = [x for x in already_grouped_ids if x is not None]
+    
     registered_students = Student.objects.filter(
-        courseregistration__course=assignment.course,
-        courseregistration__semester=assignment.semester
-    ).distinct() if hasattr(Student, 'courseregistration') else Student.objects.all()
+        id__in=registered_student_ids
+    ).exclude(id__in=already_grouped_ids).select_related('user').order_by('reg_number')
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -906,6 +929,57 @@ def grade_group(request, pk):
     })
 
 
+
+
+@login_required
+def assignment_toggle_publish(request, pk):
+    """Toggle assignment published status"""
+    assignment = get_object_or_404(Assignment, pk=pk)
+    user = request.user
+    if not (user.is_superuser or (assignment.created_by and assignment.created_by.user_id == user.id)):
+        return HttpResponseForbidden('Permission denied')
+    
+    assignment.is_published = not assignment.is_published
+    assignment.save()
+    
+    if assignment.is_published:
+        messages.success(request, f'Assignment "{assignment.title}" is now PUBLISHED - students can see and submit')
+        # Notify students
+        try:
+            from notifications.utils import notify_course_students
+            notify_course_students(
+                course=assignment.course, semester=assignment.semester,
+                ntype='assignment',
+                title=f'📋 New Assignment: {assignment.title}',
+                message=f'{assignment.course.code} — Due: {assignment.deadline_individual.strftime("%d %b %Y %I:%M %p") if assignment.deadline_individual else "See portal"}',
+                link='/lecturers/my-assignments/',
+            )
+        except Exception:
+            pass
+    else:
+        messages.success(request, f'Assignment "{assignment.title}" is now UNPUBLISHED - hidden from students')
+    
+    return redirect('lecturers:assignment_detail', pk=pk)
+
+
+@login_required
+def assignment_delete(request, pk):
+    """Delete an assignment and all its submissions"""
+    assignment = get_object_or_404(Assignment, pk=pk)
+    user = request.user
+    if not (user.is_superuser or (assignment.created_by and assignment.created_by.user_id == user.id)):
+        return HttpResponseForbidden('Permission denied')
+    
+    if request.method == 'POST':
+        title = assignment.title
+        assignment.delete()
+        messages.success(request, f'Assignment "{title}" deleted (along with all submissions and groups)')
+        return redirect('lecturers:assignment_list')
+    
+    # Show confirmation page
+    return render(request, 'lecturers/assignment_delete_confirm.html', {'assignment': assignment})
+
+
 # ============ STUDENT-SIDE VIEWS ============
 
 @login_required
@@ -919,7 +993,10 @@ def student_assignment_list(request):
     
     # Get courses registered by student
     from students.models import CourseRegistration
-    reg_courses = CourseRegistration.objects.filter(student=student).values_list('course_id', flat=True)
+    # Get all courses from M2M
+    reg_courses = []
+    for cr in CourseRegistration.objects.filter(student=student):
+        reg_courses.extend(cr.courses.values_list('id', flat=True))
     
     assignments = Assignment.objects.filter(
         course_id__in=reg_courses,

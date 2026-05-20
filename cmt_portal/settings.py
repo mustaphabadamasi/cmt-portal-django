@@ -63,6 +63,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
+                                     'notifications.context_processors.notifications_context',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -135,6 +136,11 @@ INSTALLED_APPS = [
     'core',
     'academics',
     'students',
+    'live_classes',
+    'notifications',
+    'admissions',
+    'results',
+    'forum',
     'registrar',
     'fees',
     'documents',

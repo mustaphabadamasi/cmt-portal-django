@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block page_title %}School Fee Payments{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1100px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0">💳 School Fee Payments</h1>
+      <p style="margin:4px 0 0;color:#6b7280;font-size:13px">
+        {{ pending_count }} payment{{ pending_count|pluralize }} awaiting approval
+      </p>
+    </div>
+    <a href="{% url 'admissions:registrar_list' %}" style="color:#6b7280;font-size:13px;text-decoration:none">← Applications</a>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+    <div style="padding:12px;border-radius:8px;margin-bottom:14px;background:{% if 'error' in m.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Filter tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    {% for key,label in "all,All Invoices|submitted,Awaiting Approval|approved,Approved|rejected,Rejected"|split:"|" %}
+    <a href="?status={% if key == 'all' %}{% else %}{{ key }}{% endif %}"
+       style="padding:7px 16px;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;
+              background:{% if status_filter == key or not status_filter and key == 'all' %}#1a5c38;color:white{% else %}#f3f4f6;color:#374151{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:#f9fafb">
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Invoice No.</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Student</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">App No.</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Programme</th>
+          <th style="padding:12px;text-align:right;color:#6b7280;font-weight:600">Amount</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Reference</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Status</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:12px;font-weight:600;color:#1a5c38">{{ inv.invoice_number }}</td>
+          <td style="padding:12px">{{ inv.application.get_full_name }}</td>
+          <td style="padding:12px;color:#6b7280">{{ inv.application.application_number }}</td>
+          <td style="padding:12px;color:#6b7280">{{ inv.application.programme.code }}</td>
+          <td style="padding:12px;text-align:right;font-weight:600">₦{{ inv.amount|floatformat:2 }}</td>
+          <td style="padding:12px">
+            {% if inv.payment_reference %}
+              <div style="font-size:12px">{{ inv.payment_reference }}</div>
+              <div style="font-size:11px;color:#6b7280">{{ inv.payment_bank }} · {{ inv.payment_date }}</div>
+            {% else %}—{% endif %}
+          </td>
+          <td style="padding:12px">
+            {% if inv.status == 'approved' %}<span style="background:#f0fdf4;color:#166534;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">✅ Approved</span>
+            {% elif inv.status == 'submitted' %}<span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">💳 Submitted</span>
+            {% elif inv.status == 'rejected' %}<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">❌ Rejected</span>
+            {% else %}<span style="background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600">⏳ Generated</span>{% endif %}
+          </td>
+          <td style="padding:12px">
+            {% if inv.status == 'submitted' %}
+            <div style="display:flex;gap:6px">
+              <form method="post" action="{% url 'admissions:approve_school_fee' inv.pk %}">
+                {% csrf_token %}
+                <button type="submit" style="background:#166534;color:white;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">
+                  ✅ Approve → Assign Matric
+                </button>
+              </form>
+              <form method="post" action="{% url 'admissions:reject_school_fee' inv.pk %}">
+                {% csrf_token %}
+                <button type="submit" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px">❌</button>
+              </form>
+            </div>
+            {% elif inv.status == 'approved' %}
+              <span style="font-size:12px;color:#166534;font-weight:600">{{ inv.application.matric_number }}</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="padding:40px;text-align:center;color:#9ca3af">No invoices found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block page_title %}My Results{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1000px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+    <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0">📊 My Academic Results</h1>
+    <a href="{% url 'download_transcript' %}"
+       style="background:#1a5c38;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">
+      📄 Download Transcript
+    </a>
+  </div>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 24px">{{ student.reg_number }} · {{ student.programme.name }}</p>
+
+  {% if reg_data %}
+    {% for item in reg_data %}
+    <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#111827">
+            {{ item.semester.session.name }} — {{ item.semester.name|title }} Semester
+          </div>
+          <div style="font-size:13px;color:#6b7280">
+            {{ item.course_count }} course{{ item.course_count|pluralize }} · {{ item.total_units }} credit unit{{ item.total_units|pluralize }}
+          </div>
+        </div>
+        <span style="background:#f0fdf4;color:#166534;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">Registered</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#f9fafb">
+            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Code</th>
+            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Course Title</th>
+            <th style="padding:8px 12px;text-align:center;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Units</th>
+            <th style="padding:8px 12px;text-align:center;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:600">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in item.courses %}
+          <tr style="border-bottom:1px solid #f3f4f6">
+            <td style="padding:9px 12px;font-weight:600;color:#1a5c38">{{ course.code }}</td>
+            <td style="padding:9px 12px;color:#374151">{{ course.title }}</td>
+            <td style="padding:9px 12px;text-align:center;color:#6b7280">{{ course.unit }}</td>
+            <td style="padding:9px 12px;text-align:center">
+              <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Pending</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="background:#f9fafb">
+            <td colspan="2" style="padding:9px 12px;font-weight:700;color:#374151">Total</td>
+            <td style="padding:9px 12px;text-align:center;font-weight:700">{{ item.total_units }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center;padding:60px;background:white;border-radius:12px;border:2px dashed #e5e7eb">
+      <div style="font-size:48px">📊</div>
+      <h3 style="color:#374151;margin:0 0 8px">No results yet</h3>
+      <p style="color:#6b7280;font-size:14px">Register for courses first. Results will appear here once approved.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

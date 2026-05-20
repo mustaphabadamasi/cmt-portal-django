@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Application Status</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f4f6f3;padding:40px 16px;min-height:100vh}.container{max-width:620px;margin:0 auto}.card{background:white;border-radius:12px;padding:28px;border:1px solid #e5e7eb;margin-bottom:16px}h1{color:#1a5c38;font-size:22px;margin-bottom:20px;text-align:center}input{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;margin-bottom:12px}button{width:100%;background:#1a5c38;color:white;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}.badge{display:inline-block;padding:5px 14px;border-radius:20px;font-weight:700;font-size:13px}.row{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-bottom:1px solid #f3f4f6}.row:last-child{border:none}.label{color:#6b7280}.step{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;font-size:13px}.dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;text-align:center;font-size:11px;font-weight:700;line-height:22px}.done{background:#1a5c38;color:white}.current{background:#f59e0b;color:white}.todo{background:#e5e7eb;color:#9ca3af}</style></head>
+<body><div class="container">
+  <div class="card">
+    <h1>Check Application Status</h1>
+    {% if messages %}{% for m in messages %}<div style="background:#fef2f2;color:#dc2626;padding:10px;border-radius:8px;margin-bottom:12px">{{ m }}</div>{% endfor %}{% endif %}
+    <form method="post">{% csrf_token %}
+      <input name="application_number" placeholder="Enter Application Number e.g. CMT/2025/0001" required>
+      <button type="submit">Check Status</button>
+    </form>
+  </div>
+  {% if app %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <div><div style="font-size:18px;font-weight:700">{{ app.get_full_name }}</div><div style="color:#6b7280;font-size:13px">{{ app.application_number }}</div></div>
+      {% if app.status == "school_fee_approved" %}<span class="badge" style="background:#f0fdf4;color:#166534">Fully Enrolled</span>
+      {% elif app.status == "school_fee_submitted" %}<span class="badge" style="background:#fef3c7;color:#92400e">School Fee Under Review</span>
+      {% elif app.status == "admitted" %}<span class="badge" style="background:#dbeafe;color:#1d4ed8">Admitted</span>
+      {% elif app.status == "app_fee_confirmed" %}<span class="badge" style="background:#f0fdf4;color:#166534">Fee Confirmed</span>
+      {% elif app.status == "app_fee_submitted" %}<span class="badge" style="background:#fef3c7;color:#92400e">Fee Submitted</span>
+      {% elif app.status == "rejected" %}<span class="badge" style="background:#fef2f2;color:#dc2626">Rejected</span>
+      {% else %}<span class="badge" style="background:#f3f4f6;color:#6b7280">Pending</span>{% endif %}
+    </div>
+    <div class="row"><span class="label">Programme</span><span>{{ app.programme.name }}</span></div>
+    <div class="row"><span class="label">Session</span><span>{{ app.session.name }}</span></div>
+    {% if app.matric_number %}<div class="row"><span class="label">Matric Number</span><span style="font-weight:700;color:#1a5c38;font-size:16px">{{ app.matric_number }}</span></div>{% endif %}
+    <div style="margin-top:16px">
+      <div class="step"><div class="dot done">1</div><div>Application submitted</div></div>
+      <div class="step"><div class="dot {% if app.status in 'app_fee_confirmed,admitted,school_fee_submitted,school_fee_approved' %}done{% elif app.status == 'app_fee_submitted' %}current{% else %}todo{% endif %}">2</div><div>Application fee confirmed</div></div>
+      <div class="step"><div class="dot {% if app.status in 'admitted,school_fee_submitted,school_fee_approved' %}done{% elif app.status == 'app_fee_confirmed' %}current{% else %}todo{% endif %}">3</div><div>Admitted - login with application number</div></div>
+      <div class="step"><div class="dot {% if app.status in 'school_fee_submitted,school_fee_approved' %}done{% elif app.status == 'admitted' %}current{% else %}todo{% endif %}">4</div><div>School fee paid and submitted</div></div>
+      <div class="step"><div class="dot {% if app.status == 'school_fee_approved' %}done{% elif app.status == 'school_fee_submitted' %}current{% else %}todo{% endif %}">5</div><div>School fee approved - <strong>Matric assigned</strong></div></div>
+      <div class="step"><div class="dot {% if app.status == 'school_fee_approved' %}done{% else %}todo{% endif %}">6</div><div>Course registration complete</div></div>
+    </div>
+    {% if app.status == "admitted" %}
+    <div style="background:#dbeafe;border-radius:8px;padding:14px;margin-top:14px;font-size:13px;color:#1d4ed8">
+      <strong>You have been admitted!</strong><br>
+      Username: <strong>{{ app.application_number }}</strong><br>
+      Password: <strong>{{ app.application_number }}</strong><br><br>
+      <a href="{% url 'admissions:admission_letter' app.pk %}"
+         style="display:inline-block;background:#1a5c38;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;margin-top:6px">
+        📄 Download Admission Letter PDF
+      </a>
+    </div>
+    {% elif app.status == "school_fee_approved" %}
+    <div style="background:#f0fdf4;border-radius:8px;padding:14px;margin-top:14px;font-size:13px;color:#166534">
+      <strong>Fully enrolled!</strong> Matric: <strong style="font-size:18px">{{ app.matric_number }}</strong><br>New login: <strong>{{ app.matric_number }}</strong>
+    </div>
+    {% elif app.status == "rejected" %}
+    {% if app.rejection_reason %}<div style="background:#fef2f2;border-radius:8px;padding:12px;margin-top:14px;font-size:13px;color:#dc2626"><strong>Reason:</strong> {{ app.rejection_reason }}</div>{% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+  <div style="text-align:center;margin-top:12px"><a href="{% url 'admissions:apply' %}" style="color:#1a5c38;font-size:13px">New Application</a></div>
+</div></body></html>

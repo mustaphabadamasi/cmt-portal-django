@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block page_title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:900px;margin:0 auto">
+
+  <a href="{% url 'forum:forum_course' post.course.id %}" style="color:#6b7280;font-size:13px;text-decoration:none">← {{ post.course.code }} Forum</a>
+
+  {% if messages %}{% for m in messages %}
+    <div style="padding:12px;border-radius:8px;margin:12px 0;background:#f0fdf4;color:#166534">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- POST CARD -->
+  <div style="background:white;border-radius:12px;border:1px solid {% if post.is_pinned %}#1a5c38{% else %}#e5e7eb{% endif %};padding:24px;margin:16px 0">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div style="flex:1">
+        {% if post.is_pinned %}
+          <span style="background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:8px">📌 Pinned</span>
+        {% endif %}
+        <h1 style="font-size:20px;font-weight:700;color:#111827;margin:0 0 8px">{{ post.title }}</h1>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px">
+          By <strong>{{ post.author.get_full_name }}</strong>
+          ({{ post.author.role }}) · {{ post.created_at|date:"d M Y, g:i A" }}
+        </div>
+        <div style="font-size:15px;color:#374151;line-height:1.7;white-space:pre-wrap">{{ post.content }}</div>
+        {% if post.attachment %}
+          <div style="margin-top:16px;padding:12px;background:#eff6ff;border-radius:8px;font-size:13px">
+            📎 <a href="{{ post.attachment.url }}" target="_blank" style="color:#1d4ed8;font-weight:600">
+              Download Attachment: {{ post.attachment.name|cut:"forum/attachments/" }}
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
+      <!-- Like post -->
+      <form method="post" action="{% url 'forum:post_like' post.id %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" style="background:{% if user_liked_post %}#fef2f2{% else %}#f9fafb{% endif %};color:{% if user_liked_post %}#ef4444{% else %}#6b7280{% endif %};border:1px solid {% if user_liked_post %}#fecaca{% else %}#e5e7eb{% endif %};padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
+          ♥ {{ post.like_count }} Like{% if post.like_count != 1 %}s{% endif %}
+        </button>
+      </form>
+
+      {% if is_lecturer %}
+        <!-- Pin toggle -->
+        <form method="post" action="{% url 'forum:post_pin' post.id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
+            {% if post.is_pinned %}📌 Unpin{% else %}📌 Pin{% endif %}
+          </button>
+        </form>
+      {% endif %}
+
+      {% if post.author == request.user or is_lecturer %}
+        <!-- Delete post -->
+        <a href="{% url 'forum:post_delete' post.id %}"
+           style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">
+          🗑 Delete
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- REPLIES -->
+  <h2 style="font-size:16px;font-weight:700;color:#1a5c38;margin:24px 0 12px">
+    💬 {{ post.reply_count }} Repl{{ post.reply_count|pluralize:"y,ies" }}
+  </h2>
+
+  {% for reply in replies %}
+  <div style="background:white;border-radius:10px;border:1px solid #f3f4f6;padding:16px;margin-bottom:10px;margin-left:{% if reply.author == post.author %}0{% else %}0{% endif %}px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+      <div style="flex:1">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:8px">
+          <strong style="color:#111827">{{ reply.author.get_full_name }}</strong>
+          <span style="background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:4px;font-size:11px;margin-left:6px">{{ reply.author.role }}</span>
+          · {{ reply.created_at|timesince }} ago
+        </div>
+        <div style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap">{{ reply.content }}</div>
+        {% if reply.attachment %}
+          <div style="margin-top:10px;font-size:12px">
+            📎 <a href="{{ reply.attachment.url }}" target="_blank" style="color:#1d4ed8">Download Attachment</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Reply actions -->
+    <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+      <form method="post" action="{% url 'forum:reply_like' reply.id %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" style="background:{% if reply.id in liked_reply_ids %}#fef2f2{% else %}#f9fafb{% endif %};color:{% if reply.id in liked_reply_ids %}#ef4444{% else %}#9ca3af{% endif %};border:1px solid {% if reply.id in liked_reply_ids %}#fecaca{% else %}#e5e7eb{% endif %};padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">
+          ♥ {{ reply.like_count }}
+        </button>
+      </form>
+      {% if reply.author == request.user or is_lecturer %}
+        <form method="post" action="{% url 'forum:reply_delete' reply.id %}">
+          {% csrf_token %}
+          <button type="submit" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:12px;padding:4px 8px" onclick="return confirm('Delete this reply?')">
+            🗑 Delete
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+    <div style="text-align:center;padding:30px;color:#9ca3af;font-size:14px;background:white;border-radius:10px;border:1px dashed #e5e7eb">
+      No replies yet — be the first to respond!
+    </div>
+  {% endfor %}
+
+  <!-- REPLY FORM -->
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:24px;margin-top:20px">
+    <h3 style="font-size:15px;font-weight:700;color:#1a5c38;margin:0 0 16px">✍️ Leave a Reply</h3>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <textarea name="content" rows="4" required placeholder="Write your reply here..." style="width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:10px">
+        <label style="font-size:13px;color:#6b7280;cursor:pointer">
+          📎 <input type="file" name="attachment" style="font-size:13px">
+        </label>
+        <button type="submit" style="background:#1a5c38;color:white;padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+          Post Reply
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

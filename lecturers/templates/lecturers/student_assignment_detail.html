@@ -3,19 +3,25 @@
 {% block content %}
 <div style="padding:24px;max-width:900px;margin:0 auto">
   <a href="{% url 'lecturers:student_assignment_list' %}" style="color:#1a5c38;text-decoration:none;font-size:13px">← Back to My Assignments</a>
+  <a href="{% url 'live_classes:student_list' %}" style="display:block;padding:8px 16px;color:#374151;text-decoration:none;border-radius:6px;font-size:14px">📹 Live Classes</a>
 
   {% if messages %}{% for m in messages %}<div style="background:{% if 'error' in m.tags %}#fef2f2;color:#b91c1c{% else %}#f0fdf4;color:#065f46{% endif %};padding:10px 14px;border-radius:8px;margin:16px 0">{{ m }}</div>{% endfor %}{% endif %}
 
   <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
     <div style="font-size:13px;color:#6b7280">{{ assignment.course.code }} - {{ assignment.course.title }}</div>
     <h1 style="color:#0f2d1c;margin:4px 0 16px">{{ assignment.title }}</h1>
-    <div style="white-space:pre-wrap;padding:16px;background:#f9fafb;border-radius:8px;line-height:1.6">{{ assignment.description }}</div>
+    {% if assignment.description %}<div style="white-space:pre-wrap;padding:14px;background:#f9fafb;border-radius:8px;line-height:1.6;font-size:14px;color:#374151"><strong style="font-size:12px;color:#6b7280;display:block;margin-bottom:6px">GENERAL INSTRUCTIONS</strong>{{ assignment.description }}</div>{% endif %}
   </div>
 
   <!-- Individual Submission -->
   <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
     <h2 style="color:#1e3a8a;margin:0 0 12px;font-size:18px">📝 Individual Part (10 marks)</h2>
-    <div style="font-size:13px;color:#6b7280;margin-bottom:16px">Deadline: {{ assignment.individual_deadline|date:"M d, Y H:i" }}{% if now > assignment.individual_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:12px">Deadline: {{ assignment.individual_deadline|date:"M d, Y H:i" }}{% if now > assignment.individual_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+
+    <div style="padding:14px;background:#eff6ff;border-radius:8px;margin-bottom:16px;white-space:pre-wrap;line-height:1.6;color:#1e3a8a">
+      <strong style="font-size:12px;display:block;margin-bottom:6px">YOUR QUESTION:</strong>
+      {{ assignment.individual_question }}
+    </div>
 
     {% if ind_sub %}
       <div style="padding:14px;background:#f0fdf4;border-radius:8px">
@@ -37,7 +43,12 @@
   <!-- Group Submission -->
   <div style="background:white;padding:24px;border-radius:12px;border:1px solid #e5e7eb;margin-top:16px">
     <h2 style="color:#065f46;margin:0 0 12px;font-size:18px">👥 Group Part (10 marks)</h2>
-    <div style="font-size:13px;color:#6b7280;margin-bottom:16px">Deadline: {{ assignment.group_deadline|date:"M d, Y H:i" }}{% if now > assignment.group_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:12px">Deadline: {{ assignment.group_deadline|date:"M d, Y H:i" }}{% if now > assignment.group_deadline %} <span style="color:#dc2626">(PASSED - submissions marked LATE)</span>{% endif %}</div>
+
+    <div style="padding:14px;background:#f0fdf4;border-radius:8px;margin-bottom:16px;white-space:pre-wrap;line-height:1.6;color:#065f46">
+      <strong style="font-size:12px;display:block;margin-bottom:6px">GROUP QUESTION:</strong>
+      {{ assignment.group_question }}
+    </div>
 
     {% if not my_group %}
       <div style="padding:14px;background:#fef3c7;border-radius:8px;color:#92400e">⚠ You haven't been assigned to a group yet. Contact your lecturer.</div>

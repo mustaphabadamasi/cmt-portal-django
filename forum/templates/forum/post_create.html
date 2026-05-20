@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block page_title %}New Post — {{ course.code }}{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:700px;margin:0 auto">
+  <a href="{% url 'forum:forum_course' course.id %}" style="color:#6b7280;font-size:13px;text-decoration:none">← {{ course.code }} Forum</a>
+  <h1 style="font-size:20px;font-weight:700;color:#1a5c38;margin:12px 0">✏️ New Post — {{ course.code }}</h1>
+
+  {% if messages %}{% for m in messages %}
+    <div style="padding:12px;border-radius:8px;margin-bottom:12px;background:#fef2f2;color:#dc2626">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:28px">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Post Title *</label>
+        <input name="title" required placeholder="e.g. Question about Chapter 3 assignment..."
+               style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">Content *</label>
+        <textarea name="content" rows="8" required placeholder="Share your question, resource, or discussion topic..."
+                  style="width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+      </div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">📎 Attachment (optional)</label>
+        <input type="file" name="attachment"
+               style="font-size:13px;color:#6b7280;padding:8px;border:1px solid #d1d5db;border-radius:8px;width:100%;box-sizing:border-box">
+        <div style="font-size:12px;color:#9ca3af;margin-top:4px">Upload PDFs, images, or documents to share with the class</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button type="submit" style="background:#1a5c38;color:white;padding:12px 28px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+          Post to Forum
+        </button>
+        <a href="{% url 'forum:forum_course' course.id %}"
+           style="padding:12px 20px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151;font-size:14px">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

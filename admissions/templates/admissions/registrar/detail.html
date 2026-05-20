@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block page_title %}{{ app.application_number }}{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1000px;margin:0 auto">
+  <a href="{% url 'admissions:registrar_list' %}" style="color:#6b7280;font-size:13px;text-decoration:none">← Applications</a>
+
+  {% if messages %}{% for m in messages %}
+  <div style="padding:12px;border-radius:8px;margin:10px 0;background:{% if 'error' in m.tags %}#fef2f2;color:#dc2626{% else %}#f0fdf4;color:#166534{% endif %}">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Header card -->
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:24px;margin:16px 0">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          {% if app.status == 'school_fee_approved' %}
+            <span style="background:#f0fdf4;color:#166534;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">✅ FULLY ENROLLED</span>
+          {% elif app.status == 'admitted' %}
+            <span style="background:#dbeafe;color:#1d4ed8;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">🎓 ADMITTED</span>
+          {% elif app.status == 'school_fee_submitted' %}
+            <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">💳 SCHOOL FEE SUBMITTED</span>
+          {% elif app.status == 'app_fee_confirmed' %}
+            <span style="background:#f3f4f6;color:#374151;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">✓ APP FEE CONFIRMED</span>
+          {% elif app.status == 'app_fee_submitted' %}
+            <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">⏳ FEE SUBMITTED</span>
+          {% elif app.status == 'rejected' %}
+            <span style="background:#fef2f2;color:#dc2626;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">❌ REJECTED</span>
+          {% else %}
+            <span style="background:#f3f4f6;color:#374151;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">PENDING</span>
+          {% endif %}
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 4px">{{ app.get_full_name }}</h1>
+        <div style="font-size:13px;color:#6b7280">{{ app.application_number }} · {{ app.programme.name }} · {{ app.session.name }}</div>
+        {% if app.matric_number %}
+        <div style="margin-top:6px;font-size:15px;font-weight:700;color:#1a5c38">Matric: {{ app.matric_number }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% if app.app_fee_submitted and not app.app_fee_confirmed and app.status != 'rejected' %}
+        <form method="post" action="{% url 'admissions:confirm_app_fee' app.pk %}">
+          {% csrf_token %}
+          <button type="submit" style="background:#1d4ed8;color:white;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">✓ Confirm App Fee</button>
+        </form>
+        {% endif %}
+        {% if app.status == 'app_fee_confirmed' %}
+        <form method="post" action="{% url 'admissions:admit' app.pk %}">
+          {% csrf_token %}
+          <button type="submit" style="background:#166534;color:white;padding:10px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">🎓 ADMIT STUDENT</button>
+        </form>
+        {% endif %}
+        {% if app.status in 'admitted,school_fee_submitted,school_fee_approved' %}
+        <a href="{% url 'admissions:admission_letter' app.pk %}" style="background:#1a5c38;color:white;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">📄 Admission Letter</a>
+        {% endif %}
+        {% if app.status not in 'admitted,school_fee_submitted,school_fee_approved,rejected' %}
+        <button onclick="document.getElementById('reject-form').style.display='block'" style="background:#fef2f2;color:#dc2626;padding:10px 16px;border:1px solid #fecaca;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">❌ Reject</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject form -->
+  <div id="reject-form" style="display:none;background:white;border-radius:12px;border:2px solid #dc2626;padding:20px;margin-bottom:16px">
+    <form method="post" action="{% url 'admissions:reject' app.pk %}">
+      {% csrf_token %}
+      <div style="font-weight:700;color:#dc2626;margin-bottom:10px">Reject application</div>
+      <textarea name="reason" rows="2" placeholder="Reason (optional)" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px"></textarea>
+      <div style="display:flex;gap:8px">
+        <button type="submit" style="background:#dc2626;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer">Confirm</button>
+        <button type="button" onclick="document.getElementById('reject-form').style.display='none'" style="padding:10px 20px;border:1px solid #d1d5db;border-radius:8px;cursor:pointer">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <!-- Personal -->
+    <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;padding:20px">
+      <h3 style="font-size:14px;font-weight:700;color:#1a5c38;margin:0 0 14px">Personal Information</h3>
+      {% if app.photo %}<img src="{{ app.photo.url }}" style="width:100px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:12px">{% endif %}
+      <table style="width:100%;font-size:13px">
+        <tr><td style="color:#6b7280;padding:3px 0">Full Name</td><td style="font-weight:600">{{ app.get_full_name }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">DOB</td><td>{{ app.date_of_birth|date:"d M Y" }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">Gender</td><td>{{ app.get_gender_display }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">State</td><td>{{ app.state_of_origin }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">LGA</td><td>{{ app.lga }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">Phone</td><td>{{ app.phone }}</td></tr>
+        <tr><td style="color:#6b7280;padding:3px 0">Email</td><td>{{ app.email }}</td></tr>
+      </table>
+    </div>
+
+    <!-- Payment + O'level -->
+    <div>
+      <!-- App Fee -->
+      <div style="background:white;border-radius:12px;border:1px solid {% if app.app_fee_confirmed %}#1a5c38{% else %}#e5e7eb{% endif %};padding:18px;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:700;color:#1a5c38;margin:0 0 12px">Application Fee (₦10,000)</h3>
+        <table style="width:100%;font-size:13px">
+          <tr><td style="color:#6b7280;padding:2px 0">Reference</td><td style="font-weight:600">{{ app.app_fee_reference|default:"Not submitted" }}</td></tr>
+          <tr><td style="color:#6b7280;padding:2px 0">Bank</td><td>{{ app.app_fee_bank|default:"—" }}</td></tr>
+          <tr><td style="color:#6b7280;padding:2px 0">Date</td><td>{{ app.app_fee_date|default:"—" }}</td></tr>
+          <tr><td style="color:#6b7280;padding:2px 0">Confirmed</td><td>{% if app.app_fee_confirmed %}✅ Yes{% else %}❌ No{% endif %}</td></tr>
+        </table>
+      </div>
+
+      {% if invoice %}
+      <!-- School Fee -->
+      <div style="background:white;border-radius:12px;border:1px solid {% if invoice.status == 'approved' %}#1a5c38{% else %}#e5e7eb{% endif %};padding:18px;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:700;color:#1a5c38;margin:0 0 12px">School Fee Invoice</h3>
+        <table style="width:100%;font-size:13px">
+          <tr><td style="color:#6b7280;padding:2px 0">Invoice</td><td style="font-weight:600">{{ invoice.invoice[200~cd ~/cmt-portal-django
+
+# Add "Generate School Fee Invoice" to student sidebar/dashboard
+# when student has no matric yet (reg_number starts with CMT/)
+python << 'EOF'
+with open('templates/base.html') as f:
+    content = f.read()
+
+# Add Admissions link to registrar sidebar
+old_reg = '<a href="{% url \'registrar_students\' %}" class="nav-item'
+new_reg = '''<a href="{% url 'admissions:registrar_list' %}" class="nav-item {% if request.resolver_match.namespace == 'admissions' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-person-plus-fill"></i></div>Admissions</a>
+  <a href="{% url 'admissions:registrar_school_fees' %}" class="nav-item {% if 'school_fee' in request.resolver_match.url_name|default:'' %}active{% endif %}"><div class="nav-icon"><i class="bi bi-cash-coin"></i></div>School Fee Payments</a>
+  ''' + old_reg
+
+if 'admissions:registrar_list' not in content:
+    content = content.replace(old_reg, new_reg)
+    with open('templates/base.html', 'w') as f:
+        f.write(content)
+    print('✓ Admissions links added to registrar sidebar')
+else:
+    print('• Already present')
+EOF
+
+# Update student_dashboard.html to show admission state
+python << 'EOF'
+with open('templates/students/student_dashboard.html') as f:
+    content = f.read()
+
+# Find a good insertion point - after the welcome section
+# Add a banner if student has no matric yet (reg_number starts with CMT/)
+admission_banner = '''
+    <!-- Admission Status Banner (for students without matric yet) -->
+    {% if student.reg_number|slice:":3" == "CMT" %}
+    <div style="background:linear-gradient(135deg,#1d4ed8,#1a5c38);border-radius:12px;padding:20px 24px;margin-bottom:20px;color:white">
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">🎓 Admission in Progress</div>
+      <div style="font-size:13px;opacity:.9;margin-bottom:14px">
+        You are admitted but your <strong>Matric Number</strong> has not been assigned yet.
+        Complete your school fee payment to get your matric number and full portal access.
+      </div>
+      {% with inv=student.application.school_fee %}
+      {% if inv and inv.status == "submitted" %}
+        <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:12px;font-size:13px">
+          ✅ School fee payment submitted. <strong>Awaiting Registrar approval.</strong>
+        </div>
+      {% else %}
+        <a href="{% url 'admissions:generate_invoice' %}"
+           style="display:inline-block;background:white;color:#1a5c38;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
+          💳 Generate School Fee Invoice
+        </a>
+      {% endif %}
+      {% endwith %}
+    </div>
+    {% endif %}
+'''
+
+# Insert before the stat cards section
+if 'Admission in Progress' not in content:
+    # Find the stats grid
+    import re
+    m = re.search(r'(<div[^>]*class="[^"]*stats[^"]*")', content)
+    if m:
+        content = content.replace(m.group(), admission_banner + '\n' + m.group())
+        print('✓ Admission banner added to student dashboard')
+    else:
+        # Alternative: add after the welcome hero div
+        content = content.replace(
+            '</div>\n\n    <div',
+            '</div>\n' + admission_banner + '\n    <div',
+            1
+        )
+        print('✓ Banner added via fallback')
+
+with open('templates/students/student_dashboard.html', 'w') as f:
+    f.write(content)
+EOF
+
+# Apply migration if any new fields
+python manage.py makemigrations admissions 2>/dev/null
+python manage.py migrate 2>/dev/null
+
+touch /var/www/mustapher001_pythonanywhere_com_wsgi.py
+
+echo ""
+echo "✓ COMPLETE ADMISSION SYSTEM READY!"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "PUBLIC URLS:"
+echo "  Application Form:   /admissions/apply/"
+echo "  Check Status:       /admissions/check-status/"
+echo ""
+echo "REGISTRAR (sidebar):"
+echo "  Applications:       /admissions/manage/"
+echo "  School Fee Approvals: /admissions/school-fees/"
+echo ""
+echo "COMPLETE FLOW:"
+echo "  1. /admissions/apply/           → student applies + pays ₦10k"
+echo "  2. Registrar confirms fee → ADMITS → admission letter PDF"
+echo "  3. Student logs in with CMT/2025/0001"
+echo "  4. Student generates invoice → pays school fees → submits ref"
+echo "  5. Registrar approves → DPL/PAD/25/001 assigned"
+echo "  6. Student logs in with new matric → course registration"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
