@@ -17,11 +17,7 @@
     <div style="text-align:right">
       <div style="font-size:13px;opacity:.8">Class</div>
       <div style="font-size:18px;font-weight:700">
-        {% if cgpa >= 4.5 %}First Class
-        {% elif cgpa >= 3.5 %}Second Class Upper
-        {% elif cgpa >= 2.5 %}Second Class Lower
-        {% elif cgpa >= 1.5 %}Third Class
-        {% else %}Pass{% endif %}
+        {{ degree_class }}
       </div>
     </div>
   </div>

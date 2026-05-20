@@ -294,6 +294,13 @@ def student_results(request):
 
     cgpa = round(cgpa_total_points / cgpa_total_units, 2) if cgpa_total_units else 0
 
+    # Diploma classification
+    if   cgpa >= 4.50: degree_class = "Distinction"
+    elif cgpa >= 3.50: degree_class = "Upper Credit"
+    elif cgpa >= 2.50: degree_class = "Lower Credit"
+    elif cgpa >= 1.00: degree_class = "Pass"
+    else:              degree_class = "Fail"
+
     # Current semester pending results
     current_results = CourseResult.objects.filter(
         student=student, semester=semester
@@ -302,6 +309,7 @@ def student_results(request):
     return render(request, 'results/student/my_results.html', {
         'student': student,
         'semester_data': semester_data,
+        'degree_class': degree_class,
         'cgpa': cgpa,
         'cgpa_total_units': cgpa_total_units,
         'current_results': current_results,

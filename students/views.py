@@ -653,12 +653,11 @@ def download_transcript(request):
     cgpa_units  = sum(r.course.unit for r in all_results)
     cgpa = round(cgpa_points / cgpa_units, 2) if cgpa_units else 0
 
-    if   cgpa >= 4.5: degree_class = "First Class"
-    elif cgpa >= 3.5: degree_class = "Second Class Upper"
-    elif cgpa >= 2.5: degree_class = "Second Class Lower"
-    elif cgpa >= 1.5: degree_class = "Third Class"
-    elif cgpa >  0:   degree_class = "Pass"
-    else:             degree_class = "—"
+    if   cgpa >= 4.50: degree_class = "Distinction"
+    elif cgpa >= 3.50: degree_class = "Upper Credit"
+    elif cgpa >= 2.50: degree_class = "Lower Credit"
+    elif cgpa >= 1.00: degree_class = "Pass"
+    else:              degree_class = "Fail"
 
     from students.models import CourseRegistration
     registrations = CourseRegistration.objects.filter(
