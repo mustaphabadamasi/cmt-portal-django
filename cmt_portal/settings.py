@@ -154,3 +154,9 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 AUTH_USER_MODEL = 'accounts.User'
 
 CSRF_TRUSTED_ORIGINS = ['https://mustapher001.pythonanywhere.com']
+
+
+# ── JaaS Live Classes ─────────────────────────────────────────────────────────
+JAAS_APP_ID  = 'vpaas-magic-cookie-03a955d05368490b876f4baa0b974405'
+JAAS_KEY_ID  = 'vpaas-magic-cookie-03a955d05368490b876f4baa0b974405/7f6821'
+JAAS_KEY_FILE = BASE_DIR / 'jaas_private_key.pk'

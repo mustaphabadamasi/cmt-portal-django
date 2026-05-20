@@ -1,3 +1,4 @@
+from .jaas_token import generate_jaas_token
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -65,8 +66,14 @@ def lecturer_class_detail(request, pk):
     lecturer  = get_object_or_404(Lecturer, user=request.user)
     lc        = get_object_or_404(LiveClass, pk=pk, lecturer=lecturer)
     attendance = lc.attendance.select_related('student__user').order_by('joined_at')
+    jaas_token = None
+    if lc.status == 'live':
+        jaas_token = generate_jaas_token(request.user, lc.jitsi_room_name, is_moderator=True)
+    display_name = request.user.get_full_name() or request.user.username
     return render(request, 'live_classes/lecturer/detail.html', {
-        'lc': lc, 'lecturer': lecturer, 'attendance': attendance
+        'lc': lc, 'lecturer': lecturer, 'attendance': attendance,
+        'jaas_token': jaas_token, 'room_name': lc.jitsi_room_name,
+        'display_name': display_name,
     })
 
 
@@ -168,9 +175,11 @@ def student_class_join(request, pk):
     ClassAttendance.objects.get_or_create(live_class=lc, student=student)
 
     display_name = request.user.get_full_name() or request.user.username
+    jaas_token   = generate_jaas_token(request.user, lc.jitsi_room_name, is_moderator=False)
 
     return render(request, 'live_classes/student/join.html', {
-        'lc': lc, 'student': student, 'display_name': display_name
+        'lc': lc, 'student': student, 'display_name': display_name,
+        'jaas_token': jaas_token, 'room_name': lc.jitsi_room_name
     })
 
 
