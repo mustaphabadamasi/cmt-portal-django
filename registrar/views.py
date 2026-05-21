@@ -335,113 +335,13 @@ def batch_generate_fees(request):
         for sid in student_ids:
             try:
                 student = Student.objects.get(pk=sid)
-                if Payment.objects.filter(student=student, session=session, payment_type=payment_type, status__in=["pending","approved"]).exists():
-                    skipped += 1
-                    continue
-                Payment.objects.create(
-                    student=student, session=session, semester=semester,
-                    payment_type=payment_type, amount=amount,
-                    reference=f"CMT-{uuid.uuid4().hex[:8].upper()}", status="pending"
+                reg, created = CourseRegistration.objects.get_or_create(
+                    student=student, semester=semester,
+                    defaults={'is_approved': True}
                 )
-                generated += 1
-            except Student.DoesNotExist:
-                pass
-        messages.success(request, f"Generated {generated} invoice(s). Skipped {skipped} (already exist).")
-        return redirect("batch_generate_fees")
-    context = {"student_data": student_data, "session": session, "programmes": programmes,
-               "selected_programme": programme_id, "selected_level": level}
-    return render(request, "registrar/batch_generate_fees.html", context)
-
-
-@login_required
-def batch_approve_payments(request):
-    from fees.models import Payment
-    from django.utils import timezone
-    programme_id = request.GET.get("programme")
-    pay_type     = request.GET.get("pay_type")
-    payments = Payment.objects.filter(status="pending").select_related(
-        "student__user","student__programme","session").order_by("created_at")
-    if programme_id:
-        payments = payments.filter(student__programme_id=programme_id)
-    if pay_type:
-        payments = payments.filter(payment_type=pay_type)
-    if request.method == "POST":
-        payment_ids = request.POST.getlist("payment_ids")[:40]
-        approved = 0
-        for pid in payment_ids:
-            try:
-                p = Payment.objects.get(pk=pid, status="pending")
-                p.status      = "approved"
-                p.approved_by = request.user
-                p.approved_at = timezone.now()
-                p.receipt_no  = f"CMT-{p.pk:06d}"
-                p.save()
-                approved += 1
-            except Payment.DoesNotExist:
-                pass
-        messages.success(request, f"Approved {approved} payment(s) successfully.")
-        return redirect("batch_approve_payments")
-    programmes = Programme.objects.all()
-    context = {"payments": payments[:100], "programmes": programmes,
-               "selected_programme": programme_id, "selected_pay_type": pay_type,
-               "total_pending": Payment.objects.filter(status="pending").count()}
-    return render(request, "registrar/batch_approve_payments.html", context)
-
-
-@login_required
-def batch_register_courses(request):
-    from academics.models import CourseOutline, CourseRegistration
-
-    # Allow selecting any semester
-    selected_semester_id = request.GET.get("semester_id") or request.POST.get("semester_id")
-    if selected_semester_id:
-        semester = Semester.objects.filter(pk=selected_semester_id).first()
-    else:
-        semester = Semester.objects.filter(is_active=True).first()
-
-    all_semesters = Semester.objects.select_related("session").all().order_by("-session__name","name")
-    programmes    = Programme.objects.all()
-    outlines      = CourseOutline.objects.filter(is_active=True).select_related("programme","semester")
-    programme_id  = request.GET.get("programme")
-    level         = request.GET.get("level")
-    outline_id    = request.GET.get("outline")
-
-    # Filter outlines by selected semester
-    if semester:
-        outlines = outlines.filter(semester=semester)
-    students = Student.objects.select_related("user","programme").all().order_by("reg_number")
-    if programme_id:
-        students = students.filter(programme_id=programme_id)
-    if level:
-        students = students.filter(reg_number__contains=f"/{level}/")
-    selected_outline = None
-    if outline_id:
-        try:
-            selected_outline = CourseOutline.objects.get(pk=outline_id)
-        except CourseOutline.DoesNotExist:
-            pass
-    student_data = []
-    for s in students[:100]:
-        count = CourseRegistration.objects.filter(student=s, semester=semester).count() if semester else 0
-        student_data.append({"student": s, "registered_count": count, "already_registered": count > 0})
-    if request.method == "POST":
-        student_ids = request.POST.getlist("student_ids")[:40]
-        outline_pk  = request.POST.get("outline_id")
-        registered = skipped = 0
-        try:
-            outline = CourseOutline.objects.get(pk=outline_pk)
-            courses = list(outline.courses.all())
-        except CourseOutline.DoesNotExist:
-            messages.error(request, "Invalid course outline.")
-            return redirect("batch_register_courses")
-        for sid in student_ids:
-            try:
-                student = Student.objects.get(pk=sid)
-                CourseRegistration.objects.filter(student=student, semester=semester).delete()
-                for course in courses:
-                    CourseRegistration.objects.create(
-                        student=student, semester=semester, course=course,
-                        status="registered", is_carryover=False)
+                reg.courses.set(courses)
+                reg.is_approved = True
+                reg.save()
                 registered += 1
             except Student.DoesNotExist:
                 skipped += 1
