@@ -30,8 +30,36 @@
       </button>
     </div>
     {% elif batch.status == 'approved' %}
-    <span style="background:#f0fdf4;color:#166534;padding:8px 16px;border-radius:20px;font-weight:700;font-size:13px">✅ APPROVED — Published to Students</span>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="background:#f0fdf4;color:#166534;padding:8px 16px;border-radius:20px;font-weight:700;font-size:13px">✅ APPROVED — Published to Students</span>
+      <button onclick="document.getElementById('recall-form').style.display='block'"
+        style="background:#fef3c7;color:#92400e;padding:8px 16px;border:1px solid #f59e0b;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+        ↩ Recall & Edit
+      </button>
+    </div>
     {% endif %}
+  </div>
+
+  
+  <!-- Recall form -->
+  <div id="recall-form" style="display:none;background:white;border-radius:12px;border:2px solid #f59e0b;padding:20px;margin-bottom:16px">
+    <form method="post" action="{% url 'results:recall_batch' batch.id %}">
+      {% csrf_token %}
+      <div style="font-weight:700;color:#92400e;margin-bottom:10px">↩ Recall Results for Editing</div>
+      <div style="background:#fef3c7;border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;color:#78350f">
+        ⚠ This will <strong>unpublish</strong> results from students and return them to draft status.
+        The lecturer will be notified to correct and resubmit.
+      </div>
+      <textarea name="reason" rows="2" required placeholder="Reason for recall (required)"
+        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px;font-size:14px;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:8px">
+        <button type="submit" style="background:#92400e;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer">
+          Confirm Recall
+        </button>
+        <button type="button" onclick="document.getElementById('recall-form').style.display='none'"
+          style="padding:10px 20px;border:1px solid #d1d5db;border-radius:8px;cursor:pointer">Cancel</button>
+      </div>
+    </form>
   </div>
 
   <!-- Reject form -->

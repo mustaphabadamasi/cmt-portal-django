@@ -15,6 +15,7 @@ urlpatterns = [
     path('registrar/batch/<int:batch_id>/',views.registrar_batch_detail,  name='batch_detail'),
     path('registrar/batch/<int:batch_id>/approve/', views.approve_batch,  name='approve_batch'),
     path('registrar/batch/<int:batch_id>/reject/',  views.reject_batch,   name='reject_batch'),
+    path('registrar/batch/<int:batch_id>/recall/', views.recall_batch, name='recall_batch'),
 
     # Student
     path('my-results/',                    views.student_results,         name='student_results'),

@@ -66,8 +66,16 @@ def enter_results(request, course_id):
     )
 
     if batch.status == 'approved':
-        messages.warning(request, 'Results already approved. Contact Registrar to make changes.')
-        return redirect('results:lecturer_courses')
+        # Allow viewing and downloading — just block editing
+        results  = CourseResult.objects.filter(
+            course=course, semester=semester
+        ).select_related('student','student__user').order_by('student__reg_number')
+        existing = {r.student_id: r for r in results}
+        return render(request, 'results/lecturer/enter_results.html', {
+            'course': course, 'semester': semester, 'session': session,
+            'students': [r.student for r in results],
+            'existing': existing, 'batch': batch,
+        })
 
     # Get registered students
     registrations = CourseRegistration.objects.filter(
@@ -344,3 +352,32 @@ def download_scoresheet(request, course_id):
         },
         f'Scoresheet_{course.code}_{semester}.pdf'
     )
+
+
+@login_required
+def recall_batch(request, batch_id):
+    """Registrar recalls an approved result batch for editing."""
+    batch = get_object_or_404(ResultBatch, pk=batch_id)
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        with transaction.atomic():
+            batch.status        = 'draft'
+            batch.approved_by   = None
+            batch.approved_at   = None
+            batch.reject_reason = reason
+            batch.save()
+            CourseResult.objects.filter(
+                course=batch.course, semester=batch.semester
+            ).update(status='draft', approved_by=None, approved_at=None)
+        # Notify lecturer
+        try:
+            from notifications.utils import notify
+            notify(batch.lecturer, 'result',
+                f'Result Recalled: {batch.course.code}',
+                f'Registrar has recalled your results for {batch.course.code}. Reason: {reason}. Please correct and resubmit.',
+                '/results/my-courses/')
+        except Exception:
+            pass
+        from django.contrib import messages
+        messages.warning(request, f'Results for {batch.course.code} recalled and returned to draft for editing.')
+    return redirect('results:registrar_results')

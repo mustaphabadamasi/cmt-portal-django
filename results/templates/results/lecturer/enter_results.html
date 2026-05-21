@@ -22,11 +22,12 @@
     </div>
   </div>
 
-  {% if batch.status == 'submitted' or batch.status == 'approved' %}
-  <div style="background:#dbeafe;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#1d4ed8;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+  {% if batch %}
+  <div style="background:{% if batch.status == 'submitted' %}#dbeafe{% elif batch.status == 'approved' %}#f0fdf4{% else %}#f9fafb{% endif %};border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:{% if batch.status == 'submitted' %}#1d4ed8{% elif batch.status == 'approved' %}#166534{% else %}#374151{% endif %};display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
     <span>
       {% if batch.status == 'submitted' %}⏳ Results submitted and awaiting Registrar approval. You cannot edit at this stage.
-      {% else %}✅ Results approved and published to students.{% endif %}
+      {% elif batch.status == 'approved' %}✅ Results approved and published to students.
+      {% else %}📝 Draft — enter scores and submit to Registrar.{% endif %}
     </span>
     <a href="{% url 'results:scoresheet' course.id %}"
        style="background:#1a5c38;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:12px;white-space:nowrap">

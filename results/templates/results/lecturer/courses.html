@@ -48,7 +48,10 @@
             <a href="{% url 'results:enter_results' course.id %}"
                style="background:#f3f4f6;color:#374151;padding:7px 16px;border-radius:8px;text-decoration:none;font-size:12px">View</a>
             {% else %}
-            <span style="color:#6b7280;font-size:12px">Published ✓</span>
+            <a href="{% url 'results:enter_results' course.id %}"
+               style="color:#166534;font-size:12px;font-weight:600;text-decoration:none">
+              📄 View / Download
+            </a>
             {% endif %}
           </td>
         </tr>
