@@ -1399,7 +1399,8 @@ def registration_status(request):
 
     sel_prog  = request.GET.get("programme")
     sel_sess  = request.GET.get("session")
-    sel_sem   = request.GET.get("semester")
+    active_sem = Semester.objects.filter(is_active=True).first()
+    sel_sem   = request.GET.get("semester", str(active_sem.pk) if active_sem else "")
     sel_level = request.GET.get("level", "")
 
     selected_programme = None
