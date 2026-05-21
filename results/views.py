@@ -39,7 +39,7 @@ def lecturer_result_courses(request):
         # Count registered students
         try:
             count = CourseRegistration.objects.filter(
-                courses=c, semester=semester
+                courses=c, semester=semester, is_approved=True
             ).count()
             student_counts[c.id] = count
         except Exception:
@@ -78,9 +78,10 @@ def enter_results(request, course_id):
         })
 
     # Get registered students
+    # Get students registered for this course this semester
     registrations = CourseRegistration.objects.filter(
         courses=course, semester=semester
-    ).select_related('student','student__user').order_by('student__reg_number')
+    ).select_related('student', 'student__user').order_by('student__reg_number')
 
     students = [r.student for r in registrations]
 
