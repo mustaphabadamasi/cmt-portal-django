@@ -349,7 +349,7 @@ def batch_generate_fees(request):
     context = {"student_data": student_data, "programmes": programmes,
                "session": session, "semester": semester,
                "selected_programme": programme_id, "selected_level": level}
-    return render(request, "registrar/batch_register_courses.html", context)
+    return render(request, "registrar/batch_generate_fees.html", context)
 
 
 # ─────────────────────────────────────────────────────────
