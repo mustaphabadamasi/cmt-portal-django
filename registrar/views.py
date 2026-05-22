@@ -335,23 +335,20 @@ def batch_generate_fees(request):
         for sid in student_ids:
             try:
                 student = Student.objects.get(pk=sid)
-                reg, created = CourseRegistration.objects.get_or_create(
-                    student=student, semester=semester,
-                    defaults={'is_approved': True}
+                ref_code = f"PAY-{uuid.uuid4().hex[:8].upper()}"
+                Payment.objects.create(
+                    student=student, session=session, semester=semester,
+                    payment_type=payment_type, amount=amount,
+                    reference_code=ref_code, status="pending"
                 )
-                reg.courses.set(courses)
-                reg.is_approved = True
-                reg.save()
-                registered += 1
+                generated += 1
             except Student.DoesNotExist:
                 skipped += 1
-        messages.success(request, f"Registered {len(courses)} course(s) for {registered} student(s).")
-        return redirect("batch_register_courses")
-    context = {"student_data": student_data, "outlines": outlines, "programmes": programmes,
-               "semester": semester, "all_semesters": all_semesters,
-               "selected_programme": programme_id, "selected_level": level,
-               "selected_outline": selected_outline, "outline_id": outline_id,
-               "selected_semester_id": str(selected_semester_id) if selected_semester_id else ""}
+        messages.success(request, f"Generated {generated} invoice(s).")
+        return redirect("batch_generate_fees")
+    context = {"student_data": student_data, "programmes": programmes,
+               "session": session, "semester": semester,
+               "selected_programme": programme_id, "selected_level": level}
     return render(request, "registrar/batch_register_courses.html", context)
 
 
@@ -1354,3 +1351,92 @@ def registration_status(request):
     }
     return render(request, "registrar/registration_status.html", context)
 
+
+
+@login_required
+def batch_approve_payments(request):
+    """Batch approve fee payments."""
+    from students.models import FeePayment
+    from django.contrib import messages
+
+    if request.method == "POST":
+        payment_ids = request.POST.getlist("payment_ids")
+        count = FeePayment.objects.filter(pk__in=payment_ids).update(status="approved")
+        messages.success(request, f"Approved {count} payment(s).")
+    
+    pending = FeePayment.objects.filter(status="pending").select_related("student", "student__user")
+    return render(request, "registrar/batch_approve_payments.html", {"payments": pending})
+
+
+@login_required
+def batch_register_courses(request):
+    from academics.models import CourseOutline, CourseRegistration, Course
+    from core.models import Semester
+
+    all_semesters        = Semester.objects.select_related("session").all().order_by("-session__name", "name")
+    programmes           = Programme.objects.all()
+    selected_semester_id = request.GET.get("semester_id") or request.POST.get("semester_id")
+    semester             = Semester.objects.filter(pk=selected_semester_id).first() if selected_semester_id else Semester.objects.filter(is_active=True).first()
+    outlines             = CourseOutline.objects.filter(is_active=True).select_related("programme", "semester")
+    programme_id         = request.GET.get("programme")
+    level                = request.GET.get("level")
+    outline_id           = request.GET.get("outline")
+
+    if semester:
+        outlines = outlines.filter(semester=semester)
+
+    students = Student.objects.select_related("user", "programme").all().order_by("reg_number")
+    if programme_id:
+        students = students.filter(programme_id=programme_id)
+    if level:
+        students = students.filter(reg_number__contains=f"/{level}/")
+
+    selected_outline = None
+    if outline_id:
+        try:
+            selected_outline = CourseOutline.objects.get(pk=outline_id)
+        except CourseOutline.DoesNotExist:
+            pass
+
+    student_data = []
+    for s in students[:100]:
+        count = CourseRegistration.objects.filter(student=s, semester=semester).count() if semester else 0
+        student_data.append({"student": s, "registered_count": count, "already_registered": count > 0})
+
+    if request.method == "POST":
+        student_ids = request.POST.getlist("student_ids")[:40]
+        outline_pk  = request.POST.get("outline_id")
+        registered  = skipped = 0
+        try:
+            outline = CourseOutline.objects.get(pk=outline_pk)
+            courses = list(outline.courses.all())
+        except CourseOutline.DoesNotExist:
+            messages.error(request, "Invalid course outline.")
+            return redirect("batch_register_courses")
+        for sid in student_ids:
+            try:
+                student = Student.objects.get(pk=sid)
+                CourseRegistration.objects.filter(student=student, semester=semester).delete()
+                for course in courses:
+                    CourseRegistration.objects.create(
+                        student=student, semester=semester, course=course,
+                        status="registered", is_carryover=False)
+                registered += 1
+            except Student.DoesNotExist:
+                skipped += 1
+        messages.success(request, f"Registered {len(courses)} course(s) for {registered} student(s).")
+        return redirect("batch_register_courses")
+
+    context = {
+        "student_data":          student_data,
+        "outlines":              outlines,
+        "programmes":            programmes,
+        "semester":              semester,
+        "all_semesters":         all_semesters,
+        "selected_programme":    programme_id,
+        "selected_level":        level,
+        "selected_outline":      selected_outline,
+        "outline_id":            outline_id,
+        "selected_semester_id":  str(selected_semester_id) if selected_semester_id else "",
+    }
+    return render(request, "registrar/batch_register_courses.html", context)
