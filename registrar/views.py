@@ -1356,7 +1356,7 @@ def registration_status(request):
 @login_required
 def batch_approve_payments(request):
     """Batch approve fee payments."""
-    from students.models import FeePayment
+    from fees.models import Payment as FeePayment
     from django.contrib import messages
 
     if request.method == "POST":
