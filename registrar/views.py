@@ -339,7 +339,7 @@ def batch_generate_fees(request):
                 Payment.objects.create(
                     student=student, session=session, semester=semester,
                     payment_type=payment_type, amount=amount,
-                    reference_code=ref_code, status="pending"
+                    reference=ref_code, status="pending"
                 )
                 generated += 1
             except Student.DoesNotExist:
@@ -1364,8 +1364,26 @@ def batch_approve_payments(request):
         count = FeePayment.objects.filter(pk__in=payment_ids).update(status="approved")
         messages.success(request, f"Approved {count} payment(s).")
     
+    # Get filter params
+    from academics.models import Programme
+    selected_programme = request.GET.get("programme")
+    selected_pay_type = request.GET.get("pay_type")
+    
+    programmes = Programme.objects.all().order_by("name")
     pending = FeePayment.objects.filter(status="pending").select_related("student", "student__user")
-    return render(request, "registrar/batch_approve_payments.html", {"payments": pending})
+    
+    if selected_programme:
+        pending = pending.filter(student__programme_id=selected_programme)
+    if selected_pay_type:
+        pending = pending.filter(payment_type=selected_pay_type)
+    
+    context = {
+        "payments": pending,
+        "programmes": programmes,
+        "selected_programme": selected_programme,
+        "selected_pay_type": selected_pay_type,
+    }
+    return render(request, "registrar/batch_approve_payments.html", context)
 
 
 @login_required
