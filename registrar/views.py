@@ -35,7 +35,7 @@ def dashboard(request):
 
 @login_required
 def students(request):
-    all_students = Student.objects.select_related("user","programme").all().order_by("reg_number")
+    all_students = Student.objects.exclude(reg_number__startswith="CMT/").select_related("user","programme").all().order_by("reg_number")
     programmes = Programme.objects.all()
     return render(request, "registrar/students.html", {"students": all_students, "programmes": programmes})
 
@@ -83,7 +83,7 @@ def payment_receipt(request, payment_id):
 
 @login_required
 def documents(request):
-    students = Student.objects.select_related("user","programme").all()
+    students = Student.objects.exclude(reg_number__startswith="CMT/").select_related("user","programme").all()
     return render(request, "registrar/documents.html", {"students": students})
 
 
@@ -318,7 +318,7 @@ def batch_generate_fees(request):
     programmes = Programme.objects.all()
     programme_id = request.GET.get("programme")
     level        = request.GET.get("level")
-    students = Student.objects.select_related("user","programme").all().order_by("reg_number")
+    students = Student.objects.exclude(reg_number__startswith="CMT/").select_related("user","programme").all().order_by("reg_number")
     if programme_id:
         students = students.filter(programme_id=programme_id)
     if level:
@@ -1403,7 +1403,7 @@ def batch_register_courses(request):
     if semester:
         outlines = outlines.filter(semester=semester)
 
-    students = Student.objects.select_related("user", "programme").all().order_by("reg_number")
+    students = Student.objects.exclude(reg_number__startswith="CMT/").select_related("user", "programme").all().order_by("reg_number")
     if programme_id:
         students = students.filter(programme_id=programme_id)
     if level:

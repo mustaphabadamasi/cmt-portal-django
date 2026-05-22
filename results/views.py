@@ -7,7 +7,8 @@ from django.db import transaction
 from .models import CourseResult, ResultBatch, compute_grade
 from academics.models import Course
 from core.models import Semester, Session
-from students.models import Student, CourseRegistration
+from students.models import Student
+from academics.models import CourseRegistration as CourseRegistration
 
 
 # ── LECTURER VIEWS ────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ def lecturer_result_courses(request):
         # Count registered students
         try:
             count = CourseRegistration.objects.filter(
-                courses=c, semester=semester, is_approved=True
+                course=c, semester=semester
             ).count()
             student_counts[c.id] = count
         except Exception:
@@ -80,7 +81,7 @@ def enter_results(request, course_id):
     # Get registered students
     # Get students registered for this course this semester
     registrations = CourseRegistration.objects.filter(
-        courses=course, semester=semester
+        course=course, semester=semester
     ).select_related('student', 'student__user').order_by('student__reg_number')
 
     students = [r.student for r in registrations]
