@@ -45,7 +45,7 @@
   <tr>
     <td>{{ forloop.counter }}</td>
     <td>{% if s.photo %}<img src="{{ s.photo.url }}" class="photo-thumb"/>{% else %}<div class="avatar">{{ s.user.first_name|first }}</div>{% endif %}</td>
-    <td style="font-weight:500">{{ s.user.get_full_name }}</td>
+    <td style="font-weight:500"><a href="{% url 'edit_student_courses' s.pk %}" style="color:#1a5c38;text-decoration:none;font-weight:600">{{ s.user.get_full_name }}</a></td>
     <td style="font-family:monospace;font-size:12px">{{ s.reg_number }}</td>
     <td>{{ s.programme }}</td>
     <td>{{ s.level }}</td>

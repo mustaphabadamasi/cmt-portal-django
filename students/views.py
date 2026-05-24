@@ -509,12 +509,57 @@ def my_courses(request):
 
 @login_required
 def print_course_reg(request):
+    import os, base64
     from academics.models import CourseRegistration
+    from django.conf import settings
+
     student = get_object_or_404(Student, user=request.user)
     semester = Semester.objects.filter(is_active=True).first()
-    registrations = CourseRegistration.objects.filter(student=student, semester=semester).select_related("course", "semester") if semester else []
+    registrations = CourseRegistration.objects.filter(
+        student=student, semester=semester
+    ).select_related("course", "semester") if semester else []
     total_units = sum(r.course.unit for r in registrations)
-    return render(request, "students/print_course_reg.html", {"student": student, "semester": semester, "registrations": registrations, "total_units": total_units})
+
+    def img_to_b64(path):
+        try:
+            ext = os.path.splitext(path)[1].lower().replace(".", "")
+            if ext == "jpg": ext = "jpeg"
+            with open(path, "rb") as f:
+                data = base64.b64encode(f.read()).decode()
+            return f"data:image/{ext};base64,{data}"
+        except Exception:
+            return None
+
+    # Embed logos and photo as base64
+    base = str(settings.BASE_DIR)
+    photo_uri = cmt_logo = fud_logo = None
+
+    for d in ["staticfiles/images", "static/images"]:
+        dirpath = os.path.join(base, d)
+        if not os.path.exists(dirpath):
+            continue
+        for f in os.listdir(dirpath):
+            fl = f.lower()
+            if "cmt" in fl and "fud" not in fl:
+                cmt_logo = cmt_logo or img_to_b64(os.path.join(dirpath, f))
+            if "fud" in fl or "fudma" in fl:
+                fud_logo = fud_logo or img_to_b64(os.path.join(dirpath, f))
+
+    if student.photo:
+        try:
+            photo_uri = img_to_b64(student.photo.path)
+        except Exception:
+            photo_uri = None
+
+    return render(request, "students/print_course_reg.html", {
+        "student":       student,
+        "semester":      semester,
+        "registrations": registrations,
+        "total_units":   total_units,
+        "photo_uri":     photo_uri,
+        "cmt_logo":      cmt_logo,
+        "fud_logo":      fud_logo,
+    })
 
 
 @login_required

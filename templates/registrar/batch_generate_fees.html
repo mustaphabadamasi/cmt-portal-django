@@ -5,7 +5,7 @@
     <a href="{% url 'batch_operations' %}" style="color:#6b7280;text-decoration:none;font-size:20px">←</a>
     <div>
       <div class="page-title">Batch Generate Fee Invoices</div>
-      <div class="page-sub">Generate payment invoices for up to 20 students at once</div>
+      <div class="page-sub">Generate payment invoices for up to 40 students at once</div>
     </div>
   </div>
 </div>
@@ -69,7 +69,7 @@ td{padding:9px 14px;border-bottom:1px solid #f3f4f6}
     <button type="submit" class="btn btn-green" onclick="return confirmSubmit()">⚡ Generate Invoices</button>
   </div>
 </div>
-<div class="warn">⚠️ Maximum 20 students per batch. Students who already have an invoice of the same type will be skipped.</div>
+<div class="warn">⚠️ Maximum 40 students per batch. Students who already have an invoice of the same type will be skipped.</div>
 
 <!-- Students Table -->
 <table>
@@ -108,7 +108,7 @@ function clearAll(){document.querySelectorAll(".row-check").forEach(c=>c.checked
 function confirmSubmit(){
   const n=document.querySelectorAll(".row-check:checked").length;
   if(n===0){alert("Please select at least one student.");return false;}
-  if(n>20){alert("Maximum 20 students per batch. Please deselect some.");return false;}
+  if(n>20){alert("Maximum 40 students per batch. Please deselect some.");return false;}
   return confirm("Generate invoices for "+n+" student(s)?");
 }
 </script>

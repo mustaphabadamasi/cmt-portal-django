@@ -19,7 +19,7 @@ body{font-family:Arial,sans-serif;font-size:12px;margin:20px}
 <body>
 <div class="header"><h2>COLLEGE OF MANAGEMENT AND TECHNOLOGY</h2><p>Affiliated with Federal University Dutsin-Ma, Katsina State</p></div>
 <div class="form-title">COURSE REGISTRATION FORM &mdash; {{ semester }}</div>
-<div class="photo-box">{% if student.photo %}<img src="{{ student.photo.url }}">{% else %}<div style="padding:10px;text-align:center;font-size:10px;color:#999">No Photo</div>{% endif %}</div>
+<div class="photo-box">{% if photo_uri %}<img src="{{ photo_uri }}" style="width:100%;height:100%;object-fit:cover">{% else %}<div style="padding:10px;text-align:center;font-size:10px;color:#999">No Photo</div>{% endif %}</div>
 <div class="info-row"><span class="info-label">Full Name:</span> {{ student.user.get_full_name|upper }}</div>
 <div class="info-row"><span class="info-label">Reg / Matric No:</span> {{ student.reg_number }}</div>
 <div class="info-row"><span class="info-label">Programme:</span> {{ student.programme }}</div>

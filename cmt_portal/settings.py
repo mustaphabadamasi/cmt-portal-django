@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1(&8cghzibnv6l!((rf==b(2&we$hh($!7y1vhs!^(h)xnxzsl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = ['mustapher001.pythonanywhere.com', 'localhost', '127.0.0.1',
     'mustapher001.pythonanywhere.com',
     'localhost',
     '127.0.0.1',
@@ -160,3 +160,10 @@ CSRF_TRUSTED_ORIGINS = ['https://mustapher001.pythonanywhere.com']
 JAAS_APP_ID  = 'vpaas-magic-cookie-03a955d05368490b876f4baa0b974405'
 JAAS_KEY_ID  = 'vpaas-magic-cookie-03a955d05368490b876f4baa0b974405/7f6821'
 JAAS_KEY_FILE = BASE_DIR / 'jaas_private_key.pk'
+
+# ── Production Security ────────────────────────────────────────────
+SECURE_BROWSER_XSS_FILTER   = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS             = 'SAMEORIGIN'
+SESSION_COOKIE_SECURE       = False  # Set True when on HTTPS
+CSRF_COOKIE_SECURE          = False  # Set True when on HTTPS

@@ -1,0 +1,80 @@
+{% extends "registrar/base.html" %}
+{% block topbar_title %}Registered Students{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Registered Students</div>
+  <div class="page-sub">{{ semester }} — students with active course registrations</div>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:20px">
+  <form method="get" style="display:flex;gap:10px;align-items:center">
+    <input type="text" name="q" value="{{ query }}"
+      placeholder="Search by name or matric number..."
+      style="flex:1;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;outline:none">
+    <button type="submit"
+      style="background:#1a5c38;color:white;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+      🔍 Search
+    </button>
+    {% if query %}
+    <a href="{% url 'registered_students' %}"
+      style="padding:10px 16px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#374151;text-decoration:none">
+      Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="background:#1a5c38;color:#fff">
+        <th style="padding:12px 16px;text-align:left;font-weight:500">#</th>
+        <th style="padding:12px 16px;text-align:left;font-weight:500">Matric No</th>
+        <th style="padding:12px 16px;text-align:left;font-weight:500">Full Name</th>
+        <th style="padding:12px 16px;text-align:left;font-weight:500">Programme</th>
+        <th style="padding:12px 16px;text-align:center;font-weight:500">Courses</th>
+        <th style="padding:12px 16px;text-align:left;font-weight:500">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in student_data %}
+      <tr style="border-bottom:1px solid #f3f4f6{% if forloop.last %}{% endif %}" 
+          onmouseover="this.style.background='#f9fafb'" 
+          onmouseout="this.style.background='white'">
+        <td style="padding:10px 16px;color:#9ca3af">{{ forloop.counter }}</td>
+        <td style="padding:10px 16px;font-weight:600;color:#1a5c38">{{ item.student.reg_number }}</td>
+        <td style="padding:10px 16px;font-weight:500">{{ item.student.user.get_full_name }}</td>
+        <td style="padding:10px 16px;color:#6b7280;font-size:12px">{{ item.student.programme }}</td>
+        <td style="padding:10px 16px;text-align:center">
+          <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600">
+            {{ item.course_count }}
+          </span>
+        </td>
+        <td style="padding:10px 16px">
+          <a href="{% url 'edit_student_courses' item.student.pk %}"
+            style="color:#1a5c38;font-weight:600;font-size:12px;text-decoration:none">
+            Edit Courses →
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="padding:40px;text-align:center;color:#9ca3af">
+          {% if query %}No students found for "{{ query }}"{% else %}No students registered this semester{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Counter footer -->
+  <div style="padding:14px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;color:#6b7280">
+      {% if query %}Showing results for "<strong>{{ query }}</strong>"{% else %}All registered students this semester{% endif %}
+    </span>
+    <span style="font-size:14px;font-weight:700;color:#1a5c38">
+      {{ total }} student{{ total|pluralize }} registered
+    </span>
+  </div>
+</div>
+{% endblock %}

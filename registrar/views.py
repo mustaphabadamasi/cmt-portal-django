@@ -1458,3 +1458,152 @@ def batch_register_courses(request):
         "selected_semester_id":  str(selected_semester_id) if selected_semester_id else "",
     }
     return render(request, "registrar/batch_register_courses.html", context)
+
+
+@login_required
+def student_course_edit(request, student_id):
+    """Registrar adds or drops individual courses for a student."""
+    from academics.models import CourseRegistration, Course
+    from core.models import Semester
+
+    student  = get_object_or_404(Student, pk=student_id)
+    semester = Semester.objects.filter(is_active=True).first()
+
+    # All courses available
+    all_courses = Course.objects.all().order_by("code")
+
+    # Courses currently registered for this student this semester
+    registered_ids = list(
+        CourseRegistration.objects.filter(
+            student=student, semester=semester
+        ).values_list("course_id", flat=True)
+    )
+
+    if request.method == "POST":
+        action    = request.POST.get("action")
+        course_id = request.POST.get("course_id")
+        course    = get_object_or_404(Course, pk=course_id)
+
+        if action == "add":
+            obj, created = CourseRegistration.objects.get_or_create(
+                student=student, semester=semester, course=course,
+                defaults={"status": "registered", "is_carryover": False}
+            )
+            if created:
+                messages.success(request, f"✅ Added {course.code} to {student.reg_number}")
+            else:
+                messages.info(request, f"{course.code} already registered.")
+
+        elif action == "drop":
+            deleted, _ = CourseRegistration.objects.filter(
+                student=student, semester=semester, course=course
+            ).delete()
+            if deleted:
+                messages.success(request, f"🗑 Dropped {course.code} from {student.reg_number}")
+            else:
+                messages.info(request, f"{course.code} was not registered.")
+
+        return redirect("student_course_edit", student_id=student.pk)
+
+    context = {
+        "student":        student,
+        "semester":       semester,
+        "all_courses":    all_courses,
+        "registered_ids": registered_ids,
+    }
+    return render(request, "registrar/student_course_edit.html", context)
+
+
+@login_required
+def edit_student_courses(request, student_id):
+    """Registrar adds or drops individual courses for a student."""
+    from academics.models import CourseRegistration, Course, CourseOutline
+    from core.models import Semester
+
+    student  = get_object_or_404(Student, pk=student_id)
+    semester = Semester.objects.filter(is_active=True).first()
+
+    # All courses not yet registered by this student this semester
+    # Always show ALL courses so registrar can add any course
+    all_courses = Course.objects.all().order_by("code")
+
+    if request.method == "POST":
+        action    = request.POST.get("action")
+        course_id = request.POST.get("course_id")
+        course    = get_object_or_404(Course, pk=course_id)
+
+        if action == "add":
+            CourseRegistration.objects.get_or_create(
+                student=student, semester=semester, course=course,
+                defaults={"status": "registered"}
+            )
+            messages.success(request, f"✅ {course.code} added for {student.reg_number}")
+        elif action == "drop":
+            CourseRegistration.objects.filter(
+                student=student, semester=semester, course=course
+            ).delete()
+            messages.success(request, f"🗑 {course.code} dropped for {student.reg_number}")
+
+        return redirect("edit_student_courses", student_id=student.pk)
+
+    # Refresh current courses after possible change
+    registered_courses = CourseRegistration.objects.filter(
+        student=student, semester=semester
+    ).select_related("course").order_by("course__code")
+
+    registered_ids = list(registered_courses.values_list("course_id", flat=True))
+    available      = [c for c in all_courses if c.pk not in registered_ids]
+
+    return render(request, "registrar/edit_student_courses.html", {
+        "student":            student,
+        "semester":           semester,
+        "registered_courses": registered_courses,
+        "available":          available,
+    })
+
+
+@login_required
+def registered_students(request):
+    """All students with course registrations this semester."""
+    from academics.models import CourseRegistration
+    from core.models import Semester
+
+    semester = Semester.objects.filter(is_active=True).first()
+    query    = request.GET.get("q", "").strip()
+
+    # Get distinct students who have registrations this semester
+    regs = CourseRegistration.objects.filter(
+        semester=semester
+    ).select_related("student", "student__user", "student__programme")
+
+    if query:
+        regs = regs.filter(
+            student__reg_number__icontains=query
+        ) | CourseRegistration.objects.filter(
+            semester=semester,
+            student__user__first_name__icontains=query
+        ) | CourseRegistration.objects.filter(
+            semester=semester,
+            student__user__last_name__icontains=query
+        )
+
+    # Get unique students with their course counts
+    seen = {}
+    for r in regs.order_by("student__reg_number"):
+        sid = r.student_id
+        if sid not in seen:
+            seen[sid] = {
+                "student": r.student,
+                "course_count": 0,
+            }
+        seen[sid]["course_count"] += 1
+
+    student_data = list(seen.values())
+    total = len(student_data)
+
+    return render(request, "registrar/registered_students.html", {
+        "student_data": student_data,
+        "semester":     semester,
+        "query":        query,
+        "total":        total,
+    })
