@@ -54,9 +54,14 @@ def change_password(request):
             messages.error(request, 'Password must be at least 6 characters.')
         else:
             request.user.set_password(new_password)
-            if hasattr(request.user, 'must_change_password'):
-                request.user.must_change_password = False
             request.user.save()
+            try:
+                from students.models import Student
+                student = Student.objects.get(user=request.user)
+                student.must_change_password = False
+                student.save()
+            except Exception:
+                pass
             update_session_auth_hash(request, request.user)
             messages.success(request, 'Password changed successfully. Welcome!')
             return redirect('dashboard')

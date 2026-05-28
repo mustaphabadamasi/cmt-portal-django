@@ -20,6 +20,7 @@ class Student(models.Model):
     reg_number       = models.CharField(max_length=30, unique=True)
     programme        = models.ForeignKey(Programme, on_delete=models.SET_NULL, null=True)
     current_session  = models.ForeignKey(Session, on_delete=models.SET_NULL, null=True)
+    must_change_password = models.BooleanField(default=True)
     current_semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True)
     photo            = models.ImageField(upload_to=photo_upload_path, blank=True, null=True)
 
