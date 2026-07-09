@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block page_title %}Manage Quiz Access{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:24px 16px">
+  <div style="margin-bottom:20px">
+    <a href="{% url 'lecturers:quiz_detail' quiz.pk %}" style="color:#1a5c38;font-size:13px;text-decoration:none">← Back to Quiz</a>
+    <h1 style="font-size:20px;font-weight:700;color:#1a5c38;margin:8px 0 4px">Manage Access: {{ quiz.title }}</h1>
+    <p style="color:#6b7280;font-size:13px">{{ quiz.course.code }} | {{ quiz.semester }}</p>
+  </div>
+
+  <!-- Shareable Link -->
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:20px">
+    <div style="font-weight:700;color:#166534;font-size:14px;margin-bottom:8px">🔗 Shareable Quiz Link</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px">Share this link with students. They log in directly and attempt the quiz if they are on the access list.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="token-link" value="{{ token_link }}" readonly
+        style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:12px;background:white">
+      <button onclick="navigator.clipboard.writeText(document.getElementById('token-link').value).then(function(){this.textContent='Copied!'}.bind(this))"
+        style="background:#1a5c38;color:white;padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
+        Copy Link
+      </button>
+    </div>
+  </div>
+
+  {% if success %}
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:16px">
+    {% for s in success %}<div style="font-size:13px;color:#166534">✓ {{ s }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% if errors %}
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px">
+    {% for e in errors %}<div style="font-size:13px;color:#dc2626">✗ {{ e }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add Students -->
+  <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:20px">
+    <div style="font-weight:700;font-size:14px;margin-bottom:12px">Add Students by Matric Number</div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <textarea name="matric_numbers" rows="4"
+        placeholder="Enter matric numbers one per line e.g. DPL/BUS/24/047"
+        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
+      <button type="submit"
+        style="margin-top:10px;background:#1a5c38;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+        Add Students
+      </button>
+    </form>
+  </div>
+
+  <!-- Allowed Students -->
+  <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow-x:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="font-weight:700;font-size:14px">Allowed Students ({{ allowed|length }})</div>
+      {% if allowed %}
+      <form method="post" id="remove-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="matric_numbers" id="remove-matrics">
+        <button type="button"
+          onclick="var m=Array.from(document.querySelectorAll('.mcb:checked')).map(function(c){return c.value}).join('\n');if(!m){alert('Select students first');return;}document.getElementById('remove-matrics').value=m;document.getElementById('remove-form').submit();"
+          style="background:#dc2626;color:white;padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+          Remove Selected
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% if allowed %}
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f9fafb">
+        <th style="padding:10px 12px;width:40px"><input type="checkbox" onclick="document.querySelectorAll('.mcb').forEach(function(c){c.checked=this.checked}.bind(this))"></th>
+        <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600">#</th>
+        <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600">Matric No.</th>
+        <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600">Name</th>
+        <th style="padding:10px 12px;text-align:left;color:#6b7280;font-weight:600">Added</th>
+      </tr></thead>
+      <tbody>
+      {% for a in allowed %}
+      <tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:10px 12px"><input type="checkbox" class="mcb" value="{{ a.student.reg_number }}"></td>
+        <td style="padding:10px 12px;color:#9ca3af">{{ forloop.counter }}</td>
+        <td style="padding:10px 12px;font-weight:600;color:#1a5c38">{{ a.student.reg_number }}</td>
+        <td style="padding:10px 12px">{{ a.student.user.get_full_name }}</td>
+        <td style="padding:10px 12px;color:#9ca3af;font-size:12px">{{ a.added_at|date:"d M Y H:i" }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:#9ca3af">No students added yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

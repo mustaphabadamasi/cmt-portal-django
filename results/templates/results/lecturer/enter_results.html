@@ -29,7 +29,7 @@
       {% elif batch.status == 'approved' %}✅ Results approved and published to students.
       {% else %}📝 Draft — enter scores and submit to Registrar.{% endif %}
     </span>
-    <a href="{% url 'results:scoresheet' course.id %}"
+    <a href="{% url 'results:scoresheet' course.id %}?semester_id={{ semester.id }}"
        style="background:#1a5c38;color:white;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:12px;white-space:nowrap">
       📄 Download Score Sheet PDF
     </a>

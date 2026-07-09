@@ -1,3 +1,4 @@
+import uuid
 from django.conf import settings
 from django.db import models
 
@@ -106,6 +107,7 @@ class Quiz(models.Model):
     questions_to_attempt = models.PositiveIntegerField(null=True, blank=True, help_text="If set, each student sees this many random questions from the bank. Blank = show all.")
 
     is_published = models.BooleanField(default=False, help_text="Unpublished quizzes are invisible to students.")
+    access_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)
 
@@ -175,6 +177,20 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.text[:80]
+
+class QuizAllowedStudent(models.Model):
+    """Whitelist of students the lecturer has granted access to a quiz."""
+    quiz      = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='allowed_students')
+    student   = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='quiz_access')
+    added_by  = models.ForeignKey('lecturers.Lecturer', on_delete=models.CASCADE)
+    added_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('quiz', 'student')]
+
+    def __str__(self):
+        return f"{self.student.reg_number} → {self.quiz.title}"
+
 
 # ============================================================
 # Phase 1B.2 — Quiz attempts (student-side)

@@ -71,7 +71,11 @@ class ResultBatch(models.Model):
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                     null=True, blank=True, related_name='approved_batches')
     approved_at = models.DateTimeField(null=True, blank=True)
-    reject_reason = models.TextField(blank=True)
+    reject_reason      = models.TextField(blank=True)
+    senate_published   = models.BooleanField(default=False)
+    senate_published_at= models.DateTimeField(null=True, blank=True)
+    senate_published_by= models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                            null=True, blank=True, related_name='senate_published_batches')
 
     class Meta:
         unique_together = ['lecturer','course','semester']

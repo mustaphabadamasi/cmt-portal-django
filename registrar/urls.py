@@ -25,6 +25,7 @@ urlpatterns = [
     path("batch/fees/", views.batch_generate_fees, name="batch_generate_fees"),
     path("batch/approve/", views.batch_approve_payments, name="batch_approve_payments"),
     path("batch/register/", views.batch_register_courses, name="batch_register_courses"),
+    path("register-student/", views.single_register_courses, name="single_register_courses"),
     path("results/", views.result_sheet_list, name="result_sheet_list"),
     path("results/<int:outline_id>/enter/", views.result_entry, name="result_entry"),
     path("results/<int:outline_id>/pdf/", views.result_sheet_pdf, name="result_sheet_pdf"),

@@ -597,6 +597,18 @@ def quiz_attempts(request, pk):
 
 
 @login_required
+def delete_attempt(request, pk):
+    attempt = get_object_or_404(QuizAttempt, pk=pk)
+    quiz = attempt.quiz
+    if quiz.created_by.user != request.user:
+        return HttpResponseForbidden("You do not own this quiz.")
+    if request.method == 'POST':
+        student_name = attempt.student.user.get_full_name()
+        attempt.delete()
+        messages.success(request, f"Attempt by {student_name} deleted. They can now retake the quiz.")
+    return redirect('lecturers:quiz_attempts', pk=quiz.pk)
+
+
 def attempt_inspect(request, pk):
     attempt = get_object_or_404(
         QuizAttempt.objects.select_related('quiz', 'quiz__course', 'quiz__semester', 'student', 'student__user'),
@@ -991,12 +1003,13 @@ def student_assignment_list(request):
     if not student:
         return HttpResponseForbidden('Student profile not found')
     
-    # Get courses registered by student
-    from students.models import CourseRegistration
-    # Get all courses from M2M
-    reg_courses = []
-    for cr in CourseRegistration.objects.filter(student=student):
-        reg_courses.extend(cr.courses.values_list('id', flat=True))
+    # Get courses registered by student (academics.models is the active CourseRegistration)
+    from academics.models import CourseRegistration
+    reg_courses = list(
+        CourseRegistration.objects.filter(
+            student=student, status__in=['registered', 'carryover']
+        ).values_list('course_id', flat=True)
+    )
     
     assignments = Assignment.objects.filter(
         course_id__in=reg_courses,
@@ -1086,3 +1099,81 @@ def student_assignment_detail(request, pk):
         'grp_sub': grp_sub,
         'now': timezone.now(),
     })
+
+
+# ── QUIZ ACCESS MANAGEMENT ────────────────────────────────────────────────────
+
+@login_required
+def quiz_manage_access(request, pk):
+    from .models import QuizAllowedStudent
+    from students.models import Student
+    quiz = get_object_or_404(Quiz, pk=pk, created_by__user=request.user)
+    lecturer = quiz.created_by
+    errors = []
+    success = []
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        matric_raw = request.POST.get('matric_numbers', '')
+        matrics = [m.strip().upper() for m in matric_raw.replace(',', '\n').split('\n') if m.strip()]
+        for matric in matrics:
+            try:
+                student = Student.objects.get(reg_number__iexact=matric)
+                if action == 'add':
+                    obj, created = QuizAllowedStudent.objects.get_or_create(
+                        quiz=quiz, student=student, defaults={'added_by': lecturer}
+                    )
+                    success.append(f'{matric} added' if created else f'{matric} already allowed')
+                elif action == 'remove':
+                    deleted, _ = QuizAllowedStudent.objects.filter(quiz=quiz, student=student).delete()
+                    success.append(f'{matric} removed') if deleted else errors.append(f'{matric} not in list')
+            except Student.DoesNotExist:
+                errors.append(f'{matric} not found')
+
+    allowed = QuizAllowedStudent.objects.filter(quiz=quiz).select_related('student__user').order_by('added_at')
+    token_link = request.build_absolute_uri(f'/lecturers/quiz/access/{quiz.access_token}/')
+    return render(request, 'lecturers/quiz_manage_access.html', {
+        'quiz': quiz, 'allowed': allowed,
+        'token_link': token_link,
+        'errors': errors, 'success': success,
+    })
+
+
+def quiz_token_access(request, token):
+    from .models import QuizAllowedStudent
+    quiz = get_object_or_404(Quiz, access_token=token, is_published=True)
+    error = None
+
+    if request.user.is_authenticated:
+        try:
+            student = request.user.student
+            if QuizAllowedStudent.objects.filter(quiz=quiz, student=student).exists():
+                return redirect('lecturers:quiz_start_get', pk=quiz.pk)
+            error = 'You are not on the access list for this quiz.'
+        except Exception:
+            error = 'Your account is not a student account.'
+    elif request.method == 'POST':
+        from django.contrib.auth import login
+        from students.models import Student
+        matric = request.POST.get('matric', '').strip().upper()
+        password = request.POST.get('password', '').strip()
+        if password != '123456':
+            error = 'Incorrect PIN. Please enter the quiz PIN provided by your lecturer.'
+        else:
+            try:
+                student = Student.objects.get(reg_number__iexact=matric)
+                if QuizAllowedStudent.objects.filter(quiz=quiz, student=student).exists():
+                    login(request, student.user)
+                    return redirect('lecturers:quiz_start_get', pk=quiz.pk)
+                else:
+                    error = 'You are not on the access list for this quiz. Contact your lecturer.'
+            except Student.DoesNotExist:
+                error = 'Matric number not found. Check and try again.'
+
+    return render(request, 'lecturers/quiz_token_access.html', {'quiz': quiz, 'error': error})
+
+
+@login_required
+def quiz_start_get(request, pk):
+    request.method = 'POST'
+    return quiz_start(request, pk)

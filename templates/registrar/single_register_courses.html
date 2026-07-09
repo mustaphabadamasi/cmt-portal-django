@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-1"><i class="bi bi-person-plus"></i> Single Student Course Registration</h3>
+  <p class="text-muted">
+    {% if semester %}Semester: <strong>{{ semester.session.name }} — {{ semester.name|title }}</strong>
+    {% else %}<span class="text-danger">No active semester set.</span>{% endif %}
+  </p>
+
+  {% if messages %}{% for m in messages %}
+    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} py-2">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  {% if not selected_student %}
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+      <select name="programme" class="form-select">
+        <option value="">All programmes</option>
+        {% for p in programmes %}
+        <option value="{{ p.id }}" {% if selected_programme == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="level" class="form-select">
+        <option value="">All levels</option>
+        <option value="25" {% if selected_level == '25' %}selected{% endif %}>Diploma I</option>
+        <option value="24" {% if selected_level == '24' %}selected{% endif %}>Diploma II</option>
+      </select>
+    </div>
+    <div class="col-md-5">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search reg number or name…">
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100"><i class="bi bi-search"></i> Find</button>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead><tr><th>Reg Number</th><th>Name</th><th>Programme</th><th></th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><strong>{{ s.reg_number }}</strong></td>
+          <td>{{ s.user.get_full_name }}</td>
+          <td>{{ s.programme.name }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="?student_id={{ s.id }}{% if selected_semester_id %}&semester_id={{ selected_semester_id }}{% endif %}">Register <i class="bi bi-arrow-right"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Use the filters above to find a student.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="card mb-3"><div class="card-body d-flex justify-content-between align-items-center">
+    <div>
+      <div class="fw-bold">{{ selected_student.user.get_full_name }}</div>
+      <div class="text-muted">{{ selected_student.reg_number }} · {{ selected_student.programme.name }}</div>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary" href="?{% if selected_semester_id %}semester_id={{ selected_semester_id }}{% endif %}"><i class="bi bi-arrow-left"></i> Change student</a>
+  </div></div>
+
+  {% if outline_courses %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="student_id" value="{{ selected_student.id }}">
+    {% if selected_semester_id %}<input type="hidden" name="semester_id" value="{{ selected_semester_id }}">{% endif %}
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light"><tr><th style="width:50px"></th><th>Code</th><th>Title</th><th style="width:70px">Units</th></tr></thead>
+        <tbody>
+          {% for c in outline_courses %}
+          <tr>
+            <td class="text-center"><input class="form-check-input" type="checkbox" name="course_ids" value="{{ c.id }}" {% if c.id in registered_ids %}checked{% endif %}></td>
+            <td><strong>{{ c.code }}</strong></td>
+            <td>{{ c.title }}</td>
+            <td class="text-center">{{ c.unit }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="table-light fw-bold"><td></td><td colspan="2" class="text-end">Total units</td><td class="text-center">{{ total_units }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-success"><i class="bi bi-check2-circle"></i> Save Registration</button>
+    <span class="text-muted small ms-2">Saving replaces this student's registration for the selected semester.</span>
+  </form>
+  {% else %}
+  <div class="alert alert-warning">No active course outline found for this student's programme/semester. Create one under <strong>Course Structure</strong> first.</div>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% endblock %}

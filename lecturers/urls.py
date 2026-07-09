@@ -29,12 +29,16 @@ urlpatterns = [
     path('choices/<int:pk>/correct/',      views.choice_mark_correct, name='choice_mark_correct'),
 
     path('student/quizzes/',                  views.student_quiz_list,    name='student_quiz_list'),
+    path('quizzes/<int:pk>/access/',           views.quiz_manage_access,   name='quiz_manage_access'),
+    path('quiz/access/<uuid:token>/',          views.quiz_token_access,    name='quiz_token_access'),
+    path('student/quizzes/<int:pk>/go/',       views.quiz_start_get,       name='quiz_start_get'),
     path('student/quizzes/<int:pk>/start/',   views.quiz_start,           name='quiz_start'),
     path('attempts/<int:pk>/take/',           views.quiz_take,            name='quiz_take'),
     path('attempts/<int:pk>/result/',         views.quiz_attempt_result,  name='quiz_attempt_result'),
 
     path('quizzes/<int:pk>/attempts/',                            views.quiz_attempts,   name='quiz_attempts'),
     path('attempts/<int:pk>/inspect/',                            views.attempt_inspect, name='attempt_inspect'),
+    path('attempts/<int:pk>/delete/', views.delete_attempt, name='delete_attempt'),
     path('course-results/<int:course_id>/<int:semester_id>/',     views.course_results,  name='course_results'),
 
     path('assignments/', views.assignment_list, name='assignment_list'),

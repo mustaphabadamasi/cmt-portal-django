@@ -38,6 +38,7 @@
     <a href="{% url 'lecturers:quiz_attempts' quiz.pk %}" style="background:#1a5c38;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:600;margin-right:6px">📊 View Attempts</a>
         <a href="{% url 'lecturers:quiz_import' quiz.pk %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:500">Import CSV</a>
     <a href="{% url 'lecturers:quiz_update' quiz.pk %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:500">Edit settings</a>
+      <a href="{% url 'lecturers:quiz_manage_access' quiz.pk %}" style="background:#0369a1;color:white;border:none;padding:8px 14px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">👥 Manage Access</a>
     <form method="post" action="{% url 'lecturers:quiz_publish' quiz.pk %}" style="display:inline">
       {% csrf_token %}
       <button style="background:{% if quiz.is_published %}#c8881a{% else %}#1a5c38{% endif %};color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">

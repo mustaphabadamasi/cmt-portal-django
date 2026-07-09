@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'notifications',
     'admissions',
     'results',
+    'exams_officer',
     'forum',
     'registrar',
     'fees',

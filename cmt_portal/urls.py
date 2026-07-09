@@ -10,6 +10,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("students/", include("students.urls")),
     path('lecturers/', include('lecturers.urls')),
+    path('exams/',   include('exams_officer.urls', namespace='exams_officer')),
     path('results/', include('results.urls', namespace='results')),
     path('admissions/', include('admissions.urls', namespace='admissions')),
     path('notifications/', include('notifications.urls', namespace='notifications')),

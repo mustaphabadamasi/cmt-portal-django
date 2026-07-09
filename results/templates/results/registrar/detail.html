@@ -15,6 +15,31 @@
       <p style="color:#6b7280;font-size:13px;margin:0">{{ batch.semester }} | Submitted by: {{ batch.lecturer.get_full_name }}</p>
       {% if batch.reject_reason %}<div style="background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:12px"><strong>Reject reason:</strong> {{ batch.reject_reason }}</div>{% endif %}
     </div>
+    {% if batch.status == 'approved' %}
+    <div style="display:flex;gap:8px;align-items:center">
+      {% if batch.senate_published %}
+        <span style="background:#e0f2fe;color:#0369a1;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700">
+          🎓 Senate Result Published — {{ batch.senate_published_at|date:"d M Y H:i" }}
+        </span>
+        <form method="post" action="{% url 'results:senate_unpublish' batch.id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Unpublish senate results? Students will no longer see full scores.')"
+            style="background:#dc2626;color:white;padding:10px 16px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+            ⛔ Unpublish Senate Result
+          </button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'results:senate_publish' batch.id %}">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Publish senate-approved full results to students?')"
+            style="background:#0369a1;color:white;padding:10px 20px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+            🎓 Publish Senate Result
+          </button>
+        </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
     {% if batch.status == 'submitted' %}
     <div style="display:flex;gap:8px">
       <form method="post" action="{% url 'results:approve_batch' batch.id %}">

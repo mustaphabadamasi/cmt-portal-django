@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{{ quiz.title }} - CMT Portal</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f0fdf4;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+    .card{background:white;border-radius:16px;padding:32px;max-width:420px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .logo{color:#1a5c38;font-size:22px;font-weight:800;margin-bottom:24px}
+    h2{font-size:18px;font-weight:700;color:#111827;margin-bottom:4px}
+    .sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+    label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+    input{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:16px}
+    button{width:100%;padding:12px;background:#1a5c38;color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+    .error{background:#fef2f2;color:#dc2626;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+    .info{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:20px;font-size:13px;color:#166534}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">CMT Portal</div>
+    <h2>{{ quiz.title }}</h2>
+    <p class="sub">{{ quiz.course.code }} - {{ quiz.course.title }}</p>
+    <div class="info">
+      Time limit: {% if quiz.time_limit_minutes %}{{ quiz.time_limit_minutes }} minutes{% else %}No limit{% endif %}<br>
+      Closes: {{ quiz.available_until|date:"d M Y H:i" }}
+    </div>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if user.is_authenticated %}
+    <p style="color:#6b7280;font-size:13px">You are logged in but not on the access list. Contact your lecturer.</p>
+    {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <label>Matric Number</label>
+      <input type="text" name="matric" placeholder="e.g. DPL/BUS/24/047" required>
+      <label>Quiz PIN</label>
+      <input type="password" name="password" placeholder="Quiz PIN (123456)" required>
+      <button type="submit">Enter Quiz</button>
+    </form>
+    {% endif %}
+  </div>
+</body>
+</html>

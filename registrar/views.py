@@ -1607,3 +1607,112 @@ def registered_students(request):
         "query":        query,
         "total":        total,
     })
+
+
+@login_required
+def single_register_courses(request):
+    """Register/update courses for ONE student at a time (mirrors batch logic)."""
+    from academics.models import CourseOutline, CourseRegistration, Course
+    from core.models import Semester
+
+    all_semesters = Semester.objects.select_related("session").all().order_by("-session__name", "name")
+    programmes    = Programme.objects.all()
+
+    selected_semester_id = request.GET.get("semester_id") or request.POST.get("semester_id")
+    if selected_semester_id:
+        semester = Semester.objects.filter(pk=selected_semester_id).first()
+    else:
+        semester = Semester.objects.filter(is_active=True).first()
+
+    # ----- POST: save registration for the chosen student -----
+    if request.method == "POST":
+        student_id = request.POST.get("student_id")
+        course_ids = request.POST.getlist("course_ids")
+        student = Student.objects.filter(pk=student_id).first()
+        if not student or not semester:
+            messages.error(request, "Select a student and ensure an active semester is set.")
+            return redirect(request.path)
+        # full replace for this student + semester (same as batch)
+        CourseRegistration.objects.filter(student=student, semester=semester).delete()
+        created = 0
+        for cid in course_ids:
+            course = Course.objects.filter(pk=cid).first()
+            if course:
+                CourseRegistration.objects.create(
+                    student=student, semester=semester, course=course,
+                    status="registered", is_carryover=False)
+                created += 1
+        messages.success(request, f"Registered {created} course(s) for {student.reg_number}.")
+        return redirect(f"{request.path}?student_id={student.pk}&semester_id={semester.pk}")
+
+    # ----- GET -----
+    q            = request.GET.get("q", "").strip()
+    programme_id = request.GET.get("programme")
+    level        = request.GET.get("level")
+    student_id   = request.GET.get("student_id")
+
+    selected_student = None
+    outline_courses  = []
+    registered_ids   = []
+
+    if student_id:
+        selected_student = Student.objects.select_related("user", "programme").filter(pk=student_id).first()
+
+    if selected_student and semester:
+        registered_ids = list(
+            CourseRegistration.objects.filter(
+                student=selected_student, semester=semester
+            ).values_list("course_id", flat=True)
+        )
+        outlines = CourseOutline.objects.filter(
+            is_active=True, semester=semester, programme=selected_student.programme
+        ).prefetch_related("courses")
+        is_dip2 = "/24/" in (selected_student.reg_number or "")
+        matched = None
+        for o in outlines:
+            if ("II" in (o.level or "")) == is_dip2:
+                matched = o
+                break
+        if matched is None:
+            matched = outlines.first()
+        if matched:
+            outline_courses = list(matched.courses.all().order_by("code"))
+        else:
+            sem_num = 1 if (semester.name or "").lower() == "first" else 2
+            if is_dip2:
+                sem_num += 2
+            outline_courses = list(
+                Course.objects.filter(
+                    programme=selected_student.programme, semester_number=sem_num
+                ).order_by("code"))
+
+    students = []
+    if not selected_student:
+        qs = Student.objects.exclude(reg_number__startswith="CMT/").select_related("user", "programme").all().order_by("reg_number")
+        if programme_id:
+            qs = qs.filter(programme_id=programme_id)
+        if level:
+            qs = qs.filter(reg_number__contains=f"/{level}/")
+        if q:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(reg_number__icontains=q) |
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q))
+        students = qs[:60]
+
+    context = {
+        "all_semesters":        all_semesters,
+        "programmes":           programmes,
+        "semester":             semester,
+        "selected_semester_id": str(selected_semester_id) if selected_semester_id else "",
+        "selected_programme":   programme_id,
+        "selected_level":       level,
+        "q":                    q,
+        "students":             students,
+        "selected_student":     selected_student,
+        "outline_courses":      outline_courses,
+        "registered_ids":       registered_ids,
+        "total_units":          sum((c.unit or 0) for c in outline_courses),
+    }
+    return render(request, "registrar/single_register_courses.html", context)

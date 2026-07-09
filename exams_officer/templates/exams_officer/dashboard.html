@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block page_title %}Exams Officer{% endblock %}
+{% block content %}
+<div style="padding:24px;max-width:1200px;margin:0 auto">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#1a5c38;margin:0">🎓 Exams Officer Portal</h1>
+      <p style="color:#6b7280;font-size:13px;margin:4px 0 0">{{ semester }} &mdash; Print exam cards and course registration forms</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'exams_officer:bulk_exam_cards' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+         style="background:#1a5c38;color:white;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">
+        🖨 Bulk Exam Cards ({{ registered }})
+      </a>
+      <a href="{% url 'exams_officer:bulk_course_forms' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+         style="background:#c8881a;color:white;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px">
+        📋 Bulk Course Forms ({{ registered }})
+      </a>
+    </div>
+  </div>
+
+  {% if messages %}{% for m in messages %}
+  <div style="background:#fef3c7;border-radius:8px;padding:12px;margin-bottom:14px;color:#92400e;font-size:13px">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:#1a5c38">{{ total }}</div>
+      <div style="font-size:12px;color:#6b7280">Total Students</div>
+    </div>
+    <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:#1d4ed8">{{ registered }}</div>
+      <div style="font-size:12px;color:#6b7280">Registered</div>
+    </div>
+    <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;text-align:center">
+      <div style="font-size:28px;font-weight:800;color:#dc2626">{{ total|add:"-0"|add:registered|add:registered }}</div>
+      <div style="font-size:12px;color:#6b7280">Not Registered</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div>
+      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Programme</label>
+      <select name="programme" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-width:200px">
+        <option value="">All Programmes</option>
+        {% for p in programmes %}
+        <option value="{{ p.pk }}" {% if selected_prog == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Level</label>
+      <select name="level" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+        <option value="">All Levels</option>
+        <option value="Diploma I"  {% if selected_level == "Diploma I"  %}selected{% endif %}>Diploma I</option>
+        <option value="Diploma II" {% if selected_level == "Diploma II" %}selected{% endif %}>Diploma II</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Semester</label>
+      <select name="semester" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px">
+        <option value="">Active Semester</option>
+        {% for s in semesters %}
+        <option value="{{ s.pk }}" {% if selected_sem == s.pk|stringformat:"s" %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" style="background:#1a5c38;color:white;padding:9px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+      Filter
+    </button>
+    <a href="{% url 'exams_officer:dashboard' %}" style="padding:9px 16px;border:1px solid #d1d5db;border-radius:8px;text-decoration:none;color:#374151;font-size:13px">
+      Clear
+    </a>
+  </form>
+
+  <!-- Student List -->
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:#f9fafb">
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">#</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Reg No.</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Name</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Programme</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Level</th>
+          <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Courses</th>
+          <th style="padding:12px;text-align:center;color:#6b7280;font-weight:600">Status</th>
+          <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in student_data %}
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:10px 12px;color:#9ca3af">{{ forloop.counter }}</td>
+          <td style="padding:10px 12px;font-weight:600;color:#1a5c38">{{ d.student.reg_number }}</td>
+          <td style="padding:10px 12px">{{ d.student.user.get_full_name }}</td>
+          <td style="padding:10px 12px;font-size:12px;color:#6b7280">{{ d.student.programme.name }}</td>
+          <td style="padding:10px 12px;font-size:12px">{{ d.student.level }}</td>
+          <td style="padding:10px 12px;text-align:center">
+            {% if d.registered %}
+              <span style="background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">
+                {{ d.course_count }} courses
+              </span>
+            {% else %}
+              <span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px">
+                Not registered
+              </span>
+            {% endif %}
+          </td>
+          <td style="padding:10px 12px;text-align:center">
+            {% if d.registered %}
+              <span style="background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px">✓ Ready</span>
+            {% else %}
+              <span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px">✗</span>
+            {% endif %}
+          </td>
+          <td style="padding:10px 12px">
+            {% if d.registered %}
+            <div style="display:flex;gap:6px">
+              <a href="{% url 'exams_officer:exam_card' d.student.pk %}"
+                 style="background:#1a5c38;color:white;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:600">
+                📄 Exam Card
+              </a>
+              <a href="{% url 'exams_officer:course_form' d.student.pk %}"
+                 style="background:#c8881a;color:white;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:11px;font-weight:600">
+                📋 Course Form
+              </a>
+            </div>
+            {% else %}
+            <span style="color:#9ca3af;font-size:12px">No registration</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="padding:60px;text-align:center;color:#9ca3af">
+            <div style="font-size:48px;margin-bottom:12px">🎓</div>
+            No students found
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

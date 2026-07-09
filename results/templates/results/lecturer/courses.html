@@ -4,9 +4,23 @@
 {% block content %}
 <div style="padding:24px;max-width:1000px;margin:0 auto">
   <h1 style="font-size:22px;font-weight:700;color:#1a5c38;margin:0 0 4px">📊 Result Entry</h1>
-  <p style="color:#6b7280;font-size:13px;margin:0 0 20px">{{ semester }} — Enter CA and Exam scores for your courses</p>
+  <p style="color:#6b7280;font-size:13px;margin:0 0 12px">{{ semester }} — Enter CA and Exam scores for your courses</p>
 
-  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+  <div style="margin-bottom:20px">
+    <form method="get" style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="font-size:13px;font-weight:600;color:#374151">Switch Semester:</label>
+      <select name="semester_id" onchange="this.form.submit()"
+        style="padding:6px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;background:#fff;cursor:pointer">
+        {% for sem in all_semesters %}
+          <option value="{{ sem.id }}" {% if sem.id == semester.id %}selected{% endif %}>
+            {{ sem.session }} - {{ sem.name }}{% if sem.is_active %} ✓ Active{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr style="background:#f9fafb">
         <th style="padding:12px;text-align:left;color:#6b7280;font-weight:600">Course</th>
@@ -40,15 +54,15 @@
           </td>
           <td style="padding:12px">
             {% if not batch or batch.status in 'draft,rejected' %}
-            <a href="{% url 'results:enter_results' course.id %}"
+            <a href="{% url 'results:enter_results' course.id %}?semester_id={{ semester.id }}"
                style="background:#1a5c38;color:white;padding:7px 16px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600">
               {% if batch.status == 'rejected' %}Fix & Resubmit{% else %}Enter Results{% endif %}
             </a>
             {% elif batch.status == 'submitted' %}
-            <a href="{% url 'results:enter_results' course.id %}"
+            <a href="{% url 'results:enter_results' course.id %}?semester_id={{ semester.id }}"
                style="background:#f3f4f6;color:#374151;padding:7px 16px;border-radius:8px;text-decoration:none;font-size:12px">View</a>
             {% else %}
-            <a href="{% url 'results:enter_results' course.id %}"
+            <a href="{% url 'results:enter_results' course.id %}?semester_id={{ semester.id }}"
                style="color:#166534;font-size:12px;font-weight:600;text-decoration:none">
               📄 View / Download
             </a>

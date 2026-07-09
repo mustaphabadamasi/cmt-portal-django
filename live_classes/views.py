@@ -139,14 +139,16 @@ def lecturer_class_delete(request, pk):
 
 @login_required
 def student_class_list(request):
-    from students.models import Student, CourseRegistration
+    from students.models import Student
+    from academics.models import CourseRegistration
     student = get_object_or_404(Student, user=request.user)
 
-    # Courses the student is registered for
-    reg_course_ids = []
-    for reg in CourseRegistration.objects.filter(student=student):
-        reg_course_ids.extend(reg.courses.values_list('id', flat=True))
-    reg_course_ids = list(set(reg_course_ids))
+    # Courses the student is registered for (use academics.models, NOT students.models)
+    reg_course_ids = list(
+        CourseRegistration.objects.filter(
+            student=student, status__in=['registered', 'carryover']
+        ).values_list('course_id', flat=True)
+    )
 
     classes = LiveClass.objects.filter(
         course_id__in=reg_course_ids

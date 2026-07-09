@@ -60,7 +60,13 @@
           {% if not a.is_submitted %}<span class="pill-prog">IN PROGRESS</span>{% endif %}
           {% if a.auto_submitted %}<span class="pill-auto">⏰ AUTO</span>{% endif %}
         </td>
-        <td><a href="{% url 'lecturers:attempt_inspect' a.pk %}" style="color:#1a5c38;font-weight:600;text-decoration:none">View →</a></td>
+        <td style="display:flex;gap:8px;align-items:center">
+              <a href="{% url 'lecturers:attempt_inspect' a.pk %}" style="color:#1a5c38;font-weight:600;text-decoration:none;font-size:13px">View →</a>
+              <form method="post" action="{% url 'lecturers:delete_attempt' a.pk %}" style="display:inline" onsubmit="return confirm('Delete this attempt? {{ a.student.user.get_full_name }} will be able to retake the quiz.')">
+                {% csrf_token %}
+                <button type="submit" style="background:#dc2626;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Reset</button>
+              </form>
+            </td>
       </tr>
     {% empty %}
       <tr><td colspan="7" style="text-align:center;padding:40px;color:#9ca3af">No attempts yet.</td></tr>

@@ -16,6 +16,10 @@ urlpatterns = [
     path('registrar/batch/<int:batch_id>/approve/', views.approve_batch,  name='approve_batch'),
     path('registrar/batch/<int:batch_id>/reject/',  views.reject_batch,   name='reject_batch'),
     path('registrar/batch/<int:batch_id>/recall/', views.recall_batch, name='recall_batch'),
+    path('registrar/batch/<int:batch_id>/senate-publish/', views.senate_publish, name='senate_publish'),
+    path('registrar/batch/<int:batch_id>/senate-unpublish/', views.senate_unpublish, name='senate_unpublish'),
+    path('registrar/batch/<int:batch_id>/senate-publish/', views.senate_publish, name='senate_publish'),
+    path('registrar/batch/<int:batch_id>/senate-unpublish/', views.senate_unpublish, name='senate_unpublish'),
 
     # Student
     path('my-results/',                    views.student_results,         name='student_results'),

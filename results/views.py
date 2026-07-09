@@ -15,20 +15,28 @@ from academics.models import CourseRegistration as CourseRegistration
 
 @login_required
 def lecturer_result_courses(request):
-    """Lecturer sees their courses for result entry."""
-    semester = Semester.objects.filter(is_active=True).first()
-    session  = Session.objects.filter(is_active=True).first()
-    # Get courses this lecturer teaches
+    """Lecturer sees their courses for result entry - semester selectable."""
     from lecturers.models import LecturerCourse
+    session       = Session.objects.filter(is_active=True).first()
+    all_semesters = Semester.objects.all().order_by('-id')
+    sem_id        = request.GET.get('semester_id')
+    if sem_id:
+        semester = Semester.objects.filter(id=sem_id).first() or Semester.objects.filter(is_active=True).first()
+    else:
+        semester = Semester.objects.filter(is_active=True).first()
+
+    # Get courses for this lecturer in the selected semester
     try:
         lc_courses = LecturerCourse.objects.filter(
-            lecturer__user=request.user
+            lecturer__user=request.user,
+            semester=semester,
+            is_active=True,
         ).select_related('course')
         courses = [lc.course for lc in lc_courses]
     except Exception:
         courses = []
 
-    # Get batch status and student counts for each course
+    # Get batch status and student counts for selected semester
     batch_status   = {}
     student_counts = {}
     for c in courses:
@@ -37,10 +45,10 @@ def lecturer_result_courses(request):
             batch_status[c.id] = b
         except ResultBatch.DoesNotExist:
             batch_status[c.id] = None
-        # Count registered students
         try:
             count = CourseRegistration.objects.filter(
-                course=c, semester=semester
+                course=c, semester=semester,
+                status__in=['registered', 'carryover']
             ).count()
             student_counts[c.id] = count
         except Exception:
@@ -50,6 +58,7 @@ def lecturer_result_courses(request):
         'courses': courses, 'semester': semester,
         'session': session, 'batch_status': batch_status,
         'student_counts': student_counts,
+        'all_semesters': all_semesters,
     })
 
 
@@ -57,7 +66,11 @@ def lecturer_result_courses(request):
 def enter_results(request, course_id):
     """Lecturer enters CA + Exam scores for all students in a course."""
     course   = get_object_or_404(Course, pk=course_id)
-    semester = Semester.objects.filter(is_active=True).first()
+    sem_id   = request.GET.get('semester_id')
+    if sem_id:
+        semester = Semester.objects.filter(id=sem_id).first() or Semester.objects.filter(is_active=True).first()
+    else:
+        semester = Semester.objects.filter(is_active=True).first()
     session  = Session.objects.filter(is_active=True).first()
 
     # Get or create batch
@@ -67,7 +80,7 @@ def enter_results(request, course_id):
     )
 
     if batch.status == 'approved':
-        # Allow viewing and downloading — just block editing
+        # Allow viewing and downloading - just block editing
         results  = CourseResult.objects.filter(
             course=course, semester=semester
         ).select_related('student','student__user').order_by('student__reg_number')
@@ -231,7 +244,7 @@ def approve_batch(request, batch_id):
                 f'Your results for {batch.course.code} have been approved by the Registrar.',
                 '/results/my-courses/')
         except Exception: pass
-        messages.success(request, f'✅ Results for {batch.course.code} approved and published to students!')
+        messages.success(request, f'✅ Results for {batch.course.code} approved. Students can now see CA scores. Publish senate result when ready.')
     return redirect('results:registrar_results')
 
 
@@ -259,6 +272,44 @@ def reject_batch(request, batch_id):
 
 # ── STUDENT VIEWS ─────────────────────────────────────────────────────────────
 
+
+@login_required
+def senate_unpublish(request, batch_id):
+    batch = get_object_or_404(ResultBatch, pk=batch_id)
+    if request.method == 'POST':
+        batch.senate_published    = False
+        batch.senate_published_at = None
+        batch.senate_published_by = None
+        batch.save()
+        messages.success(request, f'Senate results for {batch.course.code} have been unpublished.')
+    return redirect('results:registrar_results')
+
+@login_required
+def senate_publish(request, batch_id):
+    """Registrar publishes senate-approved results - releases full scores to students."""
+    batch = get_object_or_404(ResultBatch, pk=batch_id)
+    if request.method == 'POST':
+        if batch.status != 'approved':
+            messages.error(request, 'Batch must be approved before senate publication.')
+            return redirect('results:registrar_results')
+        batch.senate_published    = True
+        batch.senate_published_at = timezone.now()
+        batch.senate_published_by = request.user
+        batch.save()
+        try:
+            from notifications.utils import notify_course_students
+            notify_course_students(
+                course=batch.course, semester=batch.semester,
+                ntype='result',
+                title=f'📊 Full Results Released: {batch.course.code}',
+                message=f'Senate-approved results for {batch.course.code} are now available.',
+                link='/results/my-results/',
+            )
+        except Exception: pass
+        messages.success(request, f'✅ Senate results for {batch.course.code} published to students!')
+    return redirect('results:registrar_results')
+
+
 @login_required
 def student_results(request):
     """Student sees their approved results with GPA/CGPA."""
@@ -269,6 +320,12 @@ def student_results(request):
 
     semester = Semester.objects.filter(is_active=True).first()
     session  = Session.objects.filter(is_active=True).first()
+
+    # Get senate-published batch IDs - only these show full results
+    senate_batch_ids = set(
+        ResultBatch.objects.filter(senate_published=True)
+        .values_list('course_id', 'semester_id')
+    )
 
     # All approved results grouped by semester
     all_results = CourseResult.objects.filter(
@@ -281,7 +338,7 @@ def student_results(request):
     from collections import defaultdict
     semester_groups = defaultdict(list)
     for r in all_results:
-        key = f"{r.session.name} — {r.semester.name}"
+        key = f"{r.session.name} - {r.semester.name}"
         semester_groups[key].append(r)
 
     # Calculate GPA per semester and CGPA
@@ -316,6 +373,9 @@ def student_results(request):
         student=student, semester=semester
     ).select_related('course')
 
+    # Convert to comma-separated string for easy template lookup
+    senate_published_str = ','.join(f"{c},{s}" for c, s in senate_batch_ids)
+
     return render(request, 'results/student/my_results.html', {
         'student': student,
         'semester_data': semester_data,
@@ -324,13 +384,17 @@ def student_results(request):
         'cgpa_total_units': cgpa_total_units,
         'current_results': current_results,
         'semester': semester,
+        'senate_published_str': senate_published_str,
     })
 
 @login_required
 def download_scoresheet(request, course_id):
-    """Lecturer downloads score sheet PDF for a course."""
     course   = get_object_or_404(Course, pk=course_id)
-    semester = Semester.objects.filter(is_active=True).first()
+    sem_id   = request.GET.get('semester_id')
+    if sem_id:
+        semester = Semester.objects.filter(id=sem_id).first() or Semester.objects.filter(is_active=True).first()
+    else:
+        semester = Semester.objects.filter(is_active=True).first()
     session  = Session.objects.filter(is_active=True).first()
 
     results = CourseResult.objects.filter(

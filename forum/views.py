@@ -17,12 +17,13 @@ def get_user_courses(user):
         except Exception:
             return Course.objects.none()
     elif user.role == 'student':
-        from students.models import Student, CourseRegistration
+        from students.models import Student
+        from academics.models import CourseRegistration
         try:
             student = Student.objects.get(user=user)
-            ids = []
-            for reg in CourseRegistration.objects.filter(student=student):
-                ids.extend(reg.courses.values_list('id', flat=True))
+            ids = CourseRegistration.objects.filter(
+                student=student, status__in=['registered', 'carryover']
+            ).values_list('course_id', flat=True)
             return Course.objects.filter(id__in=set(ids)).order_by('code')
         except Exception:
             return Course.objects.none()
