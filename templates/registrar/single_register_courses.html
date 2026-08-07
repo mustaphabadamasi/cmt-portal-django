@@ -2,10 +2,38 @@
 {% block content %}
 <div class="container py-4">
   <h3 class="mb-1"><i class="bi bi-person-plus"></i> Single Student Course Registration</h3>
-  <p class="text-muted">
-    {% if semester %}Semester: <strong>{{ semester.session.name }} — {{ semester.name|title }}</strong>
-    {% else %}<span class="text-danger">No active semester set.</span>{% endif %}
-  </p>
+  <!-- Semester selector -->
+  <form method="get" class="mb-3" id="semester-form">
+    {% if selected_student %}
+      <input type="hidden" name="student_id" value="{{ selected_student.id }}">
+    {% endif %}
+    {% if selected_programme %}
+      <input type="hidden" name="programme" value="{{ selected_programme }}">
+    {% endif %}
+    {% if selected_level %}
+      <input type="hidden" name="level" value="{{ selected_level }}">
+    {% endif %}
+    {% if q %}
+      <input type="hidden" name="q" value="{{ q }}">
+    {% endif %}
+    <div class="d-flex align-items-center gap-2">
+      <label class="fw-semibold text-muted mb-0" style="white-space:nowrap">Semester:</label>
+      <select name="semester_id" class="form-select form-select-sm" style="max-width:280px"
+              onchange="this.form.submit()">
+        {% for sem in all_semesters %}
+        <option value="{{ sem.id }}"
+          {% if sem.id|stringformat:"s" == selected_semester_id %}selected
+          {% elif not selected_semester_id and sem.is_active %}selected
+          {% endif %}>
+          {{ sem.session.name }} — {{ sem.name|title }}{% if sem.is_active %} ★{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% if not semester %}
+        <span class="text-danger small">No active semester set.</span>
+      {% endif %}
+    </div>
+  </form>
 
   {% if messages %}{% for m in messages %}
     <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} py-2">{{ m }}</div>
@@ -13,6 +41,7 @@
 
   {% if not selected_student %}
   <form method="get" class="row g-2 mb-3">
+    {% if selected_semester_id %}<input type="hidden" name="semester_id" value="{{ selected_semester_id }}">{% endif %}
     <div class="col-md-3">
       <select name="programme" class="form-select">
         <option value="">All programmes</option>
