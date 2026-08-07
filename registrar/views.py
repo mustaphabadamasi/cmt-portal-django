@@ -1665,7 +1665,7 @@ def single_register_courses(request):
             ).values_list("course_id", flat=True)
         )
         outlines = CourseOutline.objects.filter(
-            is_active=True, semester=semester, programme=selected_student.programme
+            semester=semester, programme=selected_student.programme
         ).prefetch_related("courses")
         is_dip2 = "/24/" in (selected_student.reg_number or "")
         matched = None
