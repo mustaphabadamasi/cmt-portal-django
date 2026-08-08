@@ -795,14 +795,14 @@ def result_sheet_pdf(request, outline_id):
             c.drawCentredString(x + sn_w/2, y_data - row_h/2 - 2, str(i+1))
             x += sn_w
 
-            # Student name + matric
+            # Student name + matric (1.15 line spacing between name and reg no)
             c.setFont("Helvetica-Bold", 6.5)
             name = student.user.get_full_name()
             if len(name) > 22: name = name[:22] + "."
-            c.drawString(x + 1*mm, y_data - row_h/2 + 1, name)
+            c.drawString(x + 1*mm, y_data - row_h/2 + 2.5, name)
             c.setFont("Helvetica", 6)
             c.setFillColor(colors.HexColor("#555555"))
-            c.drawString(x + 1*mm, y_data - row_h/2 - 4, student.reg_number)
+            c.drawString(x + 1*mm, y_data - row_h/2 - 5.5, student.reg_number)
             c.setFillColor(BLACK)
             x += stu_w
 
