@@ -861,7 +861,7 @@ def result_sheet_pdf(request, outline_id):
         # Signatures:  30mm from bottom
         # Stat table:  52mm from bottom
         # Stat label:  58mm from bottom
-        y = 88*mm   # stat report label Y — fixed from bottom
+        y = 93*mm   # stat report label Y — fixed from bottom
 
         # Statistical report label
         c.setFont("Helvetica-Bold", 8)
@@ -894,7 +894,7 @@ def result_sheet_pdf(request, outline_id):
                 x += col_ws[ci]
 
         # Signature lines — fixed at 33mm from bottom
-        y_sig = 55*mm
+        y_sig = 68*mm
         sigs = [
             ("Provost - CMT"),
             ("Head of Department"),
@@ -908,7 +908,7 @@ def result_sheet_pdf(request, outline_id):
             c.drawString(sig_x[i], y_sig + 2*mm, title)
 
         # Grade key — fixed at 20mm from bottom
-        y_key = 38*mm
+        y_key = 48*mm
         c.setFont("Helvetica-Bold", 7)
         c.drawString(12*mm, y_key, "GRADING: ")
         c.setFont("Helvetica", 7)
@@ -923,7 +923,7 @@ def result_sheet_pdf(request, outline_id):
         c.drawString(35*mm, y_key - 5*mm, cls)
 
     # Draw pages
-    y_content_start = H - 48*mm
+    y_content_start = H - 45*mm
     y_footer_end    = 58*mm
     available_h     = y_content_start - y_footer_end
 
