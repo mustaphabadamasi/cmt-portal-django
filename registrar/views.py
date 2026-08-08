@@ -855,20 +855,13 @@ def result_sheet_pdf(request, outline_id):
         return y_data
 
     def draw_footer(c, pass_count, carryover_count, total, y_start=None):
-        # Footer needs ~62mm total height:
-        # stat label(5) + stat table(18) + gap(4) + sigs(16) + gap(4) + grading(10) + margin(5)
-        FOOTER_H = 62*mm
-        MARGIN_BOTTOM = 14*mm  # inside border
-
-        # Start footer just below last table row, but ensure full footer fits above bottom margin
-        if y_start is not None:
-            y = y_start - 5*mm
-        else:
-            y = MARGIN_BOTTOM + FOOTER_H
-
-        # If footer would go below bottom margin, push it up
-        if y - FOOTER_H < MARGIN_BOTTOM:
-            y = MARGIN_BOTTOM + FOOTER_H
+        # Anchor footer to fixed positions from page bottom — always consistent
+        # Page bottom border is at 10mm, inner border at 12mm
+        # Grade key:   18mm from bottom
+        # Signatures:  30mm from bottom
+        # Stat table:  52mm from bottom
+        # Stat label:  58mm from bottom
+        y = 58*mm   # stat report label Y — fixed from bottom
 
         # Statistical report label
         c.setFont("Helvetica-Bold", 8)
@@ -881,7 +874,7 @@ def result_sheet_pdf(request, outline_id):
             [str(total), str(total), f"{pass_count} ({int(pass_count/total*100) if total else 0}%)", f"({carryover_count})"],
         ]
         tbl_x = 12*mm
-        tbl_y = y - 4*mm
+        tbl_y = y - 3*mm
         col_ws = [50*mm, 50*mm, 50*mm, 50*mm]
         row_hs = [8*mm, 8*mm]
 
@@ -900,8 +893,8 @@ def result_sheet_pdf(request, outline_id):
                     c.drawCentredString(x + col_ws[ci]/2, tbl_y - (ri+1)*row_hs[ri] + row_hs[ri]/2 + (3 if len(lines)>1 else 0) - li*7, line)
                 x += col_ws[ci]
 
-        # Signature lines — 6mm gap below stat table bottom
-        y_sig = tbl_y - (len(row_hs) * row_hs[0]) - 8*mm
+        # Signature lines — fixed at 33mm from bottom
+        y_sig = 33*mm
         sigs = [
             ("Dr. Shehu Sani", "Provost - CMT"),
             ("________________________", "Head of Department"),
@@ -915,8 +908,8 @@ def result_sheet_pdf(request, outline_id):
             c.drawString(sig_x[i], y_sig + 2*mm, name)
             c.drawString(sig_x[i], y_sig - 3*mm, title)
 
-        # Grade key — 8mm below signatures
-        y_key = y_sig - 10*mm
+        # Grade key — fixed at 20mm from bottom
+        y_key = 20*mm
         c.setFont("Helvetica-Bold", 7)
         c.drawString(12*mm, y_key, "GRADING: ")
         c.setFont("Helvetica", 7)
