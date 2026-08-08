@@ -855,26 +855,33 @@ def result_sheet_pdf(request, outline_id):
         return y_data
 
     def draw_footer(c, pass_count, carryover_count, total, y_start=None):
-        # y_start is the bottom edge of the last table row (y_data from draw_table)
-        # Place footer 6mm below that, but never higher than 58mm from page bottom
+        # Footer needs ~62mm total height:
+        # stat label(5) + stat table(18) + gap(4) + sigs(16) + gap(4) + grading(10) + margin(5)
+        FOOTER_H = 62*mm
+        MARGIN_BOTTOM = 14*mm  # inside border
+
+        # Start footer just below last table row, but ensure full footer fits above bottom margin
         if y_start is not None:
-            y = y_start - 6*mm   # just below last row
+            y = y_start - 5*mm
         else:
-            y = 58*mm
-        # Clamp: never go below 14mm from page border
-        y = max(y, 14*mm)
-        # Statistical report
+            y = MARGIN_BOTTOM + FOOTER_H
+
+        # If footer would go below bottom margin, push it up
+        if y - FOOTER_H < MARGIN_BOTTOM:
+            y = MARGIN_BOTTOM + FOOTER_H
+
+        # Statistical report label
         c.setFont("Helvetica-Bold", 8)
         c.setFillColor(BLACK)
         c.drawString(12*mm, y, "STATISTICAL REPORT")
 
-        # Table
+        # Stat table: 2 rows x 8mm each = 16mm, starts 4mm below label
         data = [
             ["Total Registered", "Total Sat", "Passed", "Carryover"],
             [str(total), str(total), f"{pass_count} ({int(pass_count/total*100) if total else 0}%)", f"({carryover_count})"],
         ]
         tbl_x = 12*mm
-        tbl_y = y - 2*mm
+        tbl_y = y - 4*mm
         col_ws = [50*mm, 50*mm, 50*mm, 50*mm]
         row_hs = [8*mm, 8*mm]
 
@@ -893,8 +900,8 @@ def result_sheet_pdf(request, outline_id):
                     c.drawCentredString(x + col_ws[ci]/2, tbl_y - (ri+1)*row_hs[ri] + row_hs[ri]/2 + (3 if len(lines)>1 else 0) - li*7, line)
                 x += col_ws[ci]
 
-        # Signature lines — place below statistical table
-        y_sig = y - 22*mm
+        # Signature lines — 6mm gap below stat table bottom
+        y_sig = tbl_y - (len(row_hs) * row_hs[0]) - 8*mm
         sigs = [
             ("Dr. Shehu Sani", "Provost - CMT"),
             ("________________________", "Head of Department"),
@@ -908,8 +915,8 @@ def result_sheet_pdf(request, outline_id):
             c.drawString(sig_x[i], y_sig + 2*mm, name)
             c.drawString(sig_x[i], y_sig - 3*mm, title)
 
-        # Grade key — place below signatures
-        y_key = y_sig - 12*mm
+        # Grade key — 8mm below signatures
+        y_key = y_sig - 10*mm
         c.setFont("Helvetica-Bold", 7)
         c.drawString(12*mm, y_key, "GRADING: ")
         c.setFont("Helvetica", 7)
