@@ -571,11 +571,26 @@ def result_sheet_pdf(request, outline_id):
         course_scores = []
         has_fail = False
 
+        from results.models import CourseResult as CR
+        course_results = {r.course_id: r for r in CR.objects.filter(
+            student=student, semester=semester, course__in=courses
+        )}
         for course in courses:
             reg = regs.get(course.pk)
-            score = reg.score if reg and reg.score is not None else None
-            grade = get_grade(score)
-            gp    = get_grade_point(score)
+            cr  = course_results.get(course.pk)
+            # Prefer CourseResult total_score, fall back to CourseRegistration.score
+            if cr and cr.total_score is not None:
+                score = float(cr.total_score)
+                grade = cr.grade or get_grade(score)
+                gp    = float(cr.grade_point) if cr.grade_point else get_grade_point(score)
+            elif reg and reg.score is not None:
+                score = float(reg.score)
+                grade = get_grade(score)
+                gp    = get_grade_point(score)
+            else:
+                score = None
+                grade = "--"
+                gp    = 0
             units = course.unit
             tcr  += units
             tgp  += gp * units
@@ -583,7 +598,7 @@ def result_sheet_pdf(request, outline_id):
                 tce += units
             elif score is not None and score < 40:
                 has_fail = True
-            course_scores.append(f"{score if score is not None else '-'} {grade}")
+            course_scores.append(f"{int(score) if score is not None else '--'} {grade if score is not None else ''}")
 
         gpa = round(tgp/tcr, 2) if tcr > 0 else 0
 
