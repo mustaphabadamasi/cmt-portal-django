@@ -861,7 +861,7 @@ def result_sheet_pdf(request, outline_id):
         # Signatures:  30mm from bottom
         # Stat table:  52mm from bottom
         # Stat label:  58mm from bottom
-        y = 58*mm   # stat report label Y — fixed from bottom
+        y = 72*mm   # stat report label Y — fixed from bottom
 
         # Statistical report label
         c.setFont("Helvetica-Bold", 8)
