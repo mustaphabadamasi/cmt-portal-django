@@ -896,17 +896,16 @@ def result_sheet_pdf(request, outline_id):
         # Signature lines — fixed at 33mm from bottom
         y_sig = 33*mm
         sigs = [
-            ("Dr. Shehu Sani", "Provost - CMT"),
-            ("________________________", "Head of Department"),
-            ("Dr Jamilu Ajiya", "Provost - CPCS, FUDMA"),
+            ("Provost - CMT"),
+            ("Head of Department"),
+            ("Provost - CPCS, FUDMA"),
         ]
         sig_x = [12*mm, W/2 - 30*mm, W - 80*mm]
-        for i, (name, title) in enumerate(sigs):
+        for i, title in enumerate(sigs):
             c.setFont("Helvetica", 8)
             c.setFillColor(BLACK)
             c.line(sig_x[i], y_sig + 6*mm, sig_x[i] + 60*mm, y_sig + 6*mm)
-            c.drawString(sig_x[i], y_sig + 2*mm, name)
-            c.drawString(sig_x[i], y_sig - 3*mm, title)
+            c.drawString(sig_x[i], y_sig + 2*mm, title)
 
         # Grade key — fixed at 20mm from bottom
         y_key = 20*mm
