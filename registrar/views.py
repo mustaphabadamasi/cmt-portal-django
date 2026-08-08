@@ -685,7 +685,10 @@ def result_sheet_pdf(request, outline_id):
         c.setFont("Helvetica", 8)
         c.drawCentredString(W/2, H-42*mm, "Submission to the Academic Board, College of Professional and Continuing Studies")
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(W/2, H-46*mm, f"{outline.level.upper()}, {session} {sem_name.upper()} RESULT")
+        # Clean title: "DIPLOMA I, 2024/2025 — FIRST SEMESTER RESULT"
+        session_str  = session.name if hasattr(session, "name") else str(session)
+        sem_str      = semester.name.upper() if hasattr(semester, "name") else sem_name.upper()
+        c.drawCentredString(W/2, H-46*mm, f"{outline.level.upper()}, {session_str} — {sem_str} RESULT")
 
         if page_num > 1:
             c.setFont("Helvetica", 7)
@@ -799,8 +802,8 @@ def result_sheet_pdf(request, outline_id):
             # Student name + matric (1.15 line spacing between name and reg no)
             c.setFont("Helvetica-Bold", 6.5)
             name = student.user.get_full_name()
-            if len(name) > 22: name = name[:22] + "."
-            c.drawString(x + 1*mm, y_data - row_h/2 + 2.5, name)
+            if len(name) > 25: name = name[:25] + "."
+            c.drawString(x + 1.5*mm, y_data - row_h/2 + 2.5, name)
             c.setFont("Helvetica", 6)
             c.setFillColor(colors.HexColor("#555555"))
             c.drawString(x + 1*mm, y_data - row_h/2 - 5.5, student.reg_number)
@@ -854,14 +857,20 @@ def result_sheet_pdf(request, outline_id):
 
         return y_data
 
-    def draw_footer(c, pass_count, carryover_count, total, y_start=None):
-        # Anchor footer to fixed positions from page bottom — always consistent
-        # Page bottom border is at 10mm, inner border at 12mm
-        # Grade key:   18mm from bottom
-        # Signatures:  30mm from bottom
-        # Stat table:  52mm from bottom
-        # Stat label:  58mm from bottom
-        y = 93*mm   # stat report label Y — fixed from bottom
+    def draw_footer(c, pass_count, carryover_count, total):
+        # All footer elements anchored to fixed Y from page bottom
+        # Landscape A4 = 210mm tall
+        # Bottom border at 10mm, content ends at 100mm from bottom
+        # Layout from bottom up:
+        #   14mm: inner border
+        #   20mm: CLASS line
+        #   25mm: GRADING line
+        #   38mm: signatory titles
+        #   50mm: stat table data row
+        #   58mm: stat table header row
+        #   68mm: stat table data row bottom
+        #   75mm: STATISTICAL REPORT label
+        y = 75*mm   # STATISTICAL REPORT label
 
         # Statistical report label
         c.setFont("Helvetica-Bold", 8)
@@ -874,7 +883,7 @@ def result_sheet_pdf(request, outline_id):
             [str(total), str(total), f"{pass_count} ({int(pass_count/total*100) if total else 0}%)", f"({carryover_count})"],
         ]
         tbl_x = 12*mm
-        tbl_y = y - 3*mm
+        tbl_y = y - 4*mm  # table starts just below label
         col_ws = [50*mm, 50*mm, 50*mm, 50*mm]
         row_hs = [8*mm, 8*mm]
 
@@ -894,7 +903,7 @@ def result_sheet_pdf(request, outline_id):
                 x += col_ws[ci]
 
         # Signature lines — fixed at 33mm from bottom
-        y_sig = 68*mm
+        y_sig = 43*mm  # signatures at 43mm from bottom
         sigs = [
             ("Provost - CMT"),
             ("Head of Department"),
@@ -908,7 +917,7 @@ def result_sheet_pdf(request, outline_id):
             c.drawString(sig_x[i], y_sig + 2*mm, title)
 
         # Grade key — fixed at 20mm from bottom
-        y_key = 48*mm
+        y_key = 25*mm  # grade key at 25mm from bottom
         c.setFont("Helvetica-Bold", 7)
         c.drawString(12*mm, y_key, "GRADING: ")
         c.setFont("Helvetica", 7)
@@ -923,13 +932,14 @@ def result_sheet_pdf(request, outline_id):
         c.drawString(35*mm, y_key - 5*mm, cls)
 
     # Draw pages
-    y_content_start = H - 45*mm
-    y_footer_end    = 58*mm
-    available_h     = y_content_start - y_footer_end
+    # Footer occupies bottom 100mm of page — table must not enter this zone
+    FOOTER_ZONE  = 100*mm
+    y_content_start = H - 45*mm   # table starts here (below header)
+    y_table_stop    = FOOTER_ZONE  # table MUST stop here
 
     draw_page(c, 1, 1)
     y_after = draw_table(c, rows_data, courses, y_content_start)
-    draw_footer(c, pass_count, carryover_count, len(rows_data), y_start=y_after)
+    draw_footer(c, pass_count, carryover_count, len(rows_data))
 
     c.save()
     buf.seek(0)
