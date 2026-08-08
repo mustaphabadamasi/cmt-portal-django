@@ -536,7 +536,16 @@ def result_sheet_pdf(request, outline_id):
         semester=semester, course__in=courses
     ).values_list("student_id", flat=True).distinct()
 
-    level_year = "24" if "II" in outline.level else "25"
+    # Determine cohort year from session name, not level
+    # /24/ students = enrolled 2024 (Dip I in 24/25, Dip II in 25/26)
+    # /25/ students = enrolled 2025 (Dip I in 25/26)
+    session_name = str(outline.semester.session.name) if outline.semester and outline.semester.session else ""
+    if "2024" in session_name:
+        level_year = "24"
+    elif "2025" in session_name and "II" in outline.level:
+        level_year = "24"
+    else:
+        level_year = "25"
     students = Student.objects.filter(
         pk__in=student_ids,
         reg_number__contains=f"/{level_year}/"
