@@ -705,7 +705,7 @@ def result_sheet_pdf(request, outline_id):
         total_w = sn_w + stu_w + n_courses*crs_w + 4*cur_w + 4*prv_w + 4*cum_w + rem_w
 
         x0 = (W - total_w) / 2
-        row_h = 9*mm
+        row_h = 7.5*mm
         hdr_h = 8*mm
 
         # Header row 1 - main groups
@@ -924,7 +924,7 @@ def result_sheet_pdf(request, outline_id):
         c.drawString(35*mm, y_key - 5*mm, cls)
 
     # Draw pages
-    y_content_start = H - 52*mm
+    y_content_start = H - 48*mm
     y_footer_end    = 58*mm
     available_h     = y_content_start - y_footer_end
 
