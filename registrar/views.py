@@ -855,11 +855,14 @@ def result_sheet_pdf(request, outline_id):
         return y_data
 
     def draw_footer(c, pass_count, carryover_count, total, y_start=None):
-        # Place footer below table with a gap, but never above 58mm from bottom
+        # y_start is the bottom edge of the last table row (y_data from draw_table)
+        # Place footer 6mm below that, but never higher than 58mm from page bottom
         if y_start is not None:
-            y = min(y_start - 8*mm, 52*mm)
+            y = y_start - 6*mm   # just below last row
         else:
-            y = 30*mm  # fallback: anchor near bottom
+            y = 58*mm
+        # Clamp: never go below 14mm from page border
+        y = max(y, 14*mm)
         # Statistical report
         c.setFont("Helvetica-Bold", 8)
         c.setFillColor(BLACK)
