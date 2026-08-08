@@ -1145,28 +1145,21 @@ def graduation_list_view(request):
                 reg_number__contains=f"/{level_filter}/"
             ).select_related("user","programme").order_by("reg_number")
 
+            from results.models import CourseResult
             for student in students:
-                # Check failed courses UP TO selected semester
-                if semester_id:
-                    failed = CourseRegistration.objects.filter(
-                        student=student, status="failed"
-                    ).count()
-                else:
-                    failed = CourseRegistration.objects.filter(
-                        student=student, status="failed"
-                    ).count()
-
-                # All passed courses up to selected semester
-                all_regs = CourseRegistration.objects.filter(
-                    student=student, status="passed"
+                # Use CourseResult (approved) as source of truth
+                results = CourseResult.objects.filter(
+                    student=student,
+                    status="approved"
                 ).select_related("course")
 
-                tce = sum(r.course.unit for r in all_regs if r.course)
+                # Failed = any approved result with grade F or score < 40
+                failed = results.filter(total_score__lt=40).count()
+
+                tce = sum(r.course.unit for r in results if r.course)
                 tgp = sum(
-                    (5 if r.score and r.score>=70 else 4 if r.score and r.score>=60 else
-                     3 if r.score and r.score>=50 else 2 if r.score and r.score>=45 else
-                     1 if r.score and r.score>=40 else 0) * r.course.unit
-                    for r in all_regs if r.course and r.score is not None
+                    float(r.grade_point) * r.course.unit
+                    for r in results if r.course and r.grade_point is not None
                 )
                 cgpa = round(tgp/tce, 2) if tce > 0 else 0.0
                 if cgpa >= 4.50:   cls = "DISTINCTION"
@@ -1225,15 +1218,22 @@ def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None
         programme=programme, reg_number__contains=f"/{level}/"
     ).select_related("user","programme").order_by("reg_number")
 
+    from results.models import CourseResult as ResultCR
     grad_list = []
     for st in students:
-        if CR.objects.filter(student=st, status="failed").count() > 0:
+        results = ResultCR.objects.filter(
+            student=st, status="approved"
+        ).select_related("course")
+        # Skip students with any fail
+        if results.filter(total_score__lt=40).count() > 0:
             continue
-        regs = CR.objects.filter(student=st, status="passed").select_related("course")
-        tce = sum(r.course.unit for r in regs if r.course)
-        tgp = sum((5 if r.score>=70 else 4 if r.score>=60 else 3 if r.score>=50
-                   else 2 if r.score>=45 else 1 if r.score>=40 else 0)*r.course.unit
-                  for r in regs if r.course and r.score is not None)
+        if results.count() == 0:
+            continue
+        tce = sum(r.course.unit for r in results if r.course)
+        tgp = sum(
+            float(r.grade_point) * r.course.unit
+            for r in results if r.course and r.grade_point is not None
+        )
         cgpa = round(tgp/tce,2) if tce>0 else 0.0
         cls = ("DISTINCTION" if cgpa>=4.50 else "UPPER CREDIT" if cgpa>=3.50
                else "LOWER CREDIT" if cgpa>=2.50 else "PASS")
