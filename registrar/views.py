@@ -555,7 +555,8 @@ def result_sheet_pdf(request, outline_id):
         level_year = "25"
     students = Student.objects.filter(
         pk__in=student_ids,
-        reg_number__contains=f"/{level_year}/"
+        reg_number__contains=f"/{level_year}/",
+        programme=outline.programme
     ).select_related("user","programme").order_by("reg_number")
 
     # Build data rows
