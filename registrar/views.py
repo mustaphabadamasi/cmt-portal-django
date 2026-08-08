@@ -381,9 +381,42 @@ def get_grade_point(score):
 def result_sheet_list(request):
     """List available result sheets by programme/level/semester"""
     from academics.models import CourseOutline, CourseRegistration
-    outlines   = CourseOutline.objects.select_related("programme","semester__session").filter(is_active=True).order_by("programme__name","level","semester__name")
+    from core.models import Session, Semester
+
+    # Filters from GET params
+    session_id   = request.GET.get("session")
+    semester_id  = request.GET.get("semester")
+    programme_id = request.GET.get("programme")
+    level        = request.GET.get("level")
+
+    # Base queryset — all outlines (not just active)
+    outlines = CourseOutline.objects.select_related(
+        "programme", "semester__session"
+    ).order_by("programme__name", "level", "semester__name")
+
+    if session_id:
+        outlines = outlines.filter(semester__session__id=session_id)
+    if semester_id:
+        outlines = outlines.filter(semester__id=semester_id)
+    if programme_id:
+        outlines = outlines.filter(programme__id=programme_id)
+    if level:
+        outlines = outlines.filter(level=level)
+
     programmes = Programme.objects.all()
-    context    = {"outlines": outlines, "programmes": programmes}
+    all_sessions  = Session.objects.all().order_by("-id")
+    all_semesters = Semester.objects.select_related("session").order_by("-session__id","name")
+
+    context = {
+        "outlines":      outlines,
+        "programmes":    programmes,
+        "all_sessions":  all_sessions,
+        "all_semesters": all_semesters,
+        "sel_session":   session_id  or "",
+        "sel_semester":  semester_id or "",
+        "sel_programme": programme_id or "",
+        "sel_level":     level or "",
+    }
     return render(request, "registrar/result_sheet_list.html", context)
 
 
@@ -392,7 +425,13 @@ def result_entry(request, outline_id):
     """Enter/edit scores for students in a course outline"""
     from academics.models import CourseOutline, CourseRegistration
     outline  = get_object_or_404(CourseOutline, pk=outline_id)
-    courses  = list(outline.courses.all().order_by("code"))
+    # Deduplicate courses by id to prevent repeated columns
+    seen = set()
+    courses = []
+    for c in outline.courses.all().order_by("code"):
+        if c.id not in seen:
+            seen.add(c.id)
+            courses.append(c)
     semester = outline.semester
 
     # Get all students registered for this outline's semester with these courses
@@ -474,7 +513,13 @@ def result_sheet_pdf(request, outline_id):
     from academics.models import CourseOutline, CourseRegistration
 
     outline  = get_object_or_404(CourseOutline, pk=outline_id)
-    courses  = list(outline.courses.all().order_by("code"))
+    # Deduplicate courses by id to prevent repeated columns
+    seen = set()
+    courses = []
+    for c in outline.courses.all().order_by("code"):
+        if c.id not in seen:
+            seen.add(c.id)
+            courses.append(c)
     semester = outline.semester
 
     CMT_LOGO   = f"{settings.BASE_DIR}/static/images/cmt_logo.png.png"
@@ -865,7 +910,13 @@ def bulk_upload_results(request, outline_id):
     from academics.models import CourseOutline, CourseRegistration
 
     outline  = get_object_or_404(CourseOutline, pk=outline_id)
-    courses  = list(outline.courses.all().order_by("code"))
+    # Deduplicate courses by id to prevent repeated columns
+    seen = set()
+    courses = []
+    for c in outline.courses.all().order_by("code"):
+        if c.id not in seen:
+            seen.add(c.id)
+            courses.append(c)
     semester = outline.semester
 
     results  = []
@@ -981,7 +1032,13 @@ def download_result_template(request, outline_id):
     from academics.models import CourseOutline, CourseRegistration as CR
 
     outline  = get_object_or_404(CourseOutline, pk=outline_id)
-    courses  = list(outline.courses.all().order_by("code"))
+    # Deduplicate courses by id to prevent repeated columns
+    seen = set()
+    courses = []
+    for c in outline.courses.all().order_by("code"):
+        if c.id not in seen:
+            seen.add(c.id)
+            courses.append(c)
     semester = outline.semester
 
     response = HttpResponse(content_type="text/csv")
