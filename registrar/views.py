@@ -854,8 +854,12 @@ def result_sheet_pdf(request, outline_id):
 
         return y_data
 
-    def draw_footer(c, pass_count, carryover_count, total):
-        y = 52*mm
+    def draw_footer(c, pass_count, carryover_count, total, y_start=None):
+        # Place footer below table with a gap, but never above 58mm from bottom
+        if y_start is not None:
+            y = min(y_start - 8*mm, 52*mm)
+        else:
+            y = 30*mm  # fallback: anchor near bottom
         # Statistical report
         c.setFont("Helvetica-Bold", 8)
         c.setFillColor(BLACK)
@@ -886,8 +890,8 @@ def result_sheet_pdf(request, outline_id):
                     c.drawCentredString(x + col_ws[ci]/2, tbl_y - (ri+1)*row_hs[ri] + row_hs[ri]/2 + (3 if len(lines)>1 else 0) - li*7, line)
                 x += col_ws[ci]
 
-        # Signature lines
-        y_sig = 35*mm
+        # Signature lines — place below statistical table
+        y_sig = y - 22*mm
         sigs = [
             ("Dr. Shehu Sani", "Provost - CMT"),
             ("________________________", "Head of Department"),
@@ -901,8 +905,8 @@ def result_sheet_pdf(request, outline_id):
             c.drawString(sig_x[i], y_sig + 2*mm, name)
             c.drawString(sig_x[i], y_sig - 3*mm, title)
 
-        # Grade key
-        y_key = 20*mm
+        # Grade key — place below signatures
+        y_key = y_sig - 12*mm
         c.setFont("Helvetica-Bold", 7)
         c.drawString(12*mm, y_key, "GRADING: ")
         c.setFont("Helvetica", 7)
@@ -923,7 +927,7 @@ def result_sheet_pdf(request, outline_id):
 
     draw_page(c, 1, 1)
     y_after = draw_table(c, rows_data, courses, y_content_start)
-    draw_footer(c, pass_count, carryover_count, len(rows_data))
+    draw_footer(c, pass_count, carryover_count, len(rows_data), y_start=y_after)
 
     c.save()
     buf.seek(0)
