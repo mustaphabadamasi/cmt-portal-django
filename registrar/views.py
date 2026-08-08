@@ -440,7 +440,14 @@ def result_entry(request, outline_id):
         course__in=courses
     ).values_list("student_id", flat=True).distinct()
 
-    level_year = "24" if "II" in outline.level else "25"
+    # Cohort year from session, not level name
+    session_name = str(outline.semester.session.name) if outline.semester and outline.semester.session else ""
+    if "2024" in session_name:
+        level_year = "24"
+    elif "2025" in session_name and "II" in outline.level:
+        level_year = "24"
+    else:
+        level_year = "25"
     students = Student.objects.filter(
         pk__in=student_ids,
         programme=outline.programme,
