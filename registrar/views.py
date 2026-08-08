@@ -1291,10 +1291,14 @@ def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None
         c.drawCentredString(W/2,H-46*mm,"GRADUATION LIST {} ACADEMIC SESSION".format(session))
         c.setFont("Helvetica",8.5); c.drawCentredString(W/2,H-50*mm,sem_lbl)
         c.setFont("Helvetica-Bold",8.5)
-        c.drawCentredString(W/2,H-54*mm,"SUBMISSION TO THE CPCS ACADEMIC BOARD")
+        c.drawCentredString(W/2,H-54*mm,"SUBMISSION TO THE CODL ACADEMIC BOARD")
         if pg>1:
             c.setFont("Helvetica-Oblique",7.5)
             c.drawCentredString(W/2,H-58*mm,"(Continued - Page {})".format(pg))
+        # Page number at bottom centre
+        c.setFont("Helvetica",7)
+        c.setFillColor(BLACK)
+        c.drawCentredString(W/2, 13*mm, "Page {}".format(pg))
 
     def col_hdr(y):
         x=X0; c.setFillColor(GREEN); c.rect(X0,y-HH,TW,HH,fill=1,stroke=0)
