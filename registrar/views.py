@@ -661,9 +661,22 @@ def result_sheet_pdf(request, outline_id):
     crs_w = max(avail_for_courses / n_courses, 8 * mm) if n_courses > 0 else 10 * mm
 
     # How many rows fit per page
-    rows_per_page = int((y_table_top - THDR_H - y_table_stop) / ROW_H)
+    # Non-last pages: rows go all the way to bottom margin (no footer)
+    # Last page: rows stop above footer zone
+    rows_per_page_full = int((y_table_top - THDR_H - (MARGIN + 3*mm)) / ROW_H)
+    rows_per_page_last = int((y_table_top - THDR_H - y_table_stop) / ROW_H)
 
-    total_pages = max(1, -(-len(rows_data) // rows_per_page))  # ceil division
+    # Calculate total pages needed
+    remaining = len(rows_data)
+    total_pages = 0
+    while remaining > 0:
+        total_pages += 1
+        # Check if this could be the last page
+        if remaining <= rows_per_page_last:
+            break
+        remaining -= rows_per_page_full
+    if total_pages == 0:
+        total_pages = 1
 
     sem_label = semester.name.upper() if hasattr(semester, "name") else str(semester).upper()
     session_label = session.name if hasattr(session, "name") else str(session)
@@ -898,17 +911,22 @@ def result_sheet_pdf(request, outline_id):
         c.drawCentredString(W / 2, MARGIN + 3 * mm, f"Page {c.getPageNumber()}")
 
     # ═══════ RENDER PAGES ═══════
+    row_idx = 0
     for pg in range(1, total_pages + 1):
         draw_header(pg)
         y_data = draw_table_header()
-        start_idx = (pg - 1) * rows_per_page
-        end_idx   = min(pg * rows_per_page, len(rows_data))
 
-        for i in range(start_idx, end_idx):
-            draw_data_row(y_data, i + 1, rows_data[i])
+        is_last = (pg == total_pages)
+        stop_y  = y_table_stop if is_last else (MARGIN + 3*mm)
+
+        while row_idx < len(rows_data):
+            if y_data - ROW_H < stop_y:
+                break
+            draw_data_row(y_data, row_idx + 1, rows_data[row_idx])
             y_data -= ROW_H
+            row_idx += 1
 
-        if pg == total_pages:
+        if is_last:
             draw_footer()
 
         if pg < total_pages:
