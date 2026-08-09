@@ -880,7 +880,7 @@ def result_sheet_pdf(request, outline_id):
             tbl_x += col_ws[ci]
 
         # Signatures
-        y_sig = tbl_y - 2 * rh - 8 * mm
+        y_sig = tbl_y - 2 * rh - 18 * mm
         sigs = [
             ("Provost - CMT", MARGIN + 4 * mm),
             ("Head of Department", W / 2 - 25 * mm),
