@@ -908,7 +908,8 @@ def result_sheet_pdf(request, outline_id):
             draw_data_row(y_data, i + 1, rows_data[i])
             y_data -= ROW_H
 
-        draw_footer()
+        if pg == total_pages:
+            draw_footer()
 
         if pg < total_pages:
             c.showPage()
