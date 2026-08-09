@@ -507,8 +507,7 @@ def result_entry(request, outline_id):
 
 @login_required
 def result_sheet_pdf(request, outline_id):
-    """Generate professional result sheet PDF using ReportLab"""
-    import hashlib
+    """Generate professional result sheet PDF — complete rewrite with proper pagination."""
     from io import BytesIO
     from django.http import HttpResponse
     from django.conf import settings
@@ -516,11 +515,9 @@ def result_sheet_pdf(request, outline_id):
     from reportlab.lib import colors
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas as rl_canvas
-    from reportlab.platypus import Table, TableStyle
     from academics.models import CourseOutline, CourseRegistration
 
     outline  = get_object_or_404(CourseOutline, pk=outline_id)
-    # Deduplicate courses by id to prevent repeated columns
     seen = set()
     courses = []
     for c in outline.courses.all().order_by("code"):
@@ -528,38 +525,38 @@ def result_sheet_pdf(request, outline_id):
             seen.add(c.id)
             courses.append(c)
     semester = outline.semester
+    session  = semester.session
 
     CMT_LOGO   = f"{settings.BASE_DIR}/static/images/cmt_logo.png.png"
     FUDMA_LOGO = f"{settings.BASE_DIR}/static/images/fudma_logo.png_optimized_250.png"
 
     GREEN  = colors.HexColor("#1a5c38")
     GOLD   = colors.HexColor("#c8881a")
-    LGRAY  = colors.HexColor("#f5f5f5")
     WHITE  = colors.white
     BLACK  = colors.black
 
-    # Get students
+    W, H = landscape(A4)
+
+    # ── Get students ──
     student_ids = CourseRegistration.objects.filter(
         semester=semester, course__in=courses
     ).values_list("student_id", flat=True).distinct()
 
-    # Determine cohort year from session name, not level
-    # /24/ students = enrolled 2024 (Dip I in 24/25, Dip II in 25/26)
-    # /25/ students = enrolled 2025 (Dip I in 25/26)
-    session_name = str(outline.semester.session.name) if outline.semester and outline.semester.session else ""
+    session_name = str(session.name) if session else ""
     if "2024" in session_name:
         level_year = "24"
     elif "2025" in session_name and "II" in outline.level:
         level_year = "24"
     else:
         level_year = "25"
+
     students = Student.objects.filter(
         pk__in=student_ids,
         reg_number__contains=f"/{level_year}/",
         programme=outline.programme
-    ).select_related("user","programme").order_by("reg_number")
+    ).select_related("user", "programme").order_by("reg_number")
 
-    # Build data rows
+    # ── Build data rows ──
     rows_data = []
     pass_count = carryover_count = 0
 
@@ -568,18 +565,18 @@ def result_sheet_pdf(request, outline_id):
             student=student, semester=semester, course__in=courses
         ).select_related("course")}
 
+        from results.models import CourseResult as CRModel
+        course_results = {r.course_id: r for r in CRModel.objects.filter(
+            student=student, semester=semester, course__in=courses
+        )}
+
         tcr = tce = tgp = 0
         course_scores = []
         has_fail = False
 
-        from results.models import CourseResult as CR
-        course_results = {r.course_id: r for r in CR.objects.filter(
-            student=student, semester=semester, course__in=courses
-        )}
         for course in courses:
             reg = regs.get(course.pk)
             cr  = course_results.get(course.pk)
-            # Prefer CourseResult total_score, fall back to CourseRegistration.score
             if cr and cr.total_score is not None:
                 score = float(cr.total_score)
                 grade = cr.grade or get_grade(score)
@@ -592,7 +589,7 @@ def result_sheet_pdf(request, outline_id):
                 score = None
                 grade = "--"
                 gp    = 0
-            units = course.unit
+            units = course.unit or 0
             tcr  += units
             tgp  += gp * units
             if score is not None and score >= 40:
@@ -601,351 +598,326 @@ def result_sheet_pdf(request, outline_id):
                 has_fail = True
             course_scores.append(f"{int(score) if score is not None else '--'} {grade if score is not None else ''}")
 
-        gpa = round(tgp/tcr, 2) if tcr > 0 else 0
+        gpa = round(tgp / tcr, 2) if tcr > 0 else 0
 
-        # Previous cumulative (other semesters)
-        prev_regs = CourseRegistration.objects.filter(
-            student=student, status__in=["passed","failed"]
+        # Previous cumulative from CourseResult
+        prev_results = CRModel.objects.filter(
+            student=student, status="approved"
         ).exclude(semester=semester).select_related("course")
-
         ccr = cce = cgp_prev = 0
-        for pr in prev_regs:
-            if pr.course and pr.score is not None:
-                ccr += pr.course.unit
-                cgp_prev += get_grade_point(pr.score) * pr.course.unit
-                if pr.score >= 40:
-                    cce += pr.course.unit
-        prev_cgpa = round(cgp_prev/ccr, 2) if ccr > 0 else 0
+        for pr in prev_results:
+            if pr.course:
+                u = pr.course.unit or 0
+                ccr += u
+                gp_val = float(pr.grade_point) if pr.grade_point else 0
+                cgp_prev += gp_val * u
+                if pr.total_score is not None and float(pr.total_score) >= 40:
+                    cce += u
+        prev_cgpa = round(cgp_prev / ccr, 2) if ccr > 0 else 0
 
-        # Cumulative
-        cum_ccr = tcr + ccr
-        cum_cce = tce + cce
-        cum_cgp = tgp + cgp_prev
-        cum_cgpa = round(cum_cgp/cum_ccr, 2) if cum_ccr > 0 else 0
+        cum_ccr  = tcr + ccr
+        cum_cce  = tce + cce
+        cum_cgp  = tgp + cgp_prev
+        cum_cgpa = round(cum_cgp / cum_ccr, 2) if cum_ccr > 0 else 0
 
         remark = "PASS" if not has_fail else "C/O"
-        if not has_fail: pass_count += 1
-        else: carryover_count += 1
+        if not has_fail:
+            pass_count += 1
+        else:
+            carryover_count += 1
 
         rows_data.append({
-            "student": student,
-            "scores":  course_scores,
+            "student": student, "scores": course_scores,
             "tcr": tcr, "tce": tce, "tgp": tgp, "gpa": f"{gpa:.2f}",
             "ccr": ccr, "cce": cce, "cgp": cgp_prev, "prev_cgpa": f"{prev_cgpa:.2f}",
             "cum_ccr": cum_ccr, "cum_cce": cum_cce, "cum_cgp": cum_cgp, "cum_cgpa": f"{cum_cgpa:.2f}",
             "remark": remark,
         })
 
-    # ── PDF GENERATION ────────────────────────────────────
+    # ═══════════════════ PDF DRAWING ═══════════════════
     buf = BytesIO()
-    W, H = landscape(A4)
-    c = rl_canvas.Canvas(buf, pagesize=landscape(A4))
+    c   = rl_canvas.Canvas(buf, pagesize=landscape(A4))
 
-    def draw_page(c, page_num=1, total_pages=1):
-        # Border
+    # ── Layout constants ──
+    MARGIN       = 10 * mm
+    HDR_HEIGHT   = 48 * mm   # header zone
+    FOOTER_H     = 55 * mm   # footer zone (stats + sigs + grading)
+    ROW_H        = 7.5 * mm  # data row height
+    THDR_H       = 14 * mm   # table header (2 rows)
+
+    y_table_top  = H - MARGIN - HDR_HEIGHT
+    y_table_stop = MARGIN + FOOTER_H
+
+    # Calculate column widths
+    sn_w  = 7 * mm
+    stu_w = 38 * mm
+    n_courses = len(courses)
+    # Summary columns: TCR TCE TGP GPA | CCR CCE CGP CGPA | CCR CCE CGP CGPA | REMARK
+    summary_count = 13
+    summary_w_each = 8.5 * mm
+    remark_w = 12 * mm
+    used = sn_w + stu_w + summary_count * summary_w_each + remark_w + 2 * MARGIN
+    avail_for_courses = W - used
+    crs_w = max(avail_for_courses / n_courses, 8 * mm) if n_courses > 0 else 10 * mm
+
+    # How many rows fit per page
+    rows_per_page = int((y_table_top - THDR_H - y_table_stop) / ROW_H)
+
+    total_pages = max(1, -(-len(rows_data) // rows_per_page))  # ceil division
+
+    sem_label = semester.name.upper() if hasattr(semester, "name") else str(semester).upper()
+    session_label = session.name if hasattr(session, "name") else str(session)
+
+    def draw_header(pg):
+        """Draw header with logos, titles, border."""
+        # Outer border
         c.setStrokeColor(GREEN)
         c.setLineWidth(2)
-        c.rect(8*mm, 8*mm, W-16*mm, H-16*mm)
+        c.rect(MARGIN, MARGIN, W - 2 * MARGIN, H - 2 * MARGIN)
         c.setLineWidth(0.5)
-        c.setStrokeColor(GOLD)
-        c.rect(10*mm, 10*mm, W-20*mm, H-20*mm)
+        c.rect(MARGIN + 1.5 * mm, MARGIN + 1.5 * mm, W - 2 * MARGIN - 3 * mm, H - 2 * MARGIN - 3 * mm)
 
-        # Header
-        try:
-            c.drawImage(CMT_LOGO,  13*mm, H-35*mm, width=22*mm, height=26*mm, preserveAspectRatio=True, mask="auto")
-            c.drawImage(FUDMA_LOGO, W-35*mm, H-35*mm, width=22*mm, height=26*mm, preserveAspectRatio=True, mask="auto")
-        except: pass
+        # Logos
+        import os
+        if os.path.exists(CMT_LOGO):
+            c.drawImage(CMT_LOGO, MARGIN + 6 * mm, H - MARGIN - 28 * mm, 22 * mm, 22 * mm, preserveAspectRatio=True, mask='auto')
+        if os.path.exists(FUDMA_LOGO):
+            c.drawImage(FUDMA_LOGO, W - MARGIN - 28 * mm, H - MARGIN - 28 * mm, 22 * mm, 22 * mm, preserveAspectRatio=True, mask='auto')
 
-        c.setFillColor(GREEN)
+        # Title text
+        c.setFillColor(BLACK)
         c.setFont("Helvetica-Bold", 13)
-        c.drawCentredString(W/2, H-17*mm, "COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA")
-        c.setFillColor(BLACK)
+        c.drawCentredString(W / 2, H - MARGIN - 10 * mm, "COLLEGE OF MANAGEMENT AND TECHNOLOGY KATSINA")
         c.setFont("Helvetica", 8)
-        c.drawCentredString(W/2, H-22*mm, "11, Batsari Road, Day Kofar Yandaka, Katsina")
+        c.drawCentredString(W / 2, H - MARGIN - 14 * mm, "11, Batsari Road, Day Kofar Yandaka, Katsina")
         c.setFont("Helvetica-Oblique", 8)
-        c.drawCentredString(W/2, H-26*mm, "Affiliated to")
+        c.drawCentredString(W / 2, H - MARGIN - 18 * mm, "Affiliated to")
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(W / 2, H - MARGIN - 23 * mm, "Federal University Dutsin-Ma Katsina")
+
+        # Programme & session
         c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(W/2, H-30*mm, "Federal University Dutsin-Ma Katsina")
-
-        c.setLineWidth(1.5)
-        c.setStrokeColor(GREEN)
-        c.line(12*mm, H-33*mm, W-12*mm, H-33*mm)
-        c.setLineWidth(0.5)
-        c.setStrokeColor(GOLD)
-        c.line(12*mm, H-34*mm, W-12*mm, H-34*mm)
-
-        # Programme + title
-        prog_name = outline.programme.name if outline.programme else ""
-        sem_name  = str(semester) if semester else ""
-        session   = semester.session if hasattr(semester, "session") and semester.session else ""
-
-        c.setFillColor(BLACK)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(W/2, H-38*mm, prog_name)
+        c.drawCentredString(W / 2, H - MARGIN - 30 * mm, outline.programme.name)
         c.setFont("Helvetica", 8)
-        c.drawCentredString(W/2, H-42*mm, "Submission to the Academic Board, College of Professional and Continuing Studies")
+        c.drawCentredString(W / 2, H - MARGIN - 34 * mm, "Submission to the Academic Board, College of Professional and Continuing Studies")
         c.setFont("Helvetica-Bold", 9)
-        # Clean title: "DIPLOMA I, 2024/2025 — FIRST SEMESTER RESULT"
-        session_str  = session.name if hasattr(session, "name") else str(session)
-        sem_str      = semester.name.upper() if hasattr(semester, "name") else sem_name.upper()
-        c.drawCentredString(W/2, H-46*mm, f"{outline.level.upper()}, {session_str} — {sem_str} RESULT")
+        title_str = f"{outline.level.upper()}, {session_label} \u2014 {sem_label} RESULT"
+        c.drawCentredString(W / 2, H - MARGIN - 39 * mm, title_str)
 
-        if page_num > 1:
-            c.setFont("Helvetica", 7)
-            c.drawCentredString(W/2, H-49*mm, f"(continued — Page {page_num} of {total_pages})")
+        if pg > 1:
+            c.setFont("Helvetica-Oblique", 7)
+            c.drawCentredString(W / 2, H - MARGIN - 43 * mm, f"(Continued \u2014 Page {pg})")
 
-    def draw_table(c, rows_data, courses, y_start):
-        # Column widths
-        sn_w    = 7*mm
-        stu_w   = 35*mm
-        crs_w   = 14*mm  # per course
-        cur_w   = 8*mm   # TCR,TCE,TGP,GPA
-        prv_w   = 8*mm
-        cum_w   = 8*mm
-        rem_w   = 12*mm
+    def draw_table_header():
+        """Draw the two-row table header and return the Y of first data row."""
+        y = y_table_top
+        x = MARGIN + 3 * mm
 
-        n_courses = len(courses)
-        total_w = sn_w + stu_w + n_courses*crs_w + 4*cur_w + 4*prv_w + 4*cum_w + rem_w
-
-        x0 = (W - total_w) / 2
-        row_h = 7.5*mm
-        hdr_h = 8*mm
-
-        # Header row 1 - main groups
-        sections = [
-            (sn_w, "S/N", 2),
-            (stu_w, "Student", 2),
-            (n_courses*crs_w, "SEMESTER COURSES", 1),
-            (4*cur_w, "CURRENT", 1),
-            (4*prv_w, "PREVIOUS", 1),
-            (4*cum_w, "CUMULATIVE", 1),
-            (rem_w, "REMARK", 2),
-        ]
-
-        x = x0
-        y = y_start
+        # ── Row 1: group headers ──
+        r1_h = 7 * mm
+        # S/N + Student
         c.setFillColor(GREEN)
-        for w, label, rowspan in sections:
-            c.rect(x, y - (hdr_h if rowspan == 2 else hdr_h/2+1), w, hdr_h if rowspan == 2 else hdr_h/2, fill=1, stroke=1)
-            c.setFillColor(WHITE)
-            c.setFont("Helvetica-Bold", 6.5)
-            ty = y - (hdr_h/2 if rowspan == 2 else hdr_h/4)
-            c.drawCentredString(x + w/2, ty - 2, label)
-            c.setFillColor(GREEN)
-            x += w
+        c.rect(x, y - r1_h, sn_w + stu_w, r1_h, fill=1, stroke=1)
+        # SEMESTER COURSES
+        c.rect(x + sn_w + stu_w, y - r1_h, crs_w * n_courses, r1_h, fill=1, stroke=1)
+        c.setFillColor(WHITE)
+        c.setFont("Helvetica-Bold", 6)
+        c.drawCentredString(x + sn_w + stu_w + crs_w * n_courses / 2, y - r1_h + 2, "SEMESTER COURSES")
+        # CURRENT
+        cur_x = x + sn_w + stu_w + crs_w * n_courses
+        c.setFillColor(GREEN)
+        c.rect(cur_x, y - r1_h, 4 * summary_w_each, r1_h, fill=1, stroke=1)
+        c.setFillColor(WHITE)
+        c.drawCentredString(cur_x + 2 * summary_w_each, y - r1_h + 2, "CURRENT")
+        # PREVIOUS
+        prev_x = cur_x + 4 * summary_w_each
+        c.setFillColor(GREEN)
+        c.rect(prev_x, y - r1_h, 4 * summary_w_each, r1_h, fill=1, stroke=1)
+        c.setFillColor(WHITE)
+        c.drawCentredString(prev_x + 2 * summary_w_each, y - r1_h + 2, "PREVIOUS")
+        # CUMULATIVE
+        cum_x = prev_x + 4 * summary_w_each
+        c.setFillColor(GREEN)
+        c.rect(cum_x, y - r1_h, 4 * summary_w_each, r1_h, fill=1, stroke=1)
+        c.setFillColor(WHITE)
+        c.drawCentredString(cum_x + 2 * summary_w_each, y - r1_h + 2, "CUMULATIVE")
+        # REMARK
+        rem_x = cum_x + 4 * summary_w_each + summary_w_each  # skip one for spacing
+        c.setFillColor(GREEN)
+        c.rect(cum_x + 4 * summary_w_each, y - r1_h, remark_w, r1_h, fill=1, stroke=1)
 
-        # Header row 2 - sub-columns
-        y2 = y - hdr_h/2
-        x  = x0 + sn_w + stu_w
-
-        # Course codes + units
+        # ── Row 2: individual column headers ──
+        y2 = y - r1_h
+        r2_h = 7 * mm
+        col_x = x
+        headers = ["S/N"] + ["Student"]
         for course in courses:
+            headers.append(f"{course.code}\n{course.unit}")
+        headers += ["TCR", "TCE", "TGP", "GPA", "CCR", "CCE", "CGP", "CGPA", "CCR", "CCE", "CGP", "CGPA", "REMARK"]
+        widths  = [sn_w, stu_w] + [crs_w] * n_courses + [summary_w_each] * 12 + [remark_w]
+
+        for i, (hdr, w) in enumerate(zip(headers, widths)):
             c.setFillColor(GREEN)
-            c.rect(x, y2 - hdr_h/2, crs_w, hdr_h/2, fill=1, stroke=1)
+            c.rect(col_x, y2 - r2_h, w, r2_h, fill=1, stroke=1)
             c.setFillColor(WHITE)
             c.setFont("Helvetica-Bold", 5.5)
-            c.drawCentredString(x + crs_w/2, y2 - hdr_h/4 + 1, course.code)
-            c.setFont("Helvetica", 5)
-            c.drawCentredString(x + crs_w/2, y2 - hdr_h/4 - 3, str(course.unit))
+            lines = hdr.split("\n")
+            for li, line in enumerate(lines):
+                c.drawCentredString(col_x + w / 2, y2 - r2_h + r2_h / 2 + 2 - li * 6, line)
+            col_x += w
+
+        return y2 - r2_h  # Y position for first data row
+
+    def draw_data_row(y, idx, row):
+        """Draw one student data row."""
+        x = MARGIN + 3 * mm
+        student = row["student"]
+
+        # Alternate row background
+        if idx % 2 == 1:
+            c.setFillColor(colors.HexColor("#f9fafb"))
+            total_w = sn_w + stu_w + crs_w * n_courses + 12 * summary_w_each + remark_w
+            c.rect(x, y - ROW_H, total_w, ROW_H, fill=1, stroke=0)
+
+        c.setStrokeColor(colors.HexColor("#e5e7eb"))
+        c.setLineWidth(0.3)
+
+        # S/N
+        c.setFillColor(BLACK)
+        c.setFont("Helvetica", 6)
+        c.rect(x, y - ROW_H, sn_w, ROW_H, fill=0, stroke=1)
+        c.drawCentredString(x + sn_w / 2, y - ROW_H / 2 - 1.5, str(idx))
+        x += sn_w
+
+        # Student name + reg
+        c.rect(x, y - ROW_H, stu_w, ROW_H, fill=0, stroke=1)
+        name = student.user.get_full_name()
+        if len(name) > 24:
+            name = name[:24] + "."
+        c.setFont("Helvetica-Bold", 5.5)
+        c.drawString(x + 1 * mm, y - ROW_H / 2 + 1.5, name)
+        c.setFont("Helvetica", 5)
+        c.setFillColor(colors.HexColor("#666666"))
+        c.drawString(x + 1 * mm, y - ROW_H / 2 - 4, student.reg_number)
+        c.setFillColor(BLACK)
+        x += stu_w
+
+        # Course scores
+        c.setFont("Helvetica", 5.5)
+        for sg in row["scores"]:
+            c.rect(x, y - ROW_H, crs_w, ROW_H, fill=0, stroke=1)
+            c.drawCentredString(x + crs_w / 2, y - ROW_H / 2 - 1.5, sg)
             x += crs_w
 
-        # CURRENT sub-cols
-        for label in ["TCR","TCE","TGP","GPA"]:
-            c.setFillColor(GREEN)
-            c.rect(x, y2 - hdr_h/2, cur_w, hdr_h/2, fill=1, stroke=1)
-            c.setFillColor(WHITE)
-            c.setFont("Helvetica-Bold", 5.5)
-            c.drawCentredString(x + cur_w/2, y2 - hdr_h/4 - 1, label)
-            x += cur_w
+        # Summary columns
+        summary_vals = [
+            row["tcr"], row["tce"], row["tgp"], row["gpa"],
+            row["ccr"], row["cce"], row["cgp"], row["prev_cgpa"],
+            row["cum_ccr"], row["cum_cce"], row["cum_cgp"], row["cum_cgpa"],
+        ]
+        c.setFont("Helvetica", 5.5)
+        for val in summary_vals:
+            c.rect(x, y - ROW_H, summary_w_each, ROW_H, fill=0, stroke=1)
+            display = str(val) if val else "0"
+            c.drawCentredString(x + summary_w_each / 2, y - ROW_H / 2 - 1.5, display)
+            x += summary_w_each
 
-        # PREVIOUS sub-cols
-        for label in ["CCR","CCE","CGP","CGPA"]:
-            c.setFillColor(GREEN)
-            c.rect(x, y2 - hdr_h/2, prv_w, hdr_h/2, fill=1, stroke=1)
-            c.setFillColor(WHITE)
-            c.setFont("Helvetica-Bold", 5.5)
-            c.drawCentredString(x + prv_w/2, y2 - hdr_h/4 - 1, label)
-            x += prv_w
+        # REMARK
+        c.setFont("Helvetica-Bold", 5.5)
+        c.rect(x, y - ROW_H, remark_w, ROW_H, fill=0, stroke=1)
+        c.drawCentredString(x + remark_w / 2, y - ROW_H / 2 - 1.5, row["remark"])
 
-        # CUMULATIVE sub-cols
-        for label in ["CCR","CCE","CGP","CGPA"]:
-            c.setFillColor(GREEN)
-            c.rect(x, y2 - hdr_h/2, cum_w, hdr_h/2, fill=1, stroke=1)
-            c.setFillColor(WHITE)
-            c.setFont("Helvetica-Bold", 5.5)
-            c.drawCentredString(x + cum_w/2, y2 - hdr_h/4 - 1, label)
-            x += cum_w
+    def draw_footer():
+        """Draw stats, signatures, grading — anchored to page bottom."""
+        y = MARGIN + FOOTER_H - 2 * mm
 
-        # Data rows
-        y_data = y - hdr_h
-        for i, row in enumerate(rows_data):
-            student = row["student"]
-            bg = LGRAY if i % 2 == 0 else WHITE
-            x = x0
-
-            # Draw row background
-            c.setFillColor(bg)
-            c.rect(x, y_data - row_h, total_w, row_h, fill=1, stroke=0)
-
-            # Row border
-            c.setStrokeColor(colors.HexColor("#cccccc"))
-            c.setLineWidth(0.3)
-            c.line(x0, y_data - row_h, x0 + total_w, y_data - row_h)
-
-            c.setFillColor(BLACK)
-
-            # S/N
-            c.setFont("Helvetica", 7)
-            c.drawCentredString(x + sn_w/2, y_data - row_h/2 - 2, str(i+1))
-            x += sn_w
-
-            # Student name + matric (1.15 line spacing between name and reg no)
-            c.setFont("Helvetica-Bold", 6.5)
-            name = student.user.get_full_name()
-            if len(name) > 25: name = name[:25] + "."
-            c.drawString(x + 1.5*mm, y_data - row_h/2 + 2.5, name)
-            c.setFont("Helvetica", 6)
-            c.setFillColor(colors.HexColor("#555555"))
-            c.drawString(x + 1*mm, y_data - row_h/2 - 5.5, student.reg_number)
-            c.setFillColor(BLACK)
-            x += stu_w
-
-            # Course scores
-            for score_grade in row["scores"]:
-                c.setFont("Helvetica", 6.5)
-                c.drawCentredString(x + crs_w/2, y_data - row_h/2 - 2, str(score_grade))
-                x += crs_w
-
-            # Current
-            for val in [row["tcr"], row["tce"], row["tgp"], row["gpa"]]:
-                c.setFont("Helvetica", 6.5)
-                c.drawCentredString(x + cur_w/2, y_data - row_h/2 - 2, str(val))
-                x += cur_w
-
-            # Previous
-            for val in [row["ccr"], row["cce"], row["cgp"], row["prev_cgpa"]]:
-                c.setFont("Helvetica", 6.5)
-                c.drawCentredString(x + prv_w/2, y_data - row_h/2 - 2, str(val))
-                x += prv_w
-
-            # Cumulative
-            for val in [row["cum_ccr"], row["cum_cce"], row["cum_cgp"], row["cum_cgpa"]]:
-                c.setFont("Helvetica", 6.5)
-                c.drawCentredString(x + cum_w/2, y_data - row_h/2 - 2, str(val))
-                x += cum_w
-
-            # Remark
-            c.setFillColor(GREEN if row["remark"] == "PASS" else colors.red)
-            c.setFont("Helvetica-Bold", 7)
-            c.drawCentredString(x + rem_w/2, y_data - row_h/2 - 2, row["remark"])
-            c.setFillColor(BLACK)
-
-            y_data -= row_h
-
-        # Outer table border
-        c.setStrokeColor(GREEN)
-        c.setLineWidth(0.8)
-        c.rect(x0, y_data, total_w, y_start - y_data)
-
-        # Vertical lines
-        c.setLineWidth(0.4)
-        c.setStrokeColor(colors.HexColor("#888888"))
-        xv = x0
-        for w in [sn_w, stu_w] + [crs_w]*n_courses + [cur_w]*4 + [prv_w]*4 + [cum_w]*4:
-            xv += w
-            c.line(xv, y_data, xv, y_start)
-
-        return y_data
-
-    def draw_footer(c, pass_count, carryover_count, total):
-        # All footer elements anchored to fixed Y from page bottom
-        # Landscape A4 = 210mm tall
-        # Bottom border at 10mm, content ends at 100mm from bottom
-        # Layout from bottom up:
-        #   14mm: inner border
-        #   20mm: CLASS line
-        #   25mm: GRADING line
-        #   38mm: signatory titles
-        #   50mm: stat table data row
-        #   58mm: stat table header row
-        #   68mm: stat table data row bottom
-        #   75mm: STATISTICAL REPORT label
-        y = 75*mm   # STATISTICAL REPORT label
-
-        # Statistical report label
-        c.setFont("Helvetica-Bold", 8)
+        # STATISTICAL REPORT label
+        c.setFont("Helvetica-Bold", 7)
         c.setFillColor(BLACK)
-        c.drawString(12*mm, y, "STATISTICAL REPORT")
+        c.drawString(MARGIN + 4 * mm, y, "STATISTICAL REPORT")
 
-        # Stat table: 2 rows x 8mm each = 16mm, starts 4mm below label
-        data = [
-            ["Total Registered", "Total Sat", "Passed", "Carryover"],
-            [str(total), str(total), f"{pass_count} ({int(pass_count/total*100) if total else 0}%)", f"({carryover_count})"],
-        ]
-        tbl_x = 12*mm
-        tbl_y = y - 4*mm  # table starts just below label
-        col_ws = [50*mm, 50*mm, 50*mm, 50*mm]
-        row_hs = [8*mm, 8*mm]
+        # Stat table
+        tbl_y  = y - 3 * mm
+        tbl_x  = MARGIN + 4 * mm
+        col_ws = [50 * mm, 50 * mm, 50 * mm, 50 * mm]
+        rh     = 7 * mm
 
-        for ri, row in enumerate(data):
-            x = tbl_x
-            for ci, cell in enumerate(row):
-                bg = GREEN if ri == 0 else WHITE
-                c.setFillColor(bg)
-                c.setStrokeColor(BLACK)
-                c.setLineWidth(0.5)
-                c.rect(x, tbl_y - (ri+1)*row_hs[ri], col_ws[ci], row_hs[ri], fill=1, stroke=1)
-                c.setFillColor(WHITE if ri == 0 else BLACK)
-                c.setFont("Helvetica-Bold" if ri == 0 else "Helvetica", 7)
-                lines = cell.split("\n")
-                for li, line in enumerate(lines):
-                    c.drawCentredString(x + col_ws[ci]/2, tbl_y - (ri+1)*row_hs[ri] + row_hs[ri]/2 + (3 if len(lines)>1 else 0) - li*7, line)
-                x += col_ws[ci]
+        # Header row
+        headers = ["Total Registered", "Total Sat", "Passed", "Carryover"]
+        for ci, hdr in enumerate(headers):
+            c.setFillColor(GREEN)
+            c.rect(tbl_x, tbl_y - rh, col_ws[ci], rh, fill=1, stroke=1)
+            c.setFillColor(WHITE)
+            c.setFont("Helvetica-Bold", 6.5)
+            c.drawCentredString(tbl_x + col_ws[ci] / 2, tbl_y - rh + 2, hdr)
+            tbl_x += col_ws[ci]
 
-        # Signature lines — fixed at 33mm from bottom
-        y_sig = 43*mm  # signatures at 43mm from bottom
-        sigs = [
-            ("Provost - CMT"),
-            ("Head of Department"),
-            ("Provost - CPCS, FUDMA"),
-        ]
-        sig_x = [12*mm, W/2 - 30*mm, W - 80*mm]
-        for i, title in enumerate(sigs):
-            c.setFont("Helvetica", 8)
+        # Data row
+        tbl_x = MARGIN + 4 * mm
+        total = len(rows_data)
+        vals = [str(total), str(total),
+                f"{pass_count} ({int(pass_count/total*100) if total else 0}%)",
+                f"({carryover_count})"]
+        for ci, val in enumerate(vals):
+            c.setFillColor(WHITE)
+            c.rect(tbl_x, tbl_y - 2 * rh, col_ws[ci], rh, fill=1, stroke=1)
             c.setFillColor(BLACK)
-            c.line(sig_x[i], y_sig + 6*mm, sig_x[i] + 60*mm, y_sig + 6*mm)
-            c.drawString(sig_x[i], y_sig + 2*mm, title)
+            c.setFont("Helvetica", 6.5)
+            c.drawCentredString(tbl_x + col_ws[ci] / 2, tbl_y - 2 * rh + 2, val)
+            tbl_x += col_ws[ci]
 
-        # Grade key — fixed at 20mm from bottom
-        y_key = 25*mm  # grade key at 25mm from bottom
-        c.setFont("Helvetica-Bold", 7)
-        c.drawString(12*mm, y_key, "GRADING: ")
-        c.setFont("Helvetica", 7)
-        key = "A=70-100(5pts)  B=60-69(4pts)  C=50-59(3pts)  D=45-49(2pts)  E=40-44(1pt)  F=<40(0pts)"
-        c.drawString(35*mm, y_key, key)
+        # Signatures
+        y_sig = tbl_y - 2 * rh - 8 * mm
+        sigs = [
+            ("Provost - CMT", MARGIN + 4 * mm),
+            ("Head of Department", W / 2 - 25 * mm),
+            ("Provost - CPCS, FUDMA", W - MARGIN - 70 * mm),
+        ]
+        for title, sx in sigs:
+            c.setStrokeColor(BLACK)
+            c.setLineWidth(0.5)
+            c.line(sx, y_sig + 5 * mm, sx + 55 * mm, y_sig + 5 * mm)
+            c.setFont("Helvetica", 7)
+            c.setFillColor(BLACK)
+            c.drawString(sx, y_sig, title)
 
-        # CGPA classification
-        c.setFont("Helvetica-Bold", 7)
-        c.drawString(12*mm, y_key - 5*mm, "CLASS: ")
-        c.setFont("Helvetica", 7)
-        cls = "4.50-5.00=DISTINCTION  3.50-4.49=UPPER CREDIT  2.50-3.49=LOWER CREDIT  1.00-2.49=PASS"
-        c.drawString(35*mm, y_key - 5*mm, cls)
+        # Grading key
+        y_key = y_sig - 8 * mm
+        c.setFont("Helvetica-Bold", 6)
+        c.drawString(MARGIN + 4 * mm, y_key, "GRADING:")
+        c.setFont("Helvetica", 6)
+        c.drawString(MARGIN + 22 * mm, y_key, "A=70-100(5pts)  B=60-69(4pts)  C=50-59(3pts)  D=45-49(2pts)  E=40-44(1pt)  F=<40(0pts)")
 
-    # Draw pages
-    # Footer occupies bottom 100mm of page — table must not enter this zone
-    FOOTER_ZONE  = 100*mm
-    y_content_start = H - 45*mm   # table starts here (below header)
-    y_table_stop    = FOOTER_ZONE  # table MUST stop here
+        c.setFont("Helvetica-Bold", 6)
+        c.drawString(MARGIN + 4 * mm, y_key - 4 * mm, "CLASS:")
+        c.setFont("Helvetica", 6)
+        c.drawString(MARGIN + 22 * mm, y_key - 4 * mm, "4.50-5.00=DISTINCTION  3.50-4.49=UPPER CREDIT  2.50-3.49=LOWER CREDIT  1.00-2.49=PASS")
 
-    draw_page(c, 1, 1)
-    y_after = draw_table(c, rows_data, courses, y_content_start)
-    draw_footer(c, pass_count, carryover_count, len(rows_data))
+        # Page number
+        c.setFont("Helvetica", 6)
+        c.drawCentredString(W / 2, MARGIN + 3 * mm, f"Page {c.getPageNumber()}")
+
+    # ═══════ RENDER PAGES ═══════
+    for pg in range(1, total_pages + 1):
+        draw_header(pg)
+        y_data = draw_table_header()
+        start_idx = (pg - 1) * rows_per_page
+        end_idx   = min(pg * rows_per_page, len(rows_data))
+
+        for i in range(start_idx, end_idx):
+            draw_data_row(y_data, i + 1, rows_data[i])
+            y_data -= ROW_H
+
+        draw_footer()
+
+        if pg < total_pages:
+            c.showPage()
 
     c.save()
     buf.seek(0)
 
-    prog_name = outline.programme.name.replace(" ","_").upper() if outline.programme else "PROG"
-    fname = f"Result_{prog_name}_{outline.level.replace(' ','_')}_{semester}.pdf"
+    prog_name = outline.programme.name.replace(" ", "_").upper() if outline.programme else "PROG"
+    fname = f"Result_{prog_name}_{outline.level.replace(' ', '_')}_{session_label}_{sem_label}.pdf"
     response = HttpResponse(buf.getvalue(), content_type="application/pdf")
     response["Content-Disposition"] = f'filename="{fname}"'
     return response
@@ -1121,6 +1093,39 @@ def download_result_template(request, outline_id):
 # ─────────────────────────────────────────────────────────
 
 @login_required
+
+@login_required
+def save_student_details(request):
+    """Save gender, date of birth, state of origin for multiple students before grad list PDF."""
+    import json
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    try:
+        data = json.loads(request.body)
+        updates = data.get("students", [])
+        saved = 0
+        errors = []
+        for item in updates:
+            sid = item.get("id")
+            try:
+                student = Student.objects.get(pk=sid)
+                if item.get("gender"):
+                    student.gender = item["gender"]
+                if item.get("dob"):
+                    from datetime import datetime
+                    student.date_of_birth = datetime.strptime(item["dob"], "%Y-%m-%d").date()
+                if item.get("state"):
+                    student.state_of_origin = item["state"].upper()
+                student.save(update_fields=["gender", "date_of_birth", "state_of_origin"])
+                saved += 1
+            except Student.DoesNotExist:
+                errors.append(f"Student {sid} not found")
+            except Exception as e:
+                errors.append(str(e))
+        return JsonResponse({"saved": saved, "errors": errors})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
 def graduation_list_view(request):
     from academics.models import CourseRegistration
     programmes = Programme.objects.all()
