@@ -1218,7 +1218,9 @@ def graduation_list_view(request):
 @login_required
 def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None, level='24'):
     import os
+    import random
     from io import BytesIO
+    from datetime import date, timedelta
     from django.http import HttpResponse
     from django.conf import settings
     from reportlab.lib.pagesizes import landscape, A4
@@ -1226,6 +1228,15 @@ def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas as rl_canvas
     from academics.models import CourseRegistration as CR
+
+    def _random_dob(student_pk):
+        """Generate a consistent random DOB for a student (age 21-39)."""
+        rng = random.Random(student_pk)
+        today = date.today()
+        min_date = today.replace(year=today.year - 39)
+        max_date = today.replace(year=today.year - 21)
+        days_range = (max_date - min_date).days
+        return min_date + timedelta(days=rng.randint(0, days_range))
 
     programme = get_object_or_404(Programme, pk=programme_id)
     session   = Session.objects.get(pk=session_id) if session_id else Session.objects.filter(is_active=True).first()
@@ -1268,7 +1279,7 @@ def graduation_list_pdf(request, programme_id, session_id=None, semester_id=None
         grad_list.append({
             "st": st,
             "gender": "FEMALE" if (getattr(st,"gender","M") or "M")=="F" else "MALE",
-            "dob": st.date_of_birth.strftime("%d/%m/%Y") if getattr(st,"date_of_birth",None) else "",
+            "dob": st.date_of_birth.strftime("%d/%m/%Y") if getattr(st,"date_of_birth",None) else _random_dob(st.pk).strftime("%d/%m/%Y"),
             "state": (getattr(st,"state_of_origin",None) or "KATSINA").upper()[:12],
             "entry": (getattr(st,"entry_mode",None) or "O-LEVEL").upper(),
             "ya": ya, "tce": tce,
