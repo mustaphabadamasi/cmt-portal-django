@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Check Quiz Result - CMT Portal</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#f0fdf4;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}
+    .card{background:white;border-radius:16px;padding:28px;max-width:520px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .logo{color:#1a5c38;font-size:20px;font-weight:800;margin-bottom:6px}
+    h2{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
+    .sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+    label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+    input{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:14px}
+    button{width:100%;padding:12px;background:#1a5c38;color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+    .error{background:#fef2f2;color:#dc2626;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+    .who{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:13px;color:#166534;margin-bottom:14px}
+    .row{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px}
+    .qt{font-weight:700;color:#111827;font-size:14px;margin-bottom:4px}
+    .meta{font-size:12px;color:#9ca3af;margin-bottom:8px}
+    .score{font-size:26px;font-weight:800;color:#1a5c38}
+    .score span{font-size:15px;color:#9ca3af;font-weight:600}
+    .pending{background:#fef3c7;color:#92400e;border-radius:8px;padding:10px;font-size:12.5px}
+    .again{display:block;text-align:center;margin-top:16px;font-size:13px;color:#1a5c38;text-decoration:none;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">CMT Portal</div>
+    <h2>Check Your Quiz Result</h2>
+    <p class="sub">Enter your matric number, course code and result PIN to view your score.</p>
+
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    {% if results %}
+      <div class="who">
+        <strong>{{ student.user.get_full_name }}</strong><br>
+        {{ student.reg_number }} &middot; {{ course.code }} - {{ course.title }}
+      </div>
+
+      {% for r in results %}
+      <div class="row">
+        <div class="qt">{{ r.quiz.title }}</div>
+        <div class="meta">Submitted: {{ r.attempt.submitted_at|date:"d M Y, H:i" }}</div>
+        {% if r.closed %}
+          <div class="score">{{ r.attempt.score }}<span> / {{ r.attempt.max_score }}</span></div>
+          <div class="meta" style="margin-top:4px">
+            {{ r.attempt.correct_count }} of {{ r.attempt.question_count }} correct
+          </div>
+        {% else %}
+          <div class="pending">
+            Your score will be released after the quiz closes on
+            {{ r.quiz.available_until|date:"d M Y, H:i" }}.
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <a class="again" href="{% url 'lecturers:public_result_check' %}">Check another result</a>
+    {% else %}
+      <form method="post">
+        {% csrf_token %}
+        <label>Matric Number</label>
+        <input type="text" name="matric" placeholder="e.g. DPL/PAD/24/172"
+               value="{{ request.POST.matric|default:'' }}" required>
+        <label>Course Code</label>
+        <input type="text" name="course_code" placeholder="e.g. PAD215"
+               value="{{ request.POST.course_code|default:'' }}" required>
+        <label>Result PIN</label>
+        <input type="text" name="result_pin" placeholder="6-character PIN"
+               value="{{ request.POST.result_pin|default:'' }}" required>
+        <button type="submit">Check Result</button>
+      </form>
+    {% endif %}
+  </div>
+</body>
+</html>

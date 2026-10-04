@@ -8,6 +8,7 @@
   </div>
   <div style="display:flex;gap:8px">
     <a href="{% url 'lecturers:course_results' quiz.course_id quiz.semester_id %}" style="background:#fff;color:#1a5c38;border:1px solid #bbf7d0;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:600">📊 Course Results</a>
+      <a href="{% url 'lecturers:download_pin_list' quiz.pk %}" style="background:#0369a1;color:white;padding:9px 16px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;margin-right:6px">&#128190; Download PINs</a>
     <a href="{% url 'lecturers:quiz_detail' quiz.pk %}" style="background:#fff;color:#374151;border:1px solid #d1d5db;padding:9px 16px;border-radius:8px;font-size:13px;text-decoration:none">← Quiz</a>
   </div>
 </div>
@@ -38,7 +39,7 @@
 <table class="attempts">
   <thead>
     <tr>
-      <th>#</th><th>Student</th><th>Reg No.</th>
+      <th>#</th><th>Student</th><th>Reg No.</th><th>PIN</th>
       <th>Score</th><th>Submitted</th><th></th><th></th>
     </tr>
   </thead>
@@ -48,6 +49,7 @@
         <td>{{ forloop.counter }}</td>
         <td>{{ a.student.user.last_name|upper }} {{ a.student.user.first_name }}</td>
         <td>{{ a.student.reg_number }}</td>
+            <td style="font-family:monospace;font-weight:700;color:#0369a1">{{ a.result_pin }}</td>
         <td>
           {% if a.is_submitted %}
             {% with pct=a.score %}

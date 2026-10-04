@@ -1177,3 +1177,96 @@ def quiz_token_access(request, token):
 def quiz_start_get(request, pk):
     request.method = 'POST'
     return quiz_start(request, pk)
+
+
+# -- PUBLIC RESULT CHECK (no login) ------------------------------------------
+
+def public_result_check(request):
+    from students.models import Student
+    from academics.models import Course
+    context = {'results': None, 'error': None, 'student': None}
+
+    if request.method == 'POST':
+        matric = request.POST.get('matric', '').strip().upper()
+        code   = request.POST.get('course_code', '').strip().upper()
+        pin    = request.POST.get('result_pin', '').strip().upper()
+
+        student = Student.objects.filter(reg_number__iexact=matric).first()
+        course  = Course.objects.filter(code__iexact=code).first()
+
+        if not student:
+            context['error'] = 'Matric number not found. Please check and try again.'
+        elif not course:
+            context['error'] = 'Course code not found. Please check and try again.'
+        else:
+            attempts = (QuizAttempt.objects
+                        .filter(student=student, quiz__course=course,
+                                is_submitted=True, result_pin__iexact=pin)
+                        .select_related('quiz')
+                        .order_by('-quiz__available_until'))
+            rows = []
+            for a in attempts:
+                closed = _tz.now() > a.quiz.available_until
+                rows.append({'attempt': a, 'quiz': a.quiz, 'closed': closed})
+            if not rows:
+                context['error'] = 'No result found. Check that your matric number, course code and PIN are all correct.'
+            else:
+                context['results'] = rows
+                context['student'] = student
+                context['course']  = course
+
+    return render(request, 'lecturers/public_result_check.html', context)
+
+
+# -- PIN LIST DOWNLOAD (Excel) -----------------------------------------------
+
+@login_required
+def download_pin_list(request, pk):
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment
+    from django.http import HttpResponse
+
+    quiz = get_object_or_404(Quiz, pk=pk)
+    if not _can_view_results(request.user, quiz):
+        return HttpResponseForbidden("You do not have permission to view this quiz.")
+
+    attempts = (QuizAttempt.objects
+                .filter(quiz=quiz, is_submitted=True)
+                .select_related('student', 'student__user')
+                .order_by('student__reg_number'))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Result PINs'
+
+    ws['A1'] = f'{quiz.course.code} - {quiz.title}'
+    ws['A1'].font = Font(bold=True, size=13)
+    ws.merge_cells('A1:B1')
+
+    headers = ['REG NUMBER', 'RESULT PIN']
+    for col, h in enumerate(headers, start=1):
+        c = ws.cell(row=3, column=col, value=h)
+        c.font = Font(bold=True)
+        c.alignment = Alignment(horizontal='center')
+
+    for i, a in enumerate(attempts, start=4):
+        ws.cell(row=i, column=1, value=a.student.reg_number)
+        pin_cell = ws.cell(row=i, column=2, value=a.result_pin)
+        pin_cell.alignment = Alignment(horizontal='center')
+        pin_cell.font = Font(bold=True)
+
+    ws.column_dimensions['A'].width = 24
+    ws.column_dimensions['B'].width = 16
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    fname = f'PINs_{quiz.course.code}_{quiz.pk}.xlsx'
+    resp = HttpResponse(
+        buf.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    resp['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return resp

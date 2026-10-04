@@ -196,11 +196,22 @@ class QuizAllowedStudent(models.Model):
 # Phase 1B.2 — Quiz attempts (student-side)
 # ============================================================
 
+def _gen_result_pin():
+    import random, string
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
 class QuizAttempt(models.Model):
     """One student's attempt at a quiz. Max one per (student, quiz)."""
 
     quiz    = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='quiz_attempts')
+    result_pin = models.CharField(max_length=10, blank=True, default='')
+
+    def save(self, *args, **kwargs):
+        if not self.result_pin:
+            self.result_pin = _gen_result_pin()
+        super().save(*args, **kwargs)
 
     started_at     = models.DateTimeField(auto_now_add=True)
     submitted_at   = models.DateTimeField(null=True, blank=True)

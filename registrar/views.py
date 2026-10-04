@@ -642,7 +642,7 @@ def result_sheet_pdf(request, outline_id):
     MARGIN       = 10 * mm
     HDR_HEIGHT   = 48 * mm   # header zone
     FOOTER_H     = 55 * mm   # footer zone (stats + sigs + grading)
-    ROW_H        = 7.5 * mm  # data row height
+    ROW_H        = 7 * mm    # data row height
     THDR_H       = 14 * mm   # table header (2 rows)
 
     y_table_top  = H - MARGIN - HDR_HEIGHT
@@ -671,10 +671,16 @@ def result_sheet_pdf(request, outline_id):
     total_pages = 0
     while remaining > 0:
         total_pages += 1
-        # Check if this could be the last page
         if remaining <= rows_per_page_last:
-            break
-        remaining -= rows_per_page_full
+            # Fits on the last page (with footer)
+            remaining = 0
+        elif remaining <= rows_per_page_full:
+            # Fits on a full page but NOT on a last page with footer;
+            # need this page as full + one more page for footer/stats
+            remaining = 0
+            total_pages += 1
+        else:
+            remaining -= rows_per_page_full
     if total_pages == 0:
         total_pages = 1
 
